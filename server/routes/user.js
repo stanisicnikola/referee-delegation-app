@@ -27,9 +27,9 @@ router.delete("/:id", async (req, res) => {
     const deletedUser = await User.destroy({ where: { id: userId } });
 
     if (deletedUser) {
-      return res.json({ message: "User obrisan!" });
+      return res.json({ message: "User deleted!" });
     } else {
-      return res.json({ message: "User ne postoji!" });
+      return res.json({ message: "User does not exist!" });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });

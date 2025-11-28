@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { Team } = require("../models");
+const { Venue } = require("../models");
 
 router.get("/", async (req, res) => {
   try {
-    const teams = await Team.findAll();
-    res.json(teams);
+    const venues = await Venue.findAll();
+    res.json(venues);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -13,10 +13,10 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const team = req.body;
-    await Team.create(team);
+    const venue = req.body;
+    await Venue.create(venue);
 
-    res.json(team);
+    res.json(venue);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -24,13 +24,13 @@ router.post("/", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
-    const teamId = req.params.id;
-    const deletedTeam = await Team.destroy({ where: { id: teamId } });
+    const venueId = req.params.id;
+    const deletedVenue = await Venue.destroy({ where: { id: venueId } });
 
-    if (deletedTeam) {
-      return res.json({ message: "Team deleted!" });
+    if (deletedVenue) {
+      return res.json({ message: "Venue deleted!" });
     } else {
-      return res.json({ message: "Team does not exist!" });
+      return res.json({ message: "Venue does not exist!" });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });

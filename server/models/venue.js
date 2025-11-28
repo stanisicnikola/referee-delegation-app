@@ -1,45 +1,37 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Team extends Model {
+  class Venue extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // Tim pripada jednoj dvorani
-      Team.belongsTo(models.Venue, {
-        as: "venue",
+      // Dvorana može imati više timova
+      Venue.hasMany(models.Team, {
+        as: "teams",
         foreignKey: "venueId",
       });
 
-      // Tim može igrati više utakmica kao domaćin
-      Team.hasMany(models.Game, {
-        as: "homeGames",
-        foreignKey: "homeTeamId",
-      });
-
-      // Tim može igrati više utakmica kao gost
-      Team.hasMany(models.Game, {
-        as: "awayGames",
-        foreignKey: "awayTeamId",
+      // Dvorana može imati više utakmica
+      Venue.hasMany(models.Game, {
+        as: "games",
+        foreignKey: "venueId",
       });
     }
   }
-  Team.init(
+  Venue.init(
     {
       name: { type: DataTypes.STRING, allowNull: false, unique: true },
       country: { type: DataTypes.STRING, allowNull: false },
       city: { type: DataTypes.STRING, allowNull: false },
       address: { type: DataTypes.STRING, allowNull: false },
-      logoPath: { type: DataTypes.STRING, allowNull: true },
-      venueId: { type: DataTypes.INTEGER, allowNull: false },
     },
     {
       sequelize,
-      modelName: "Team",
+      modelName: "Venue",
     }
   );
-  return Team;
+  return Venue;
 };
