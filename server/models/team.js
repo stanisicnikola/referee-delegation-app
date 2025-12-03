@@ -1,45 +1,87 @@
 "use strict";
 const { Model } = require("sequelize");
+
 module.exports = (sequelize, DataTypes) => {
   class Team extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // Tim pripada jednoj dvorani
       Team.belongsTo(models.Venue, {
-        as: "venue",
-        foreignKey: "venueId",
+        foreignKey: "primaryVenueId",
+        as: "primaryVenue",
       });
 
-      // Tim može igrati više utakmica kao domaćin
-      Team.hasMany(models.Game, {
-        as: "homeGames",
+      Team.hasMany(models.Match, {
         foreignKey: "homeTeamId",
+        as: "homeMatches",
       });
 
-      // Tim može igrati više utakmica kao gost
-      Team.hasMany(models.Game, {
-        as: "awayGames",
+      Team.hasMany(models.Match, {
         foreignKey: "awayTeamId",
+        as: "awayMatches",
       });
     }
   }
+
   Team.init(
     {
-      name: { type: DataTypes.STRING, allowNull: false, unique: true },
-      country: { type: DataTypes.STRING, allowNull: false },
-      city: { type: DataTypes.STRING, allowNull: false },
-      address: { type: DataTypes.STRING, allowNull: false },
-      logoPath: { type: DataTypes.STRING, allowNull: true },
-      venueId: { type: DataTypes.INTEGER, allowNull: false },
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      shortName: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        field: "short_name",
+      },
+      city: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      logoUrl: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+        field: "logo_url",
+      },
+      primaryVenueId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: "primary_venue_id",
+      },
+      contactPerson: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+        field: "contact_person",
+      },
+      contactEmail: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: "contact_email",
+      },
+      contactPhone: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        field: "contact_phone",
+      },
+      status: {
+        type: DataTypes.ENUM("active", "inactive", "suspended"),
+        allowNull: false,
+        defaultValue: "active",
+      },
     },
     {
       sequelize,
       modelName: "Team",
+      tableName: "teams",
+      underscored: true,
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     }
   );
+
   return Team;
 };
