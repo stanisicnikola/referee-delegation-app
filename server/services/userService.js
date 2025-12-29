@@ -1,12 +1,14 @@
 const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
-const { User, Referee } = require("../models");
+const { User, Referee, sequelize } = require("../models");
 const { AppError } = require("../middlewares");
 
 class UserService {
   async findAll(query = {}) {
     const { page = 1, limit = 10, role, status, search } = query;
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * limitNum;
 
     const where = {};
 
@@ -23,7 +25,7 @@ class UserService {
     const { count, rows } = await User.findAndCountAll({
       where,
       include: [{ model: Referee, as: "referee" }],
-      limit,
+      limit: limitNum,
       offset,
       order: [["created_at", "DESC"]],
     });
@@ -32,9 +34,9 @@ class UserService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
       },
     };
   }
@@ -60,18 +62,65 @@ class UserService {
       throw new AppError("User with this email already exists.", 400);
     }
 
-    const passwordHash = await bcrypt.hash(userData.password, 12);
+    // Use transaction to ensure both user and referee are created together
+    const transaction = await sequelize.transaction();
 
-    const user = await User.create({
-      ...userData,
-      passwordHash,
-    });
+    try {
+      const passwordHash = await bcrypt.hash(userData.password, 12);
 
-    return user;
+      // Extract referee-specific data
+      const {
+        licenseNumber,
+        licenseCategory,
+        dateOfBirth,
+        city,
+        address,
+        experienceYears,
+        bankAccount,
+        notes,
+        ...userOnlyData
+      } = userData;
+
+      const user = await User.create(
+        {
+          ...userOnlyData,
+          passwordHash,
+        },
+        { transaction }
+      );
+
+      // If user is a referee, create referee profile automatically
+      if (userData.role === "referee") {
+        await Referee.create(
+          {
+            userId: user.id,
+            licenseNumber: licenseNumber || `REF-${Date.now()}`, // Generate temporary if not provided
+            licenseCategory: licenseCategory || "C", // Default category
+            dateOfBirth: dateOfBirth || null,
+            city: city || null,
+            address: address || null,
+            experienceYears: experienceYears || 0,
+            bankAccount: bankAccount || null,
+            notes: notes || null,
+          },
+          { transaction }
+        );
+      }
+
+      await transaction.commit();
+
+      // Return user with referee data
+      return this.findById(user.id);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async update(id, userData) {
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      include: [{ model: Referee, as: "referee" }],
+    });
 
     if (!user) {
       throw new AppError("User not found.", 404);
@@ -86,21 +135,111 @@ class UserService {
       }
     }
 
-    await user.update(userData);
+    const transaction = await sequelize.transaction();
 
-    return user;
+    try {
+      // Extract referee-specific data
+      const {
+        licenseNumber,
+        licenseCategory,
+        dateOfBirth,
+        city,
+        address,
+        experienceYears,
+        bankAccount,
+        notes,
+        ...userOnlyData
+      } = userData;
+
+      await user.update(userOnlyData, { transaction });
+
+      // Handle role changes
+      const newRole = userData.role || user.role;
+      const hadRefereeProfile = user.referee !== null;
+
+      if (newRole === "referee") {
+        if (hadRefereeProfile) {
+          // Update existing referee profile
+          await user.referee.update(
+            {
+              licenseNumber: licenseNumber || user.referee.licenseNumber,
+              licenseCategory: licenseCategory || user.referee.licenseCategory,
+              dateOfBirth:
+                dateOfBirth !== undefined
+                  ? dateOfBirth
+                  : user.referee.dateOfBirth,
+              city: city !== undefined ? city : user.referee.city,
+              address: address !== undefined ? address : user.referee.address,
+              experienceYears:
+                experienceYears !== undefined
+                  ? experienceYears
+                  : user.referee.experienceYears,
+              bankAccount:
+                bankAccount !== undefined
+                  ? bankAccount
+                  : user.referee.bankAccount,
+              notes: notes !== undefined ? notes : user.referee.notes,
+            },
+            { transaction }
+          );
+        } else {
+          // Create new referee profile
+          await Referee.create(
+            {
+              userId: user.id,
+              licenseNumber: licenseNumber || `REF-${Date.now()}`,
+              licenseCategory: licenseCategory || "C",
+              dateOfBirth: dateOfBirth || null,
+              city: city || null,
+              address: address || null,
+              experienceYears: experienceYears || 0,
+              bankAccount: bankAccount || null,
+              notes: notes || null,
+            },
+            { transaction }
+          );
+        }
+      } else if (hadRefereeProfile && newRole !== "referee") {
+        // Role changed from referee to something else - optionally delete referee profile
+        // For now, we keep the profile but you could delete it if needed
+        // await user.referee.destroy({ transaction });
+      }
+
+      await transaction.commit();
+
+      return this.findById(id);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async delete(id) {
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      include: [{ model: Referee, as: "referee" }],
+    });
 
     if (!user) {
       throw new AppError("User not found.", 404);
     }
 
-    await user.destroy();
+    const transaction = await sequelize.transaction();
 
-    return { message: "User deleted successfully." };
+    try {
+      // Delete referee profile first if exists (due to foreign key)
+      if (user.referee) {
+        await user.referee.destroy({ transaction });
+      }
+
+      await user.destroy({ transaction });
+
+      await transaction.commit();
+
+      return { message: "User deleted successfully." };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async updateStatus(id, status) {

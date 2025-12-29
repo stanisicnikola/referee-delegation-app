@@ -5,7 +5,9 @@ const { AppError } = require("../middlewares");
 class TeamService {
   async findAll(query = {}) {
     const { page = 1, limit = 10, city, status, search } = query;
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
 
     const where = {};
 
@@ -21,7 +23,7 @@ class TeamService {
     const { count, rows } = await Team.findAndCountAll({
       where,
       include: [{ model: Venue, as: "primaryVenue" }],
-      limit,
+      limit: limitNum,
       offset,
       order: [["name", "ASC"]],
     });
@@ -30,9 +32,9 @@ class TeamService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
       },
     };
   }

@@ -13,7 +13,9 @@ class CompetitionService {
       gender,
       search,
     } = query;
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
 
     const where = {};
 
@@ -30,7 +32,7 @@ class CompetitionService {
 
     const { count, rows } = await Competition.findAndCountAll({
       where,
-      limit,
+      limit: limitNum,
       offset,
       order: [
         ["season", "DESC"],
@@ -42,9 +44,9 @@ class CompetitionService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
       },
     };
   }

@@ -25,7 +25,9 @@ class MatchService {
       dateTo,
       round,
     } = query;
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
 
     const where = {};
 
@@ -62,7 +64,7 @@ class MatchService {
           ],
         },
       ],
-      limit,
+      limit: limitNum,
       offset,
       order: [["scheduledAt", "ASC"]],
       distinct: true,
@@ -72,9 +74,9 @@ class MatchService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
       },
     };
   }

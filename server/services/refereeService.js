@@ -12,7 +12,9 @@ const { AppError } = require("../middlewares");
 class RefereeService {
   async findAll(query = {}) {
     const { page = 1, limit = 10, licenseCategory, city, search } = query;
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * limitNum;
 
     const where = {};
     const userWhere = {};
@@ -34,10 +36,10 @@ class RefereeService {
         {
           model: User,
           as: "user",
-          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          where: search ? userWhere : undefined,
         },
       ],
-      limit,
+      limit: limitNum,
       offset,
       order: [[{ model: User, as: "user" }, "lastName", "ASC"]],
     });
@@ -46,9 +48,9 @@ class RefereeService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
       },
     };
   }
