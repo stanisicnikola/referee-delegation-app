@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context";
-import { AdminLayout } from "../layouts";
+import { AdminLayout, DelegateLayout } from "../layouts";
 import {
   LoginPage,
   DashboardPage,
@@ -12,6 +12,14 @@ import {
   VenuesPage,
   SettingsPage,
 } from "../pages";
+import {
+  DashboardPage as DelegateDashboard,
+  MatchesPage as DelegateMatches,
+  DelegationPage,
+  RefereesPage as DelegateReferees,
+  CompetitionsPage as DelegateCompetitions,
+  TeamsPage as DelegateTeams,
+} from "../pages/delegate";
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -35,13 +43,19 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
 // Public Route component (redirect to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return null;
   }
 
   if (isAuthenticated) {
+    // Redirect based on user role
+    if (user?.role === "admin") {
+      return <Navigate to='/admin/dashboard' replace />;
+    } else if (user?.role === "delegate") {
+      return <Navigate to='/delegate/dashboard' replace />;
+    }
     return <Navigate to='/admin/dashboard' replace />;
   }
 
@@ -80,6 +94,27 @@ const AppRoutes = () => {
           <Route path='teams' element={<TeamsPage />} />
           <Route path='venues' element={<VenuesPage />} />
           <Route path='settings' element={<SettingsPage />} />
+        </Route>
+
+        {/* Delegate routes */}
+        <Route
+          path='/delegate'
+          element={
+            <ProtectedRoute allowedRoles={["delegate", "admin"]}>
+              <DelegateLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route
+            index
+            element={<Navigate to='/delegate/dashboard' replace />}
+          />
+          <Route path='dashboard' element={<DelegateDashboard />} />
+          <Route path='matches' element={<DelegateMatches />} />
+          <Route path='delegation/:matchId' element={<DelegationPage />} />
+          <Route path='referees' element={<DelegateReferees />} />
+          <Route path='competitions' element={<DelegateCompetitions />} />
+          <Route path='teams' element={<DelegateTeams />} />
         </Route>
 
         {/* Default redirects */}
