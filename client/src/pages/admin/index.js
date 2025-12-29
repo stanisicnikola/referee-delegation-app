@@ -1,0 +1,9 @@
+export { default as DashboardPage } from "./DashboardPage";
+export { default as UsersPage } from "./UsersPage";
+export { default as RefereesPage } from "./RefereesPage";
+export { default as MatchesPage } from "./MatchesPage";
+export { default as CompetitionsPage } from "./CompetitionsPage";
+export { default as TeamsPage } from "./TeamsPage";
+export { default as VenuesPage } from "./VenuesPage";
+export { default as DelegationsPage } from "./DelegationsPage";
+export { default as SettingsPage } from "./SettingsPage";

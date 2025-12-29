@@ -1,16 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context";
-import { LoginPage } from "../pages";
+import { AdminLayout } from "../layouts";
+import {
+  LoginPage,
+  DashboardPage,
+  UsersPage,
+  RefereesPage,
+  MatchesPage,
+  CompetitionsPage,
+  TeamsPage,
+  VenuesPage,
+  SettingsPage,
+} from "../pages";
 
 // Protected Route component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return null; // Or a loading spinner
   }
 
   if (!isAuthenticated) {
+    return <Navigate to='/login' replace />;
+  }
+
+  // Check role-based access
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to='/login' replace />;
   }
 
@@ -26,27 +42,11 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to='/dashboard' replace />;
+    return <Navigate to='/admin/dashboard' replace />;
   }
 
   return children;
 };
-
-// Placeholder Dashboard component
-const Dashboard = () => (
-  <div
-    style={{
-      padding: "40px",
-      color: "white",
-      textAlign: "center",
-      minHeight: "100vh",
-      background: "#0a0a0b",
-    }}
-  >
-    <h1>Dashboard</h1>
-    <p>Dobrodošli! Ova stranica će biti implementirana uskoro.</p>
-  </div>
-);
 
 const AppRoutes = () => {
   return (
@@ -62,18 +62,32 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Protected routes */}
+        {/* Admin routes */}
         <Route
-          path='/dashboard'
+          path='/admin'
           element={
-            <ProtectedRoute>
-              <Dashboard />
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to='/admin/dashboard' replace />} />
+          <Route path='dashboard' element={<DashboardPage />} />
+          <Route path='users' element={<UsersPage />} />
+          <Route path='referees' element={<RefereesPage />} />
+          <Route path='matches' element={<MatchesPage />} />
+          <Route path='competitions' element={<CompetitionsPage />} />
+          <Route path='teams' element={<TeamsPage />} />
+          <Route path='venues' element={<VenuesPage />} />
+          <Route path='settings' element={<SettingsPage />} />
+        </Route>
 
-        {/* Default redirect */}
+        {/* Default redirects */}
         <Route path='/' element={<Navigate to='/login' replace />} />
+        <Route
+          path='/dashboard'
+          element={<Navigate to='/admin/dashboard' replace />}
+        />
         <Route path='*' element={<Navigate to='/login' replace />} />
       </Routes>
     </BrowserRouter>

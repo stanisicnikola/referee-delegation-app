@@ -1,2 +1,9 @@
 export { default as api } from "./axios";
 export { authApi } from "./auth";
+export { usersApi } from "./users";
+export { refereesApi } from "./referees";
+export { teamsApi } from "./teams";
+export { venuesApi } from "./venues";
+export { competitionsApi } from "./competitions";
+export { matchesApi } from "./matches";
+export { delegationsApi } from "./delegations";
