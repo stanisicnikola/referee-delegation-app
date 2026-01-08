@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi } from "../api";
+import { toast } from "react-toastify";
 
 export const userKeys = {
   all: ["users"],
@@ -40,6 +41,7 @@ export const useCreateUser = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
     },
   });
 };
@@ -49,9 +51,13 @@ export const useUpdateUser = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => usersApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(id) });
+      toast.success(data?.message || "User updated successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update user.");
     },
   });
 };
@@ -61,9 +67,14 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: (id) => usersApi.delete(id),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
+      toast.success(data?.message || "User deleted successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete user.");
     },
   });
 };

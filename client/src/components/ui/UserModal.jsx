@@ -19,7 +19,14 @@ import {
   VerifiedUser as AdminIcon,
 } from "@mui/icons-material";
 
-const UserModal = ({ open, onClose, onSubmit, isLoading, editUser = null, allowedRoles = null }) => {
+const UserModal = ({
+  open,
+  onClose,
+  onSubmit,
+  isLoading,
+  editUser = null,
+  allowedRoles = null,
+}) => {
   const [formData, setFormData] = useState({
     role: "referee",
     firstName: "",
@@ -69,7 +76,7 @@ const UserModal = ({ open, onClose, onSubmit, isLoading, editUser = null, allowe
       });
     } else {
       setFormData({
-        role: "referee",
+        role: allowedRoles?.[0] || "referee",
         firstName: "",
         lastName: "",
         email: "",
@@ -85,7 +92,7 @@ const UserModal = ({ open, onClose, onSubmit, isLoading, editUser = null, allowe
       });
     }
     setErrors({});
-  }, [editUser, open]);
+  }, [editUser, allowedRoles, open]);
 
   const handleChange = (field) => (e) => {
     const value =
@@ -253,8 +260,8 @@ const UserModal = ({ open, onClose, onSubmit, isLoading, editUser = null, allowe
               ].map((role) => {
                 const isSelected = formData.role === role.value;
                 // Disabled if: editing user and not selected, OR role not in allowedRoles
-                const isDisabled = 
-                  (editUser && !isSelected) || 
+                const isDisabled =
+                  (editUser && !isSelected) ||
                   (allowedRoles && !allowedRoles.includes(role.value));
 
                 return (
@@ -489,42 +496,44 @@ const UserModal = ({ open, onClose, onSubmit, isLoading, editUser = null, allowe
           </Box>
 
           {/* Options */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.sendWelcomeEmail}
-                  onChange={handleChange("sendWelcomeEmail")}
-                  sx={{
-                    color: "#3f3f46",
-                    "&.Mui-checked": { color: "#8b5cf6" },
-                  }}
-                />
-              }
-              label={
-                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  Send welcome email
-                </Typography>
-              }
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.requirePasswordChange}
-                  onChange={handleChange("requirePasswordChange")}
-                  sx={{
-                    color: "#3f3f46",
-                    "&.Mui-checked": { color: "#8b5cf6" },
-                  }}
-                />
-              }
-              label={
-                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  Require password change
-                </Typography>
-              }
-            />
-          </Box>
+          {!editUser && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.sendWelcomeEmail}
+                    onChange={handleChange("sendWelcomeEmail")}
+                    sx={{
+                      color: "#3f3f46",
+                      "&.Mui-checked": { color: "#8b5cf6" },
+                    }}
+                  />
+                }
+                label={
+                  <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                    Send welcome email
+                  </Typography>
+                }
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.requirePasswordChange}
+                    onChange={handleChange("requirePasswordChange")}
+                    sx={{
+                      color: "#3f3f46",
+                      "&.Mui-checked": { color: "#8b5cf6" },
+                    }}
+                  />
+                }
+                label={
+                  <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                    Require password change
+                  </Typography>
+                }
+              />
+            </Box>
+          )}
         </Box>
 
         {/* Footer */}

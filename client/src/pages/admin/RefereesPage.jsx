@@ -41,22 +41,24 @@ import {
   useDeleteUser,
 } from "../../hooks/admin";
 import UserModal from "../../components/ui/UserModal";
+import { ConfirmDialog } from "../../components/ui";
+import { toast } from "react-toastify";
 
 const RefereesPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [cityFilter, setCityFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [refereeToDelete, setRefereeToDelete] = useState(null);
 
   const { data, isLoading, refetch } = useReferees({
     page: page + 1,
     limit: rowsPerPage,
     search,
     licenseCategory: categoryFilter !== "all" ? categoryFilter : undefined,
-    city: cityFilter !== "all" ? cityFilter : undefined,
   });
 
   const createUser = useCreateUser();
@@ -64,7 +66,6 @@ const RefereesPage = () => {
   const deleteUser = useDeleteUser();
 
   const referees = data?.data || [];
-  console.log("Referees list:", referees);
   const totalReferees = data?.pagination?.total || 0;
 
   const handleOpenModal = (referee = null) => {
@@ -97,10 +98,22 @@ const RefereesPage = () => {
     }
   };
 
-  const handleDelete = async (referee) => {
-    if (window.confirm("Are you sure you want to delete this referee?")) {
-      await deleteUser.mutateAsync(referee.userId);
-    }
+  const handleOpenDialog = (referee) => {
+    setRefereeToDelete(referee);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialogOpen(false);
+    setRefereeToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    console.log(">>>>>>Deleting referee:", refereeToDelete);
+    console.log(">>>>>>Deleting referee ID:", refereeToDelete.userId);
+    await deleteUser.mutateAsync(refereeToDelete.userId);
+    toast.success("Referee deleted successfully!");
+    handleCloseConfirmDialog();
   };
 
   const getCategoryBadge = (category) => {
@@ -118,7 +131,7 @@ const RefereesPage = () => {
       B: {
         label: "Category B",
         color: "#3b82f6",
-        bg: "rgba(59, 130, 246, 0.15)",
+        bg: "#3b82f626",
       },
       C: {
         label: "Category C",
@@ -167,9 +180,6 @@ const RefereesPage = () => {
     "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
   };
 
-  // Get unique cities for filter
-  const cities = [...new Set(referees.map((r) => r.city).filter(Boolean))];
-
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -204,19 +214,6 @@ const RefereesPage = () => {
               }}
             >
               <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title='Export'>
-            <IconButton
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <DownloadIcon />
             </IconButton>
           </Tooltip>
           <Button
@@ -370,26 +367,6 @@ const RefereesPage = () => {
             <MenuItem value='A'>Category A</MenuItem>
             <MenuItem value='B'>Category B</MenuItem>
             <MenuItem value='C'>Category C</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
-          <Select
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-            displayEmpty
-            sx={{
-              "& .MuiSelect-select": {
-                color: cityFilter === "all" ? "#6b7280" : "#fff",
-              },
-            }}
-          >
-            <MenuItem value='all'>All Cities</MenuItem>
-            {cities.map((city) => (
-              <MenuItem key={city} value={city}>
-                {city}
-              </MenuItem>
-            ))}
           </Select>
         </FormControl>
       </Box>
@@ -585,7 +562,7 @@ const RefereesPage = () => {
                             gap: 0.5,
                           }}
                         >
-                          <Tooltip title='View'>
+                          {/* <Tooltip title='View'>
                             <IconButton
                               sx={{
                                 color: "#6b7280",
@@ -597,7 +574,7 @@ const RefereesPage = () => {
                             >
                               <ViewIcon fontSize='small' />
                             </IconButton>
-                          </Tooltip>
+                          </Tooltip> */}
                           <Tooltip title='Edit'>
                             <IconButton
                               onClick={() => handleOpenModal(referee)}
@@ -614,7 +591,7 @@ const RefereesPage = () => {
                           </Tooltip>
                           <Tooltip title='Delete'>
                             <IconButton
-                              onClick={() => handleDelete(referee)}
+                              onClick={() => handleOpenDialog(referee)}
                               sx={{
                                 color: "#6b7280",
                                 "&:hover": {
@@ -680,6 +657,13 @@ const RefereesPage = () => {
         isLoading={createUser.isPending || updateUser.isPending}
         editUser={editingUser}
         allowedRoles={["referee"]}
+      />
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onClose={handleCloseConfirmDialog}
+        onConfirm={handleDelete}
+        title='Delete Referee'
+        message='Are you sure you want to delete this referee?'
       />
     </Box>
   );

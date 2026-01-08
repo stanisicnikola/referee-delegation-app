@@ -62,7 +62,6 @@ const MatchesPage = () => {
   const deleteMatch = useDeleteMatch();
 
   const matches = data?.data || [];
-  console.log("Matches data:", matches);
   const totalMatches = data?.pagination?.total || 0;
 
   const handleOpenModal = (match = null) => {

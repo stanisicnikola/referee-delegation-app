@@ -7,3 +7,4 @@ export { venuesApi } from "./venues";
 export { competitionsApi } from "./competitions";
 export { matchesApi } from "./matches";
 export { delegationsApi } from "./delegations";
+export { availabilityApi } from "./availability";

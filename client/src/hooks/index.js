@@ -6,3 +6,4 @@ export * from "./useVenues";
 export * from "./useCompetitions";
 export * from "./useMatches";
 export * from "./useDelegations";
+export * from "./useAvailability";

@@ -47,15 +47,12 @@ const DashboardPage = () => {
   const createMatch = useCreateMatch();
 
   const users = usersData?.data?.users || usersData?.data || [];
-  console.log("Users data:", users);
   const referees = refereesData?.data?.referees || refereesData?.data || [];
   const matches = matchesData?.data?.matches || matchesData?.data || [];
   const _teams = teamsData?.data?.teams || teamsData?.data || []; // Available for future use
 
   const totalUsers = Array.isArray(users) ? users.length : 0;
   const totalReferees = Array.isArray(referees) ? referees.length : 0;
-  console.log("Total referees:", totalReferees);
-  console.log("Referees data:", referees);
   const totalMatches = Array.isArray(matches) ? matches.length : 0;
   const admins = Array.isArray(users)
     ? users.filter((u) => u.role === "admin").length

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,29 +8,30 @@ import {
   FormControl,
   Button,
   IconButton,
-  Avatar,
   CircularProgress,
   Tooltip,
-  Table,
-  TableBody,
-  TableCell,
+  Avatar,
   TableContainer,
+  Table,
   TableHead,
   TableRow,
+  TableCell,
+  TableBody,
   TablePagination,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Person as PersonIcon,
-  Groups as GroupsIcon,
-  VerifiedUser as AdminIcon,
-  CheckCircle as ActiveIcon,
-  Cancel as InactiveIcon,
+  CalendarMonth as CalendarIcon,
+  LocationOn as LocationIcon,
+  SportsSoccer as MatchIcon,
   Download as DownloadIcon,
+  Delete as DeleteIcon,
   Refresh as RefreshIcon,
+  CheckCircle as AssignedIcon,
+  Warning as PendingIcon,
+  AccessTime as TimeIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import {
   useUsers,
@@ -39,37 +39,48 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks/admin";
+import { useState } from "react";
 import UserModal from "../../components/ui/UserModal";
-import { ConfirmDialog } from "../../components/ui";
 
-const UsersPage = () => {
+const DelegatesPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
-
-  const { data, isLoading, refetch } = useUsers({
-    page: page + 1,
-    limit: rowsPerPage,
-    search,
-    role: roleFilter !== "all" ? roleFilter : undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined,
-  });
+  const [modalOpen, setModalOpen] = useState(false);
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
-  const users = data?.data || [];
-  const totalUsers = data?.pagination?.total || 0;
+  const { data, isLoading, refetch } = useUsers({
+    page: page + 1,
+    limit: rowsPerPage,
+    search,
+  });
+  const delegates = data?.data?.filter((user) => user.role === "delegate");
+  console.log("Delegates:", delegates);
 
-  const handleOpenModal = (user = null) => {
-    setEditingUser(user);
+  const inputStyles = {
+    "& .MuiOutlinedInput-root": {
+      bgcolor: "#1a1a1d",
+      borderRadius: "12px",
+      "& fieldset": { borderColor: "#242428" },
+      "&:hover fieldset": { borderColor: "#3f3f46" },
+      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+    },
+    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
+  };
+
+  const handleOpenModal = (delegate = null) => {
+    if (delegate) {
+      setEditingUser({
+        ...delegate,
+        delegate: delegate,
+      });
+    } else {
+      setEditingUser(null);
+    }
     setModalOpen(true);
   };
 
@@ -83,115 +94,18 @@ const UsersPage = () => {
       if (editingUser) {
         await updateUser.mutateAsync({ id: editingUser.id, data: formData });
       } else {
-        await createUser.mutateAsync(formData);
+        await createUser.mutateAsync({ ...formData, role: "delegate" });
       }
       handleCloseModal();
     } catch (error) {
-      console.error("Error saving user:", error);
+      console.error("Error saving delegate:", error);
     }
   };
 
-  const handleOpenDialog = (user) => {
-    setUserToDelete(user);
-    setConfirmDialogOpen(true);
-  };
-
-  const handleCloseConfirmDialog = () => {
-    setConfirmDialogOpen(false);
-    setUserToDelete(null);
-  };
-
-  const handleDelete = async () => {
-    await deleteUser.mutateAsync(userToDelete.id);
-    handleCloseConfirmDialog();
-  };
-
-  const getRoleBadge = (role) => {
-    const config = {
-      admin: {
-        label: "Admin",
-        color: "#8b5cf6",
-        bg: "rgba(139, 92, 246, 0.15)",
-        icon: AdminIcon,
-      },
-      delegate: {
-        label: "Delegate",
-        color: "#3b82f6",
-        bg: "#3b82f626",
-        icon: GroupsIcon,
-      },
-      referee: {
-        label: "Referee",
-        color: "#22c55e",
-        bg: "rgba(34, 197, 94, 0.15)",
-        icon: PersonIcon,
-      },
-    };
-    const { label, color, bg, icon: Icon } = config[role] || config.referee;
-    return (
-      <Box
-        sx={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 0.75,
-          px: 1.5,
-          py: 0.5,
-          borderRadius: "20px",
-          bgcolor: bg,
-          border: `1px solid ${color}30`,
-        }}
-      >
-        <Icon sx={{ fontSize: 14, color }} />
-        <Typography sx={{ fontSize: "12px", fontWeight: 500, color }}>
-          {label}
-        </Typography>
-      </Box>
-    );
-  };
-
-  const getStatusBadge = (isActive) => {
-    return (
-      <Box
-        sx={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 0.5,
-          px: 1.5,
-          py: 0.5,
-          borderRadius: "20px",
-          bgcolor: isActive
-            ? "rgba(34, 197, 94, 0.15)"
-            : "rgba(239, 68, 68, 0.15)",
-          border: `1px solid ${isActive ? "#22c55e30" : "#ef444430"}`,
-        }}
-      >
-        {isActive ? (
-          <ActiveIcon sx={{ fontSize: 12, color: "#22c55e" }} />
-        ) : (
-          <InactiveIcon sx={{ fontSize: 12, color: "#ef4444" }} />
-        )}
-        <Typography
-          sx={{
-            fontSize: "12px",
-            fontWeight: 500,
-            color: isActive ? "#22c55e" : "#ef4444",
-          }}
-        >
-          {isActive ? "Active" : "Inactive"}
-        </Typography>
-      </Box>
-    );
-  };
-
-  const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#1a1a1d",
-      borderRadius: "12px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-    },
-    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
+  const handleDelete = async (delegate) => {
+    if (window.confirm("Are you sure you want to delete this delegate?")) {
+      await deleteUser.mutateAsync(delegate.userId);
+    }
   };
 
   return (
@@ -209,10 +123,10 @@ const UsersPage = () => {
           <Typography
             sx={{ fontSize: "28px", fontWeight: 700, color: "#fff", mb: 0.5 }}
           >
-            Users Management
+            Delegates
           </Typography>
           <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-            Manage system users, referees, and administrators
+            Manage registered delegates and their profiles
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 1.5 }}>
@@ -241,89 +155,13 @@ const UsersPage = () => {
               color: "#fff",
               fontSize: "14px",
               fontWeight: 500,
-              textTransform: "none",
               "&:hover": { bgcolor: "#7c3aed" },
             }}
           >
-            New User
+            New Delegate
           </Button>
         </Box>
       </Box>
-
-      {/* Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        {[
-          {
-            label: "Total Users",
-            value: totalUsers,
-            icon: PersonIcon,
-            color: "#8b5cf6",
-          },
-          {
-            label: "Referees",
-            value: users.filter((u) => u.role === "referee").length,
-            icon: PersonIcon,
-            color: "#22c55e",
-          },
-          {
-            label: "Delegates",
-            value: users.filter((u) => u.role === "delegate").length,
-            icon: GroupsIcon,
-            color: "#3b82f6",
-          },
-          {
-            label: "Admins",
-            value: users.filter((u) => u.role === "admin").length,
-            icon: AdminIcon,
-            color: "#f59e0b",
-          },
-        ].map((stat) => (
-          <Box
-            key={stat.label}
-            sx={{
-              p: 2.5,
-              bgcolor: "#121214",
-              border: "1px solid #242428",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "12px",
-                bgcolor: `${stat.color}15`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <stat.icon sx={{ fontSize: 24, color: stat.color }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
-              >
-                {stat.value}
-              </Typography>
-              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
-                {stat.label}
-              </Typography>
-            </Box>
-          </Box>
-        ))}
-      </Box>
-
       {/* Filters */}
       <Box
         sx={{
@@ -338,7 +176,7 @@ const UsersPage = () => {
         }}
       >
         <TextField
-          placeholder='Search users...'
+          placeholder='Search delegates...'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           InputProps={{
@@ -350,46 +188,37 @@ const UsersPage = () => {
           }}
           sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
         />
+      </Box>
 
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
-          <Select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            displayEmpty
+      <Box
+        sx={{
+          bgcolor: "#121214",
+          border: "1px solid #242428",
+          borderRadius: "16px",
+          p: 1,
+          overflow: "hidden",
+        }}
+      >
+        {delegates?.map((delegate) => (
+          <Box
+            key={delegate.id}
             sx={{
-              "& .MuiSelect-select": {
-                color: roleFilter === "all" ? "#6b7280" : "#fff",
-              },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              p: 2,
+              borderBottom: "1px solid #242428",
+              "&:last-child": { borderBottom: "none" },
+              "&:hover": { bgcolor: "#1a1a1d" },
             }}
           >
-            <MenuItem value='all'>All Roles</MenuItem>
-            <MenuItem value='admin'>Admin</MenuItem>
-            <MenuItem value='delegate'>Delegate</MenuItem>
-            <MenuItem value='referee'>Referee</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            displayEmpty
-            sx={{
-              "& .MuiSelect-select": {
-                color: statusFilter === "all" ? "#6b7280" : "#fff",
-              },
-            }}
-          >
-            <MenuItem value='all'>All Status</MenuItem>
-            <MenuItem value='active'>Active</MenuItem>
-            <MenuItem value='inactive'>Inactive</MenuItem>
-            <MenuItem value='suspended'>Suspended</MenuItem>
-          </Select>
-        </FormControl>
+            {delegate.firstName} {delegate.lastName}
+          </Box>
+        ))}
       </Box>
 
       {/* Table */}
-      <Box
+      {/* <Box
         sx={{
           bgcolor: "#121214",
           border: "1px solid #242428",
@@ -423,7 +252,7 @@ const UsersPage = () => {
                         borderColor: "#242428",
                       }}
                     >
-                      User
+                      Delegate
                     </TableCell>
                     <TableCell
                       sx={{
@@ -445,29 +274,7 @@ const UsersPage = () => {
                         borderColor: "#242428",
                       }}
                     >
-                      Role
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Status
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Created
+                      Phone number
                     </TableCell>
                     <TableCell
                       align='right'
@@ -484,9 +291,9 @@ const UsersPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {users.map((user) => (
+                  {delegates.map((delegate) => (
                     <TableRow
-                      key={user.id}
+                      key={delegate.id}
                       sx={{
                         "&:hover": { bgcolor: "#1a1a1d" },
                         "& td": { borderColor: "#242428" },
@@ -504,14 +311,14 @@ const UsersPage = () => {
                             sx={{
                               width: 40,
                               height: 40,
-                              bgcolor: "#8b5cf620",
-                              color: "#8b5cf6",
+                              bgcolor: "#3b82f626",
+                              color: "#3b82f6",
                               fontSize: "14px",
                               fontWeight: 600,
                             }}
                           >
-                            {user.firstName?.[0]}
-                            {user.lastName?.[0]}
+                            {delegate?.firstName?.[0]}
+                            {delegate?.lastName?.[0]}
                           </Avatar>
                           <Box>
                             <Typography
@@ -521,32 +328,31 @@ const UsersPage = () => {
                                 color: "#fff",
                               }}
                             >
-                              {user.firstName} {user.lastName}
+                              {delegate?.firstName} {delegate?.lastName}
                             </Typography>
-                            {user.referee?.licenseNumber && (
-                              <Typography
-                                sx={{ fontSize: "12px", color: "#6b7280" }}
-                              >
-                                {user.referee.licenseNumber}
-                              </Typography>
-                            )}
                           </Box>
                         </Box>
                       </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                          {user.email}
-                        </Typography>
+
+                      <TableCell align='right'>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Typography
+                            sx={{ fontSize: "14px", color: "#9ca3af" }}
+                          >
+                            {delegate?.email}
+                          </Typography>
+                        </Box>
                       </TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>
-                        {getStatusBadge(user.isActive !== false)}
+                      <TableCell align='right'>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Typography
+                            sx={{ fontSize: "14px", color: "#9ca3af" }}
+                          >
+                            {delegate?.phone}
+                          </Typography>
+                        </Box>
                       </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                          {new Date(user.createdAt).toLocaleDateString("bs-BA")}
-                        </Typography>
-                      </TableCell>
+
                       <TableCell align='right'>
                         <Box
                           sx={{
@@ -557,7 +363,7 @@ const UsersPage = () => {
                         >
                           <Tooltip title='Edit'>
                             <IconButton
-                              onClick={() => handleOpenModal(user)}
+                              onClick={() => handleOpenModal(delegate)}
                               sx={{
                                 color: "#6b7280",
                                 "&:hover": {
@@ -571,7 +377,7 @@ const UsersPage = () => {
                           </Tooltip>
                           <Tooltip title='Delete'>
                             <IconButton
-                              onClick={() => handleOpenDialog(user)}
+                              onClick={() => handleDelete(delegate)}
                               sx={{
                                 color: "#6b7280",
                                 "&:hover": {
@@ -587,7 +393,7 @@ const UsersPage = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {users.length === 0 && (
+                  {delegates.length === 0 && (
                     <TableRow>
                       <TableCell
                         colSpan={6}
@@ -598,7 +404,7 @@ const UsersPage = () => {
                         }}
                       >
                         <Typography sx={{ color: "#6b7280" }}>
-                          No users found
+                          No delegates found
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -608,7 +414,7 @@ const UsersPage = () => {
             </TableContainer>
             <TablePagination
               component='div'
-              count={totalUsers}
+              count={delegates?.length}
               page={page}
               onPageChange={(_, newPage) => setPage(newPage)}
               rowsPerPage={rowsPerPage}
@@ -627,8 +433,7 @@ const UsersPage = () => {
             />
           </>
         )}
-      </Box>
-
+      </Box> */}
       {/* User Modal */}
       <UserModal
         open={modalOpen}
@@ -636,16 +441,10 @@ const UsersPage = () => {
         onSubmit={handleSubmit}
         isLoading={createUser.isPending || updateUser.isPending}
         editUser={editingUser}
-      />
-      <ConfirmDialog
-        open={confirmDialogOpen}
-        onClose={handleCloseConfirmDialog}
-        onConfirm={handleDelete}
-        title='Delete User'
-        message='Are you sure you want to delete this user?'
+        allowedRoles={["delegate"]}
       />
     </Box>
   );
 };
 
-export default UsersPage;
+export default DelegatesPage;

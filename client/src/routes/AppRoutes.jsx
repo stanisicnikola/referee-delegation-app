@@ -1,16 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context";
-import { AdminLayout, DelegateLayout } from "../layouts";
+import { AdminLayout, DelegateLayout, RefereeLayout } from "../layouts";
 import {
   LoginPage,
   DashboardPage,
   UsersPage,
   RefereesPage,
+  DelegationsPage,
   MatchesPage,
   CompetitionsPage,
   TeamsPage,
   VenuesPage,
   SettingsPage,
+  RefereeDashboardPage,
+  RefereeSchedulePage,
+  RefereePendingPage,
+  RefereeAvailabilityPage,
+  RefereeNotificationsPage,
+  RefereeHistoryPage,
+  RefereeProfilePage,
 } from "../pages";
 import {
   DashboardPage as DelegateDashboard,
@@ -55,6 +63,8 @@ const PublicRoute = ({ children }) => {
       return <Navigate to='/admin/dashboard' replace />;
     } else if (user?.role === "delegate") {
       return <Navigate to='/delegate/dashboard' replace />;
+    } else if (user?.role === "referee") {
+      return <Navigate to='/referee/dashboard' replace />;
     }
     return <Navigate to='/admin/dashboard' replace />;
   }
@@ -89,6 +99,7 @@ const AppRoutes = () => {
           <Route path='dashboard' element={<DashboardPage />} />
           <Route path='users' element={<UsersPage />} />
           <Route path='referees' element={<RefereesPage />} />
+          <Route path='delegates' element={<DelegationsPage />} />
           <Route path='matches' element={<MatchesPage />} />
           <Route path='competitions' element={<CompetitionsPage />} />
           <Route path='teams' element={<TeamsPage />} />
@@ -115,6 +126,25 @@ const AppRoutes = () => {
           <Route path='referees' element={<DelegateReferees />} />
           <Route path='competitions' element={<DelegateCompetitions />} />
           <Route path='teams' element={<DelegateTeams />} />
+        </Route>
+
+        {/* Referee routes */}
+        <Route
+          path='/referee'
+          element={
+            <ProtectedRoute allowedRoles={["referee", "admin"]}>
+              <RefereeLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to='/referee/dashboard' replace />} />
+          <Route path='dashboard' element={<RefereeDashboardPage />} />
+          <Route path='schedule' element={<RefereeSchedulePage />} />
+          <Route path='pending' element={<RefereePendingPage />} />
+          <Route path='availability' element={<RefereeAvailabilityPage />} />
+          <Route path='notifications' element={<RefereeNotificationsPage />} />
+          <Route path='history' element={<RefereeHistoryPage />} />
+          <Route path='profile' element={<RefereeProfilePage />} />
         </Route>
 
         {/* Default redirects */}

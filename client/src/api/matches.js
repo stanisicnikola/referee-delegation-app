@@ -3,7 +3,6 @@ import api from "./axios";
 export const matchesApi = {
   getAll: async (params = {}) => {
     const response = await api.get("/matches", { params });
-    console.log("Fetched matches:", response.data);
     return response.data;
   },
 

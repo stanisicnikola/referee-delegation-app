@@ -29,6 +29,7 @@ import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Person as RefereeIcon,
+  Groups as GroupsIcon,
   EmojiEvents as CompetitionIcon,
   Event as MatchIcon,
   Groups as TeamsIcon,
@@ -64,9 +65,11 @@ const AdminLayout = () => {
   // Fetch counts for sidebar badges
   const { data: usersData } = useUsers();
   const { data: refereesData } = useReferees();
+  const delegates = usersData?.data?.filter((user) => user.role === "delegate");
 
   const userCount = usersData?.pagination?.total || 0;
   const refereeCount = refereesData?.pagination?.total || 0;
+  const delegatesCount = delegates?.length || 0;
 
   // Mock notifications
   const notifications = [
@@ -96,8 +99,6 @@ const AdminLayout = () => {
     },
   ];
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   const menuSections = [
     {
       title: "OVERVIEW",
@@ -119,6 +120,12 @@ const AdminLayout = () => {
           path: "/admin/referees",
           icon: RefereeIcon,
           count: refereeCount,
+        },
+        {
+          title: "Delegates",
+          path: "/admin/delegates",
+          icon: GroupsIcon,
+          count: delegatesCount,
         },
       ],
     },
@@ -153,10 +160,6 @@ const AdminLayout = () => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleNotificationOpen = (event) => {
-    setNotificationAnchor(event.currentTarget);
   };
 
   const handleNotificationClose = () => {
@@ -465,33 +468,6 @@ const AdminLayout = () => {
               <Box sx={{ flexGrow: 1 }} />
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                {/* Notifications */}
-                <Tooltip title='Notifications'>
-                  <IconButton
-                    onClick={handleNotificationOpen}
-                    sx={{
-                      color: "text.secondary",
-                      "&:hover": { color: "text.primary" },
-                    }}
-                  >
-                    <Badge
-                      badgeContent={unreadCount}
-                      color='error'
-                      sx={{
-                        "& .MuiBadge-badge": {
-                          bgcolor: "#ef4444",
-                          color: "white",
-                          fontSize: "0.7rem",
-                          minWidth: 18,
-                          height: 18,
-                        },
-                      }}
-                    >
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-
                 {/* Date */}
                 <Typography
                   variant='body2'

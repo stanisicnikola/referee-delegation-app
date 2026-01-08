@@ -3,7 +3,6 @@ import api from "./axios";
 export const refereesApi = {
   getAll: async (params = {}) => {
     const response = await api.get("/referees", { params });
-    console.log("Referees API getAll response:", response);
     return response.data;
   },
 

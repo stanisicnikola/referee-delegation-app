@@ -5,5 +5,5 @@ export { default as MatchesPage } from "./MatchesPage";
 export { default as CompetitionsPage } from "./CompetitionsPage";
 export { default as TeamsPage } from "./TeamsPage";
 export { default as VenuesPage } from "./VenuesPage";
-export { default as DelegationsPage } from "./DelegationsPage";
+export { default as DelegationsPage } from "./DelegatesPage";
 export { default as SettingsPage } from "./SettingsPage";
