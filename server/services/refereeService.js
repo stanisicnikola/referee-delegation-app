@@ -84,7 +84,7 @@ class RefereeService {
     if (existingLicense) {
       throw new AppError(
         "Referee with this license number already exists.",
-        400
+        400,
       );
     }
 
@@ -110,7 +110,7 @@ class RefereeService {
       if (existingLicense) {
         throw new AppError(
           "Referee with this license number already exists.",
-          400
+          400,
         );
       }
     }
@@ -223,6 +223,30 @@ class RefereeService {
     });
 
     return referees;
+  }
+
+  async getOverallStatistics() {
+    const total = await Referee.count();
+    const international = await Referee.count({
+      where: { licenseCategory: "international" },
+    });
+    const A = await Referee.count({ where: { licenseCategory: "A" } });
+    const B = await Referee.count({ where: { licenseCategory: "B" } });
+    const C = await Referee.count({ where: { licenseCategory: "C" } });
+    const regional = await Referee.count({
+      where: { licenseCategory: "regional" },
+    });
+
+    return {
+      total,
+      byCategory: {
+        international,
+        A,
+        B,
+        C,
+        regional,
+      },
+    };
   }
 }
 

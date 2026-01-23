@@ -100,6 +100,20 @@ const getRefereeStatistics = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get referee overall statistics
+ * @route   GET /api/referees/statistics
+ * @access  Private
+ */
+const getRefereesStatistics = asyncHandler(async (req, res) => {
+  const statistics = await refereeService.getOverallStatistics();
+
+  res.json({
+    success: true,
+    data: statistics,
+  });
+});
+
+/**
  * @desc    Get available referees for date
  * @route   GET /api/referees/available
  * @access  Private/Admin,Delegate
@@ -153,6 +167,7 @@ module.exports = {
   deleteReferee,
   getRefereeAssignments,
   getRefereeStatistics,
+  getRefereesStatistics,
   getAvailableReferees,
   getMyAssignments,
   getMyStatistics,

@@ -9,21 +9,21 @@ const create = z.object({
     .min(8, "Password must be at least 8 characters."),
   firstName: z
     .string({ required_error: "First name is required." })
-    .min(2)
-    .max(100),
+    .min(2, "First name must be at least 2 characters.")
+    .max(50, "First name must be at most 50 characters."),
   lastName: z
     .string({ required_error: "Last name is required." })
-    .min(2)
-    .max(100),
+    .min(2, "Last name must be at least 2 characters.")
+    .max(50, "Last name must be at most 50 characters."),
   phone: z.string().optional().nullable(),
   role: z.enum(["admin", "delegate", "referee"]),
-  status: z.enum(["active", "inactive", "suspended"]).optional(),
+  status: z.enum(["active", "inactive", "suspended"]),
 });
 
 const update = z.object({
   email: z.string().email("Invalid email format.").optional(),
-  firstName: z.string().min(2).max(100).optional(),
-  lastName: z.string().min(2).max(100).optional(),
+  firstName: z.string().min(2).max(50).optional(),
+  lastName: z.string().min(2).max(50).optional(),
   phone: z.string().optional().nullable(),
   role: z.enum(["admin", "delegate", "referee"]).optional(),
   status: z.enum(["active", "inactive", "suspended"]).optional(),
