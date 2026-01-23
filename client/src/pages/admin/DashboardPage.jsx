@@ -30,7 +30,7 @@ import {
   useCreateUser,
   useCreateMatch,
 } from "../../hooks";
-import UserModal from "../../components/ui/UserModal";
+import UserModal from "../../components/user/UserModal";
 import MatchModal from "../../components/ui/MatchModal";
 
 const DashboardPage = () => {
@@ -795,7 +795,7 @@ const DashboardPage = () => {
       <UserModal
         open={userModalOpen}
         onClose={() => setUserModalOpen(false)}
-        onSubmit={async (data) => {
+        onConfirm={async (data) => {
           await createUser.mutateAsync(data);
           setUserModalOpen(false);
         }}

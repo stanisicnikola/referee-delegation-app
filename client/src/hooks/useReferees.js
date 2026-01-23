@@ -10,6 +10,7 @@ export const refereeKeys = {
   available: (params) => [...refereeKeys.all, "available", params],
   assignments: (id) => [...refereeKeys.all, "assignments", id],
   statistics: (id) => [...refereeKeys.all, "statistics", id],
+  overallStatistics: () => [...refereeKeys.all, "overall-statistics"],
   myAssignments: () => [...refereeKeys.all, "my-assignments"],
   myStatistics: () => [...refereeKeys.all, "my-statistics"],
 };
@@ -50,6 +51,13 @@ export const useRefereeStatistics = (id) => {
     queryKey: refereeKeys.statistics(id),
     queryFn: () => refereesApi.getStatistics(id),
     enabled: !!id,
+  });
+};
+
+export const useRefereesStatistics = () => {
+  return useQuery({
+    queryKey: refereeKeys.overallStatistics(),
+    queryFn: () => refereesApi.getOverallStatistics(),
   });
 };
 

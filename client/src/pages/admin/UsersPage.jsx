@@ -10,7 +10,6 @@ import {
   Button,
   IconButton,
   Avatar,
-  CircularProgress,
   Tooltip,
   Table,
   TableBody,
@@ -28,19 +27,19 @@ import {
   Person as PersonIcon,
   Groups as GroupsIcon,
   VerifiedUser as AdminIcon,
-  CheckCircle as ActiveIcon,
-  Cancel as InactiveIcon,
   Download as DownloadIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import {
   useUsers,
+  useUserStatistics,
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks/admin";
-import UserModal from "../../components/ui/UserModal";
-import { ConfirmDialog } from "../../components/ui";
+import UserModal from "../../components/user/UserModal";
+import UserStatusBadge from "../../components/user/UserStatusBadge";
+import { ConfirmDialog, LoadingSpinner, Modal } from "../../components/ui";
 
 const UsersPage = () => {
   const [page, setPage] = useState(0);
@@ -53,7 +52,7 @@ const UsersPage = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  const { data, isLoading, refetch } = useUsers({
+  const { data, isLoading, refetch, isFetching } = useUsers({
     page: page + 1,
     limit: rowsPerPage,
     search,
@@ -61,15 +60,23 @@ const UsersPage = () => {
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
+  const { data: statisticsData } = useUserStatistics();
+
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
   const users = data?.data || [];
-  const totalUsers = data?.pagination?.total || 0;
+  const stats = statisticsData?.data || {};
+  const totalUsers = stats.total ?? data?.pagination?.total ?? 0;
+  const roleStats = stats.byRole || {};
 
   const handleOpenModal = (user = null) => {
-    setEditingUser(user);
+    if (user) {
+      setEditingUser(user);
+    } else {
+      setEditingUser(null);
+    }
     setModalOpen(true);
   };
 
@@ -136,7 +143,7 @@ const UsersPage = () => {
           gap: 0.75,
           px: 1.5,
           py: 0.5,
-          borderRadius: "20px",
+          borderRadius: "10px",
           bgcolor: bg,
           border: `1px solid ${color}30`,
         }}
@@ -144,40 +151,6 @@ const UsersPage = () => {
         <Icon sx={{ fontSize: 14, color }} />
         <Typography sx={{ fontSize: "12px", fontWeight: 500, color }}>
           {label}
-        </Typography>
-      </Box>
-    );
-  };
-
-  const getStatusBadge = (isActive) => {
-    return (
-      <Box
-        sx={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 0.5,
-          px: 1.5,
-          py: 0.5,
-          borderRadius: "20px",
-          bgcolor: isActive
-            ? "rgba(34, 197, 94, 0.15)"
-            : "rgba(239, 68, 68, 0.15)",
-          border: `1px solid ${isActive ? "#22c55e30" : "#ef444430"}`,
-        }}
-      >
-        {isActive ? (
-          <ActiveIcon sx={{ fontSize: 12, color: "#22c55e" }} />
-        ) : (
-          <InactiveIcon sx={{ fontSize: 12, color: "#ef4444" }} />
-        )}
-        <Typography
-          sx={{
-            fontSize: "12px",
-            fontWeight: 500,
-            color: isActive ? "#22c55e" : "#ef4444",
-          }}
-        >
-          {isActive ? "Active" : "Inactive"}
         </Typography>
       </Box>
     );
@@ -264,25 +237,25 @@ const UsersPage = () => {
             label: "Total Users",
             value: totalUsers,
             icon: PersonIcon,
-            color: "#8b5cf6",
+            color: "#f59e0b",
           },
           {
             label: "Referees",
-            value: users.filter((u) => u.role === "referee").length,
+            value: roleStats.referees,
             icon: PersonIcon,
             color: "#22c55e",
           },
           {
             label: "Delegates",
-            value: users.filter((u) => u.role === "delegate").length,
+            value: roleStats.delegates,
             icon: GroupsIcon,
             color: "#3b82f6",
           },
           {
             label: "Admins",
-            value: users.filter((u) => u.role === "admin").length,
+            value: roleStats.admins,
             icon: AdminIcon,
-            color: "#f59e0b",
+            color: "#8b5cf6",
           },
         ].map((stat) => (
           <Box
@@ -397,17 +370,8 @@ const UsersPage = () => {
           overflow: "hidden",
         }}
       >
-        {isLoading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 8,
-            }}
-          >
-            <CircularProgress sx={{ color: "#8b5cf6" }} />
-          </Box>
+        {isLoading || isFetching ? (
+          <LoadingSpinner />
         ) : (
           <>
             <TableContainer>
@@ -540,11 +504,13 @@ const UsersPage = () => {
                       </TableCell>
                       <TableCell>{getRoleBadge(user.role)}</TableCell>
                       <TableCell>
-                        {getStatusBadge(user.isActive !== false)}
+                        <UserStatusBadge status={user.status} />
                       </TableCell>
                       <TableCell>
                         <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                          {new Date(user.createdAt).toLocaleDateString("bs-BA")}
+                          {new Date(user.created_at).toLocaleDateString(
+                            "en-US",
+                          )}
                         </Typography>
                       </TableCell>
                       <TableCell align='right'>
@@ -633,7 +599,7 @@ const UsersPage = () => {
       <UserModal
         open={modalOpen}
         onClose={handleCloseModal}
-        onSubmit={handleSubmit}
+        onConfirm={handleSubmit}
         isLoading={createUser.isPending || updateUser.isPending}
         editUser={editingUser}
       />
@@ -643,6 +609,8 @@ const UsersPage = () => {
         onConfirm={handleDelete}
         title='Delete User'
         message='Are you sure you want to delete this user?'
+        confirmText='Delete'
+        loading={deleteUser.isPending}
       />
     </Box>
   );

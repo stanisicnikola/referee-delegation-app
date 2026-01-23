@@ -1,6 +1,6 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
 
-const LoadingSpinner = ({ message = "Loading...", fullPage = false }) => {
+const LoadingSpinner = ({ message = "", fullPage = false }) => {
   const content = (
     <Box
       sx={{

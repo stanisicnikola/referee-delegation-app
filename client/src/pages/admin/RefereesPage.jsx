@@ -10,7 +10,6 @@ import {
   Button,
   IconButton,
   Avatar,
-  CircularProgress,
   Tooltip,
   Table,
   TableBody,
@@ -19,7 +18,6 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Chip,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -36,12 +34,14 @@ import {
 } from "@mui/icons-material";
 import {
   useReferees,
+  useRefereesStatistics,
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks/admin";
-import UserModal from "../../components/ui/UserModal";
-import { ConfirmDialog } from "../../components/ui";
+import UserModal from "../../components/user/UserModal";
+import UserStatusBadge from "../../components/user/UserStatusBadge";
+import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
 import { toast } from "react-toastify";
 
 const RefereesPage = () => {
@@ -54,19 +54,23 @@ const RefereesPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [refereeToDelete, setRefereeToDelete] = useState(null);
 
-  const { data, isLoading, refetch } = useReferees({
+  const { data, isLoading, refetch, isFetching } = useReferees({
     page: page + 1,
     limit: rowsPerPage,
     search,
     licenseCategory: categoryFilter !== "all" ? categoryFilter : undefined,
   });
 
+  const { data: statisticsData } = useRefereesStatistics();
+
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
   const referees = data?.data || [];
-  const totalReferees = data?.pagination?.total || 0;
+  const stats = statisticsData?.data || {};
+  const totalReferees = stats.total ?? data?.pagination?.total ?? 0;
+  const categoryStats = stats.byCategory || {};
 
   const handleOpenModal = (referee = null) => {
     if (referee) {
@@ -109,8 +113,6 @@ const RefereesPage = () => {
   };
 
   const handleDelete = async () => {
-    console.log(">>>>>>Deleting referee:", refereeToDelete);
-    console.log(">>>>>>Deleting referee ID:", refereeToDelete.userId);
     await deleteUser.mutateAsync(refereeToDelete.userId);
     toast.success("Referee deleted successfully!");
     handleCloseConfirmDialog();
@@ -156,7 +158,7 @@ const RefereesPage = () => {
           alignItems: "center",
           px: 1.5,
           py: 0.5,
-          borderRadius: "20px",
+          borderRadius: "10px",
           bgcolor: bg,
           border: `1px solid ${color}30`,
         }}
@@ -254,33 +256,42 @@ const RefereesPage = () => {
           },
           {
             label: "International",
-            value: referees.filter((r) => r.licenseCategory === "international")
-              .length,
+            value:
+              categoryStats.international ??
+              referees.filter((r) => r.licenseCategory === "international")
+                .length,
             icon: StarIcon,
             color: "#f59e0b",
           },
           {
             label: "Category A",
-            value: referees.filter((r) => r.licenseCategory === "A").length,
+            value:
+              categoryStats.A ??
+              referees.filter((r) => r.licenseCategory === "A").length,
             icon: StarIcon,
             color: "#22c55e",
           },
           {
             label: "Category B",
-            value: referees.filter((r) => r.licenseCategory === "B").length,
+            value:
+              categoryStats.B ??
+              referees.filter((r) => r.licenseCategory === "B").length,
             icon: StarIcon,
             color: "#3b82f6",
           },
           {
             label: "Category C",
-            value: referees.filter((r) => r.licenseCategory === "C").length,
+            value:
+              categoryStats.C ??
+              referees.filter((r) => r.licenseCategory === "C").length,
             icon: StarIcon,
             color: "#8b5cf6",
           },
           {
             label: "Regional",
-            value: referees.filter((r) => r.licenseCategory === "regional")
-              .length,
+            value:
+              categoryStats.regional ??
+              referees.filter((r) => r.licenseCategory === "regional").length,
             icon: StarIcon,
             color: "#d3f127",
           },
@@ -380,17 +391,8 @@ const RefereesPage = () => {
           overflow: "hidden",
         }}
       >
-        {isLoading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 8,
-            }}
-          >
-            <CircularProgress sx={{ color: "#8b5cf6" }} />
-          </Box>
+        {isLoading || isFetching ? (
+          <LoadingSpinner />
         ) : (
           <>
             <TableContainer>
@@ -451,6 +453,17 @@ const RefereesPage = () => {
                       }}
                     >
                       Experience
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "#6b7280",
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        textTransform: "uppercase",
+                        borderColor: "#242428",
+                      }}
+                    >
+                      Status
                     </TableCell>
                     <TableCell
                       align='right'
@@ -554,6 +567,9 @@ const RefereesPage = () => {
                             : "N/A"}
                         </Typography>
                       </TableCell>
+                      <TableCell>
+                        <UserStatusBadge status={referee.user?.status} />
+                      </TableCell>
                       <TableCell align='right'>
                         <Box
                           sx={{
@@ -653,7 +669,7 @@ const RefereesPage = () => {
       <UserModal
         open={modalOpen}
         onClose={handleCloseModal}
-        onSubmit={handleSubmit}
+        onConfirm={handleSubmit}
         isLoading={createUser.isPending || updateUser.isPending}
         editUser={editingUser}
         allowedRoles={["referee"]}
@@ -664,6 +680,8 @@ const RefereesPage = () => {
         onConfirm={handleDelete}
         title='Delete Referee'
         message='Are you sure you want to delete this referee?'
+        confirmText='Delete'
+        loading={deleteUser.isPending}
       />
     </Box>
   );

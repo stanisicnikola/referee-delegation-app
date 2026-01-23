@@ -3,35 +3,13 @@ import {
   Typography,
   TextField,
   InputAdornment,
-  Select,
-  MenuItem,
-  FormControl,
-  Button,
   IconButton,
-  CircularProgress,
   Tooltip,
-  Avatar,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TablePagination,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Add as AddIcon,
-  CalendarMonth as CalendarIcon,
-  LocationOn as LocationIcon,
-  SportsSoccer as MatchIcon,
-  Download as DownloadIcon,
-  Delete as DeleteIcon,
   Refresh as RefreshIcon,
-  CheckCircle as AssignedIcon,
-  Warning as PendingIcon,
-  AccessTime as TimeIcon,
-  Edit as EditIcon,
 } from "@mui/icons-material";
 import {
   useUsers,
@@ -40,26 +18,28 @@ import {
   useDeleteUser,
 } from "../../hooks/admin";
 import { useState } from "react";
-import UserModal from "../../components/ui/UserModal";
+import UserModal from "../../components/user/UserModal";
+import DelegateCard from "../../components/delegate/DelegateCard";
+import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
 
 const DelegatesPage = () => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [editingUser, setEditingUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [delegateToDelete, setDelegateToDelete] = useState(null);
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
-  const { data, isLoading, refetch } = useUsers({
-    page: page + 1,
-    limit: rowsPerPage,
+  const { data, isLoading, isFetching, refetch } = useUsers({
+    page: 1,
+    limit: 1000,
     search,
+    role: "delegate",
   });
-  const delegates = data?.data?.filter((user) => user.role === "delegate");
-  console.log("Delegates:", delegates);
+  const delegates = data?.data || [];
 
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
@@ -102,10 +82,20 @@ const DelegatesPage = () => {
     }
   };
 
-  const handleDelete = async (delegate) => {
-    if (window.confirm("Are you sure you want to delete this delegate?")) {
-      await deleteUser.mutateAsync(delegate.userId);
-    }
+  const handleOpenDelete = (delegate) => {
+    setDelegateToDelete(delegate);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialogOpen(false);
+    setDelegateToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!delegateToDelete) return;
+    await deleteUser.mutateAsync(delegateToDelete.id);
+    handleCloseConfirmDialog();
   };
 
   return (
@@ -129,38 +119,20 @@ const DelegatesPage = () => {
             Manage registered delegates and their profiles
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
-          <Tooltip title='Refresh'>
-            <IconButton
-              onClick={() => refetch()}
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenModal()}
+        <Tooltip title='Refresh'>
+          <IconButton
+            onClick={() => refetch()}
             sx={{
-              px: 3,
-              py: 1.25,
+              bgcolor: "#1a1a1d",
+              border: "1px solid #242428",
               borderRadius: "12px",
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              fontSize: "14px",
-              fontWeight: 500,
-              "&:hover": { bgcolor: "#7c3aed" },
+              color: "#9ca3af",
+              "&:hover": { bgcolor: "#242428", color: "#fff" },
             }}
           >
-            New Delegate
-          </Button>
-        </Box>
+            <RefreshIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
       {/* Filters */}
       <Box
@@ -192,256 +164,98 @@ const DelegatesPage = () => {
 
       <Box
         sx={{
-          bgcolor: "#121214",
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          p: 1,
-          overflow: "hidden",
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
+          },
+          gap: 2,
         }}
       >
-        {delegates?.map((delegate) => (
+        {isLoading || isFetching ? (
           <Box
-            key={delegate.id}
             sx={{
+              gridColumn: "1 / -1",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              p: 2,
-              borderBottom: "1px solid #242428",
-              "&:last-child": { borderBottom: "none" },
-              "&:hover": { bgcolor: "#1a1a1d" },
-            }}
-          >
-            {delegate.firstName} {delegate.lastName}
-          </Box>
-        ))}
-      </Box>
-
-      {/* Table */}
-      {/* <Box
-        sx={{
-          bgcolor: "#121214",
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          overflow: "hidden",
-        }}
-      >
-        {isLoading ? (
-          <Box
-            sx={{
-              display: "flex",
               justifyContent: "center",
-              alignItems: "center",
-              py: 8,
+              minHeight: "60vh",
             }}
           >
-            <CircularProgress sx={{ color: "#8b5cf6" }} />
+            <LoadingSpinner />
           </Box>
         ) : (
           <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#0a0a0b" }}>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Delegate
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Email
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Phone number
-                    </TableCell>
-                    <TableCell
-                      align='right'
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {delegates.map((delegate) => (
-                    <TableRow
-                      key={delegate.id}
-                      sx={{
-                        "&:hover": { bgcolor: "#1a1a1d" },
-                        "& td": { borderColor: "#242428" },
-                      }}
-                    >
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Avatar
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              bgcolor: "#3b82f626",
-                              color: "#3b82f6",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {delegate?.firstName?.[0]}
-                            {delegate?.lastName?.[0]}
-                          </Avatar>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontSize: "14px",
-                                fontWeight: 500,
-                                color: "#fff",
-                              }}
-                            >
-                              {delegate?.firstName} {delegate?.lastName}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-
-                      <TableCell align='right'>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Typography
-                            sx={{ fontSize: "14px", color: "#9ca3af" }}
-                          >
-                            {delegate?.email}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Typography
-                            sx={{ fontSize: "14px", color: "#9ca3af" }}
-                          >
-                            {delegate?.phone}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-
-                      <TableCell align='right'>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Tooltip title='Edit'>
-                            <IconButton
-                              onClick={() => handleOpenModal(delegate)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#8b5cf6",
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Delete'>
-                            <IconButton
-                              onClick={() => handleDelete(delegate)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#ef4444",
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {delegates.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        sx={{
-                          textAlign: "center",
-                          py: 8,
-                          borderColor: "#242428",
-                        }}
-                      >
-                        <Typography sx={{ color: "#6b7280" }}>
-                          No delegates found
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              component='div'
-              count={delegates?.length}
-              page={page}
-              onPageChange={(_, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
-              rowsPerPageOptions={[5, 10, 25, 50]}
+            {delegates?.map((delegate) => (
+              <DelegateCard
+                key={delegate.id}
+                delegate={delegate}
+                onEdit={handleOpenModal}
+                onDelete={handleOpenDelete}
+              />
+            ))}
+            <Box
+              onClick={() => handleOpenModal()}
               sx={{
-                borderTop: "1px solid #242428",
-                color: "#6b7280",
-                "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
-                "& .MuiIconButton-root": { color: "#6b7280" },
-                "& .Mui-disabled": { color: "#3f3f46 !important" },
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1.5,
+                minHeight: 280,
+                borderRadius: "16px",
+                border: "2px dashed #2a2a2f",
+                bgcolor: "rgba(18, 18, 20, 0.5)",
+                color: "#9ca3af",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  borderColor: "#8b5cf6",
+                  color: "#c4b5fd",
+                },
               }}
-            />
+            >
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "12px",
+                  bgcolor: "rgba(139, 92, 246, 0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#8b5cf6",
+                  fontSize: 32,
+                }}
+              >
+                +
+              </Box>
+              <Typography sx={{ fontSize: "14px" }}>
+                Add new delegate
+              </Typography>
+            </Box>
           </>
         )}
-      </Box> */}
+      </Box>
+
       {/* User Modal */}
       <UserModal
         open={modalOpen}
         onClose={handleCloseModal}
-        onSubmit={handleSubmit}
+        onConfirm={handleSubmit}
         isLoading={createUser.isPending || updateUser.isPending}
         editUser={editingUser}
         allowedRoles={["delegate"]}
+      />
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onClose={handleCloseConfirmDialog}
+        onConfirm={handleDelete}
+        title='Delete Delegate'
+        message='Are you sure you want to delete this delegate?'
+        confirmText='Delete'
+        loading={deleteUser.isPending}
       />
     </Box>
   );

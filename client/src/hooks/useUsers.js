@@ -38,10 +38,14 @@ export const useCreateUser = () => {
 
   return useMutation({
     mutationFn: (data) => usersApi.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.statistics() });
       queryClient.invalidateQueries({ queryKey: ["referees"] });
+      toast.success(data?.message || "User created successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update user.");
     },
   });
 };

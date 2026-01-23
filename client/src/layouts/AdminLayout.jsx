@@ -241,7 +241,10 @@ const AdminLayout = () => {
           >
             RefDelegate
           </Typography>
-          <Typography variant='caption' color='text.secondary'>
+          <Typography
+            variant='caption'
+            sx={(theme) => ({ color: theme.palette.primary.main })}
+          >
             Admin Panel
           </Typography>
         </Box>

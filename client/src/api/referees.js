@@ -41,6 +41,11 @@ export const refereesApi = {
     return response.data;
   },
 
+  getOverallStatistics: async () => {
+    const response = await api.get("/referees/statistics");
+    return response.data;
+  },
+
   getMyAssignments: async () => {
     const response = await api.get("/referees/my-assignments");
     return response.data;
