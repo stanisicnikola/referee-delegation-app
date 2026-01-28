@@ -13,9 +13,7 @@ const create = z.object({
 
 const update = z.object({
   licenseNumber: z.string().optional(),
-  licenseCategory: z
-    .enum(["international", "A", "B", "C", "regional"])
-    .optional(),
+  licenseCategory: z.enum(["international", "A", "B", "C", "regional"]),
   dateOfBirth: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),

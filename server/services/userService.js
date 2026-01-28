@@ -86,7 +86,7 @@ class UserService {
           ...userOnlyData,
           passwordHash,
         },
-        { transaction }
+        { transaction },
       );
 
       // If user is a referee, create referee profile automatically
@@ -103,7 +103,7 @@ class UserService {
             bankAccount: bankAccount || null,
             notes: notes || null,
           },
-          { transaction }
+          { transaction },
         );
       }
 
@@ -180,7 +180,7 @@ class UserService {
                   : user.referee.bankAccount,
               notes: notes !== undefined ? notes : user.referee.notes,
             },
-            { transaction }
+            { transaction },
           );
         } else {
           // Create new referee profile
@@ -196,7 +196,7 @@ class UserService {
               bankAccount: bankAccount || null,
               notes: notes || null,
             },
-            { transaction }
+            { transaction },
           );
         }
       } else if (hadRefereeProfile && newRole !== "referee") {
@@ -270,13 +270,29 @@ class UserService {
   async getStatistics() {
     const totalUsers = await User.count();
     const activeUsers = await User.count({ where: { status: "active" } });
+    const inactiveUsers = await User.count({ where: { status: "inactive" } });
+    const suspendedUsers = await User.count({ where: { status: "suspended" } });
     const referees = await User.count({ where: { role: "referee" } });
     const delegates = await User.count({ where: { role: "delegate" } });
     const admins = await User.count({ where: { role: "admin" } });
+    const activeDelegates = await User.count({
+      where: { role: "delegate", status: "active" },
+    });
+    const inactiveDelegates = await User.count({
+      where: { role: "delegate", status: "inactive" },
+    });
+    const suspendedDelegates = await User.count({
+      where: { role: "delegate", status: "suspended" },
+    });
 
     return {
       total: totalUsers,
       active: activeUsers,
+      inactive: inactiveUsers,
+      suspended: suspendedUsers,
+      activeDelegates,
+      inactiveDelegates,
+      suspendedDelegates,
       byRole: {
         referees,
         delegates,
