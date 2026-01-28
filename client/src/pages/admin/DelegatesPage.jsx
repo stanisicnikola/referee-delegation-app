@@ -5,15 +5,22 @@ import {
   InputAdornment,
   IconButton,
   Tooltip,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  Add as AddIcon,
+  Person as PersonIcon,
   Refresh as RefreshIcon,
+  CheckCircle as ActiveIcon,
+  Cancel as InactiveIcon,
+  Warning as SuspendedIcon,
 } from "@mui/icons-material";
 import {
   useUsers,
   useCreateUser,
+  useUserStatistics,
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks/admin";
@@ -24,6 +31,7 @@ import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
 
 const DelegatesPage = () => {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [editingUser, setEditingUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -35,10 +43,19 @@ const DelegatesPage = () => {
 
   const { data, isLoading, isFetching, refetch } = useUsers({
     page: 1,
-    limit: 1000,
+    limit: 100,
     search,
+    status: statusFilter !== "all" ? statusFilter : undefined,
     role: "delegate",
   });
+  const { data: statisticsData } = useUserStatistics();
+  console.log("User statistics data:", statisticsData);
+
+  const stats = statisticsData?.data || {};
+  const totalUsers = stats?.byRole?.delegates || 0;
+  const activeDelegates = stats?.activeDelegates || 0;
+  const inactiveDelegates = stats?.inactiveDelegates || 0;
+  const suspendedDelegates = stats?.suspendedDelegates || 0;
   const delegates = data?.data || [];
 
   const inputStyles = {
@@ -134,6 +151,85 @@ const DelegatesPage = () => {
           </IconButton>
         </Tooltip>
       </Box>
+
+      {/* Stats Cards */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "repeat(2, 1fr)",
+            md: "repeat(3, 1fr)",
+            lg: "repeat(4, 1fr)",
+          },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        {[
+          {
+            label: "Total",
+            value: totalUsers,
+            icon: PersonIcon,
+            color: "#3b82f6",
+          },
+          {
+            label: "Active",
+            value: activeDelegates,
+            icon: ActiveIcon,
+            color: "#22c55e",
+          },
+          {
+            label: "Inactive",
+            value: inactiveDelegates,
+            icon: InactiveIcon,
+            color: "#ef4444",
+          },
+          {
+            label: "Suspended",
+            value: suspendedDelegates,
+            icon: SuspendedIcon,
+            color: "#df5f04",
+          },
+        ].map((stat) => (
+          <Box
+            key={stat.label}
+            sx={{
+              p: 2.5,
+              bgcolor: "#121214",
+              border: "1px solid #242428",
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: "12px",
+                bgcolor: `${stat.color}15`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <stat.icon sx={{ fontSize: 24, color: stat.color }} />
+            </Box>
+            <Box>
+              <Typography
+                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+              >
+                {stat.value}
+              </Typography>
+              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
+                {stat.label}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
       {/* Filters */}
       <Box
         sx={{
@@ -158,8 +254,25 @@ const DelegatesPage = () => {
               </InputAdornment>
             ),
           }}
-          sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
+          sx={{ ...inputStyles, flex: 1, maxWidth: 400, minWidth: 150 }}
         />
+        <FormControl sx={{ minWidth: 80, ...inputStyles }}>
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            displayEmpty
+            sx={{
+              "& .MuiSelect-select": {
+                color: statusFilter === "all" ? "#6b7280" : "#fff",
+              },
+            }}
+          >
+            <MenuItem value='all'>All Status</MenuItem>
+            <MenuItem value='active'>Active</MenuItem>
+            <MenuItem value='inactive'>Inactive</MenuItem>
+            <MenuItem value='suspended'>Suspended</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       <Box
@@ -203,7 +316,7 @@ const DelegatesPage = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 1.5,
-                minHeight: 280,
+                minHeight: 380,
                 borderRadius: "16px",
                 border: "2px dashed #2a2a2f",
                 bgcolor: "rgba(18, 18, 20, 0.5)",

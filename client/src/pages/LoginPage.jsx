@@ -395,7 +395,7 @@ const LoginPage = () => {
                             <IconButton
                               onClick={() => setShowPassword(!showPassword)}
                               edge='end'
-                              sx={{ color: "grey.500" }}
+                              sx={{ color: "grey.200" }}
                             >
                               {showPassword ? (
                                 <VisibilityOff />

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -13,8 +13,13 @@ import {
   FormControlLabel,
   FormHelperText,
   InputLabel,
+  InputAdornment,
 } from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+import {
+  Close as CloseIcon,
+  Visibility,
+  VisibilityOff,
+} from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createUserSchema, updateUserSchema } from "../../hooks/userValidation";
@@ -40,16 +45,21 @@ const UserModal = ({
         licenseNumber: user?.referee?.licenseNumber || "",
         licenseCategory: user?.referee?.licenseCategory || "",
         city: user?.referee?.city || "",
-        experienceYears: user?.referee?.experienceYears || 0,
+        experienceYears:
+          user?.referee?.experienceYears !== undefined &&
+          user?.referee?.experienceYears !== null
+            ? String(user.referee.experienceYears)
+            : "",
         password: "",
         confirmPassword: "",
         sendWelcomeEmail: !user,
-        requirePasswordChange: false,
+        requirePasswordChange: true,
       };
     },
-    [allowedRoles]
+    [allowedRoles],
   );
-  // Odaberi ispravnu shemu
+
+  const [showPassword, setShowPassword] = useState(false);
   const schema = editUser ? updateUserSchema : createUserSchema;
 
   const {
@@ -71,14 +81,13 @@ const UserModal = ({
       licenseNumber: "",
       licenseCategory: "",
       city: "",
-      experienceYears: 0,
+      experienceYears: "",
       password: "",
       confirmPassword: "",
       sendWelcomeEmail: !editUser,
-      requirePasswordChange: false,
+      requirePasswordChange: true,
     },
   });
-
   const watchedRole = watch("role");
 
   // Prevent body scroll when modal is open
@@ -98,6 +107,13 @@ const UserModal = ({
   }, [editUser, reset, getFormValues]);
 
   const onSubmit = (data) => {
+    if (data.role !== "referee") {
+      // eslint-disable-next-line no-unused-vars
+      const { licenseNumber, licenseCategory, city, experienceYears, ...rest } =
+        data;
+      onConfirm(rest);
+      return;
+    }
     onConfirm(data);
   };
 
@@ -425,7 +441,7 @@ const UserModal = ({
                       <TextField
                         {...field}
                         fullWidth
-                        type='number'
+                        type='text'
                         placeholder='0'
                         error={!!errors.experienceYears}
                         helperText={errors.experienceYears?.message}
@@ -444,9 +460,7 @@ const UserModal = ({
               sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
             >
               <Box>
-                <Typography sx={labelStyles}>
-                  Password {!editUser && "*"}
-                </Typography>
+                <Typography sx={labelStyles}>Password *</Typography>
                 <Controller
                   name='password'
                   control={control}
@@ -454,19 +468,34 @@ const UserModal = ({
                     <TextField
                       {...field}
                       fullWidth
-                      type='password'
+                      type={showPassword ? "text" : "password"}
                       placeholder='Minimum 8 characters'
                       error={!!errors.password}
                       helperText={errors.password?.message}
                       sx={inputStyles}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position='end'>
+                            <IconButton
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge='end'
+                              sx={{ color: "grey.200" }}
+                            >
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
                     />
                   )}
                 />
               </Box>
               <Box>
-                <Typography sx={labelStyles}>
-                  Confirm Password {!editUser && "*"}
-                </Typography>
+                <Typography sx={labelStyles}>Confirm Password *</Typography>
                 <Controller
                   name='confirmPassword'
                   control={control}
@@ -483,6 +512,7 @@ const UserModal = ({
                   )}
                 />
               </Box>
+              {console.log(">>>>>>", errors)}
             </Box>
           ) : null}
 
@@ -572,6 +602,7 @@ const UserModal = ({
           <Button
             type='submit'
             disabled={isLoading}
+            onClick={() => console.log("Errors:", errors)}
             sx={{
               px: 3,
               py: 1.25,

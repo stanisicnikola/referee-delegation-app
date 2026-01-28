@@ -5,10 +5,7 @@ export const loginSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Enter a valid email address"),
-  password: z
-    .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const registerSchema = z
@@ -33,7 +30,7 @@ export const registerSchema = z
       .min(8, "Password must be at least 8 characters")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain an uppercase letter, a lowercase letter, and a number"
+        "Password must contain an uppercase letter, a lowercase letter, and a number",
       ),
     confirmPassword: z.string().min(1, "Confirm password is required"),
     role: z.enum(["referee", "delegate"], {
