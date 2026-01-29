@@ -18,7 +18,6 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Chip,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -28,9 +27,7 @@ import {
   CalendarMonth as CalendarIcon,
   LocationOn as LocationIcon,
   SportsSoccer as MatchIcon,
-  Download as DownloadIcon,
   Refresh as RefreshIcon,
-  Visibility as ViewIcon,
   CheckCircle as AssignedIcon,
   Warning as PendingIcon,
   AccessTime as TimeIcon,
@@ -95,8 +92,9 @@ const MatchesPage = () => {
 
   const getStatusBadge = (match) => {
     const hasReferees = match.referees && match.referees.length > 0;
-    const matchDate = new Date(match.dateTime);
-    const isPast = matchDate < new Date();
+    const matchDateValue = match.scheduledAt;
+    const matchDate = matchDateValue ? new Date(matchDateValue) : null;
+    const isPast = matchDate ? matchDate < new Date() : false;
 
     if (isPast) {
       return (
@@ -169,9 +167,13 @@ const MatchesPage = () => {
   };
 
   const formatDateTime = (dateTime) => {
+    if (!dateTime) {
+      return { date: "—", time: "—" };
+    }
+
     const date = new Date(dateTime);
     return {
-      date: date.toLocaleDateString("bs-BA", {
+      date: date.toLocaleDateString("en-US", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -195,10 +197,10 @@ const MatchesPage = () => {
   };
 
   const assignedMatches = matches.filter(
-    (m) => m.referees && m.referees.length > 0
+    (m) => m.referees && m.referees.length > 0,
   ).length;
   const pendingMatches = matches.filter(
-    (m) => !m.referees || m.referees.length === 0
+    (m) => !m.referees || m.referees.length === 0,
   ).length;
 
   return (
@@ -235,19 +237,6 @@ const MatchesPage = () => {
               }}
             >
               <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title='Export'>
-            <IconButton
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <DownloadIcon />
             </IconButton>
           </Tooltip>
           <Button
@@ -498,7 +487,8 @@ const MatchesPage = () => {
                 </TableHead>
                 <TableBody>
                   {matches.map((match) => {
-                    const { date, time } = formatDateTime(match.dateTime);
+                    const dateTimeValue = match.scheduledAt;
+                    const { date, time } = formatDateTime(dateTimeValue);
                     return (
                       <TableRow
                         key={match.id}
@@ -544,7 +534,7 @@ const MatchesPage = () => {
                               <Typography
                                 sx={{ fontSize: "12px", color: "#6b7280" }}
                               >
-                                Round {match.round || 1}
+                                Round {match.round}
                               </Typography>
                             </Box>
                           </Box>
@@ -629,19 +619,6 @@ const MatchesPage = () => {
                               gap: 0.5,
                             }}
                           >
-                            <Tooltip title='View Details'>
-                              <IconButton
-                                sx={{
-                                  color: "#6b7280",
-                                  "&:hover": {
-                                    bgcolor: "#242428",
-                                    color: "#3b82f6",
-                                  },
-                                }}
-                              >
-                                <ViewIcon fontSize='small' />
-                              </IconButton>
-                            </Tooltip>
                             <Tooltip title='Edit'>
                               <IconButton
                                 onClick={() => handleOpenModal(match)}

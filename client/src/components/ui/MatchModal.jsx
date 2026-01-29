@@ -72,9 +72,8 @@ const MatchModal = ({
 
   useEffect(() => {
     if (editMatch) {
-      const matchDate = editMatch.dateTime
-        ? new Date(editMatch.dateTime)
-        : null;
+      const matchDateValue = editMatch.scheduledAt;
+      const matchDate = matchDateValue ? new Date(matchDateValue) : null;
       setFormData({
         competitionId: editMatch.competitionId || "",
         homeTeamId: editMatch.homeTeamId || "",
@@ -131,10 +130,9 @@ const MatchModal = ({
 
   const handleSubmit = () => {
     if (validate()) {
-      const dateTime = new Date(
-        `${formData.date}T${formData.time}`
-      ).toISOString();
-      onSubmit({ ...formData, dateTime });
+      const scheduledAt = `${formData.date}T${formData.time}:00`;
+      const { date: _date, time: _time, ...payload } = formData;
+      onSubmit({ ...payload, scheduledAt });
     }
   };
 
@@ -444,7 +442,7 @@ const MatchModal = ({
                           <MenuItem key={del.id} value={del.id}>
                             {`${del?.firstName} ${del?.lastName}`}
                           </MenuItem>
-                        )
+                        ),
                     )}
                   </Select>
                 </FormControl>
