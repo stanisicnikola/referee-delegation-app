@@ -21,7 +21,7 @@ class CompetitionService {
 
     if (season) where.season = season;
     if (category) where.category = category;
-    
+
     if (status) {
       const now = new Date().toISOString().split("T")[0];
       if (status === "suspended") {
@@ -62,11 +62,11 @@ class CompetitionService {
       ],
     });
 
-    const mappedRows = rows.map(comp => {
+    const mappedRows = rows.map((comp) => {
       const plainComp = comp.get({ plain: true });
       return {
         ...plainComp,
-        status: this._calculateStatus(plainComp)
+        status: this._calculateStatus(plainComp),
       };
     });
 
@@ -91,7 +91,7 @@ class CompetitionService {
     const plainComp = competition.get({ plain: true });
     return {
       ...plainComp,
-      status: this._calculateStatus(plainComp)
+      status: this._calculateStatus(plainComp),
     };
   }
 
@@ -111,18 +111,24 @@ class CompetitionService {
 
   async create(competitionData) {
     const status = this._calculateStatus(competitionData);
-    const competition = await Competition.create({ ...competitionData, status });
+    const competition = await Competition.create({
+      ...competitionData,
+      status,
+    });
     return this.findById(competition.id);
   }
 
-    async update(id, competitionData) {
+  async update(id, competitionData) {
     const competition = await Competition.findByPk(id);
 
     if (!competition) {
       throw new AppError("Competition not found.", 404);
     }
 
-    const dataToCalculate = { ...competition.get({ plain: true }), ...competitionData };
+    const dataToCalculate = {
+      ...competition.get({ plain: true }),
+      ...competitionData,
+    };
     const status = this._calculateStatus(dataToCalculate);
 
     await competition.update({ ...competitionData, status });
@@ -159,16 +165,16 @@ class CompetitionService {
 
   async getGlobalSummary() {
     const competitions = await Competition.findAll();
-    
+
     const summary = {
       total: competitions.length,
       upcoming: 0,
       active: 0,
       completed: 0,
-      suspended: 0
+      suspended: 0,
     };
 
-    competitions.forEach(comp => {
+    competitions.forEach((comp) => {
       const calculatedStatus = this._calculateStatus(comp.get({ plain: true }));
       if (summary[calculatedStatus] !== undefined) {
         summary[calculatedStatus]++;

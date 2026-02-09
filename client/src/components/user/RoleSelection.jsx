@@ -72,8 +72,8 @@ const RoleSelection = ({
                   borderColor: isDisabled
                     ? "#242428"
                     : isSelected
-                    ? "#8b5cf6"
-                    : "#3f3f46",
+                      ? "#8b5cf6"
+                      : "#3f3f46",
                 },
                 ...(isSelected && {
                   bgcolor: "rgba(139, 92, 246, 0.1)",

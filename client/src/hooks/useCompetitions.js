@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { competitionsApi } from "../api";
 import { toast } from "react-toastify";
 
-
 export const competitionKeys = {
   all: ["competitions"],
   lists: () => [...competitionKeys.all, "list"],
@@ -88,7 +87,9 @@ export const useDeleteCompetition = () => {
       toast.success(data?.message || "Competition deleted successfully!");
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to delete competition.");
+      toast.error(
+        error.response?.data?.message || "Failed to delete competition.",
+      );
     },
   });
 };

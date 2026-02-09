@@ -161,13 +161,13 @@ export const CompetitionModal = ({
           <Box>
             <Typography sx={labelStyles}>Competition Name *</Typography>
             <Controller
-              name="name"
+              name='name'
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
                   fullWidth
-                  placeholder="e.g. Premijer liga BiH"
+                  placeholder='e.g. Premijer liga BiH'
                   error={!!errors.name}
                   helperText={errors.name?.message}
                   sx={inputStyles}
@@ -179,13 +179,13 @@ export const CompetitionModal = ({
             <Box>
               <Typography sx={labelStyles}>Season *</Typography>
               <Controller
-                name="season"
+                name='season'
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    placeholder="2024/2025"
+                    placeholder='2024/2025'
                     error={!!errors.season}
                     helperText={errors.season?.message}
                     sx={inputStyles}
@@ -196,20 +196,27 @@ export const CompetitionModal = ({
             <Box>
               <Typography sx={labelStyles}>Categories</Typography>
               <Controller
-                name="category"
+                name='category'
                 control={control}
                 render={({ field }) => (
-                  <FormControl fullWidth sx={inputStyles} error={!!errors.category}>
+                  <FormControl
+                    fullWidth
+                    sx={inputStyles}
+                    error={!!errors.category}
+                  >
                     <Select
                       {...field}
                       sx={{ "& .MuiSelect-select": { color: "#fff" } }}
                     >
-                      <MenuItem value="seniors">Seniors</MenuItem>
-                      <MenuItem value="juniors">Juniors</MenuItem>
-                      <MenuItem value="youth">Youth</MenuItem>
+                      <MenuItem value='seniors'>Seniors</MenuItem>
+                      <MenuItem value='juniors'>Juniors</MenuItem>
+                      <MenuItem value='youth'>Youth</MenuItem>
                     </Select>
                     {errors.category && (
-                      <Typography variant="caption" sx={{ color: "#d32f2f", ml: 1.5, mt: 0.5 }}>
+                      <Typography
+                        variant='caption'
+                        sx={{ color: "#d32f2f", ml: 1.5, mt: 0.5 }}
+                      >
                         {errors.category.message}
                       </Typography>
                     )}
@@ -228,7 +235,14 @@ export const CompetitionModal = ({
                 border: "1px solid #242428",
               }}
             >
-              <Typography sx={{ fontSize: "14px", fontWeight: 600, color: "#fff", mb: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#fff",
+                  mb: 0.5,
+                }}
+              >
                 {isSuspended ? "Resume Competition" : "Suspend Competition"}
               </Typography>
               <Typography sx={{ fontSize: "13px", color: "#6b7280", mb: 2 }}>
@@ -237,9 +251,14 @@ export const CompetitionModal = ({
                   : "Suspending this competition will hide it from the delegation process. You can resume it at any time."}
               </Typography>
               <Button
-                variant="outlined"
+                variant='outlined'
                 color={isSuspended ? "success" : "error"}
-                onClick={() => onSubmit({ ...editCompetition, status: isSuspended ? "active" : "suspended" })}
+                onClick={() =>
+                  onSubmit({
+                    ...editCompetition,
+                    status: isSuspended ? "active" : "suspended",
+                  })
+                }
                 disabled={isLoading}
                 sx={{
                   borderRadius: "8px",
@@ -248,7 +267,9 @@ export const CompetitionModal = ({
                   color: isSuspended ? "#22c55e" : "#ef4444",
                   "&:hover": {
                     borderColor: isSuspended ? "#16a34a" : "#dc2626",
-                    bgcolor: isSuspended ? "rgba(34, 197, 94, 0.05)" : "rgba(239, 68, 68, 0.05)",
+                    bgcolor: isSuspended
+                      ? "rgba(34, 197, 94, 0.05)"
+                      : "rgba(239, 68, 68, 0.05)",
                   },
                 }}
               >
@@ -261,13 +282,13 @@ export const CompetitionModal = ({
             <Box>
               <Typography sx={labelStyles}>Start Date</Typography>
               <Controller
-                name="startDate"
+                name='startDate'
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    type="date"
+                    type='date'
                     error={!!errors.startDate}
                     helperText={errors.startDate?.message}
                     sx={{
@@ -283,13 +304,13 @@ export const CompetitionModal = ({
             <Box>
               <Typography sx={labelStyles}>End Date</Typography>
               <Controller
-                name="endDate"
+                name='endDate'
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    type="date"
+                    type='date'
                     error={!!errors.endDate}
                     helperText={errors.endDate?.message}
                     sx={{

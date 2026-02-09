@@ -22,14 +22,14 @@ const statusConfig = {
     border: "#ef444430",
     icon: InactiveIcon,
   },
-   suspended: {
+  suspended: {
     label: "Suspended",
     color: "#df5f04",
     bg: "rgba(233, 107, 61, 0.15)",
     border: "#df5f0430",
     icon: SuspendedIcon,
   },
-  upcoming:{
+  upcoming: {
     label: "Upcoming",
     color: "#3b82f6",
     bg: "rgba(68, 117, 239, 0.15)",
@@ -44,7 +44,6 @@ const statusConfig = {
     border: "#f59e0b30",
     icon: CompletedIcon,
   },
- 
 };
 
 const StatusBadge = ({ status = "inactive" }) => {

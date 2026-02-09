@@ -66,13 +66,13 @@ const CompetitionsPage = () => {
 
   const competitions = data?.data || [];
   const totalCompetitions = data?.pagination?.total || 0;
-  
+
   const summary = summaryData?.data || {
     total: 0,
     active: 0,
     completed: 0,
     upcoming: 0,
-    suspended: 0
+    suspended: 0,
   };
 
   const handleOpenModal = (competition = null) => {
@@ -100,10 +100,7 @@ const CompetitionsPage = () => {
     }
   };
 
-   const handleOpenDialog = (competition) => {
-    console.log(">>>>>>>",competition.id);
-    console.log(">>>>>>>",competition);
-
+  const handleOpenDialog = (competition) => {
     setCompetitionToDelete(competition);
     setConfirmDialogOpen(true);
   };
@@ -111,14 +108,12 @@ const CompetitionsPage = () => {
   const handleCloseDialog = () => {
     setConfirmDialogOpen(false);
     setCompetitionToDelete(null);
-   };
- 
-   const handleDelete = async () => {
+  };
+
+  const handleDelete = async () => {
     await deleteCompetition.mutateAsync(competitionToDelete.id);
     handleCloseDialog();
-   };
-
-  
+  };
 
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
@@ -293,7 +288,7 @@ const CompetitionsPage = () => {
           }}
           sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
         />
-         <FormControl sx={{ minWidth: 80, ...inputStyles }}>
+        <FormControl sx={{ minWidth: 80, ...inputStyles }}>
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -442,7 +437,7 @@ const CompetitionsPage = () => {
                           {comp.season}
                         </Typography>
                       </TableCell>
-                       <TableCell>
+                      <TableCell>
                         <StatusBadge status={comp.status} />
                       </TableCell>
                       <TableCell>
@@ -568,7 +563,7 @@ const CompetitionsPage = () => {
         isLoading={createCompetition.isPending || updateCompetition.isPending}
         editCompetition={editingCompetition}
       />
-       <ConfirmDialog
+      <ConfirmDialog
         open={confirmDialogOpen}
         onClose={handleCloseDialog}
         onConfirm={handleDelete}

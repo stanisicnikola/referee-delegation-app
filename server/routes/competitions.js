@@ -17,12 +17,12 @@ router.get("/summary", competitionController.getCompetitionSummary);
 router.get(
   "/",
   validate(competitionSchemas.query, "query"),
-  competitionController.getCompetitions
+  competitionController.getCompetitions,
 );
 router.get(
   "/:id",
   validate(competitionSchemas.params, "params"),
-  competitionController.getCompetition
+  competitionController.getCompetition,
 );
 
 // Admin only
@@ -30,27 +30,27 @@ router.post(
   "/",
   authorize("admin"),
   validate(competitionSchemas.create),
-  competitionController.createCompetition
+  competitionController.createCompetition,
 );
 router.put(
   "/:id",
   authorize("admin"),
   validate(competitionSchemas.params, "params"),
   validate(competitionSchemas.update),
-  competitionController.updateCompetition
+  competitionController.updateCompetition,
 );
 router.delete(
   "/:id",
   authorize("admin"),
   validate(competitionSchemas.params, "params"),
-  competitionController.deleteCompetition
+  competitionController.deleteCompetition,
 );
 
 // Competition statistics
 router.get(
   "/:id/statistics",
   validate(competitionSchemas.params, "params"),
-  competitionController.getCompetitionStatistics
+  competitionController.getCompetitionStatistics,
 );
 
 module.exports = router;
