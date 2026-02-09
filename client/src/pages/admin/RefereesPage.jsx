@@ -28,9 +28,7 @@ import {
   Star as StarIcon,
   LocationOn as LocationIcon,
   Badge as BadgeIcon,
-  Download as DownloadIcon,
   Refresh as RefreshIcon,
-  Visibility as ViewIcon,
 } from "@mui/icons-material";
 import {
   useReferees,
@@ -40,7 +38,7 @@ import {
   useDeleteUser,
 } from "../../hooks/admin";
 import UserModal from "../../components/user/UserModal";
-import UserStatusBadge from "../../components/user/UserStatusBadge";
+import StatusBadge from "../../components/user/StatusBadge";
 import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
 import { toast } from "react-toastify";
 
@@ -107,15 +105,14 @@ const RefereesPage = () => {
     setConfirmDialogOpen(true);
   };
 
-  const handleCloseConfirmDialog = () => {
+  const handleCloseDialog = () => {
     setConfirmDialogOpen(false);
     setRefereeToDelete(null);
   };
 
   const handleDelete = async () => {
     await deleteUser.mutateAsync(refereeToDelete.userId);
-    toast.success("Referee deleted successfully!");
-    handleCloseConfirmDialog();
+    handleCloseDialog();
   };
 
   const getCategoryBadge = (category) => {
@@ -568,7 +565,7 @@ const RefereesPage = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <UserStatusBadge status={referee.user?.status} />
+                        <StatusBadge status={referee.user?.status} />
                       </TableCell>
                       <TableCell align='right'>
                         <Box
@@ -578,19 +575,6 @@ const RefereesPage = () => {
                             gap: 0.5,
                           }}
                         >
-                          {/* <Tooltip title='View'>
-                            <IconButton
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#3b82f6",
-                                },
-                              }}
-                            >
-                              <ViewIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip> */}
                           <Tooltip title='Edit'>
                             <IconButton
                               onClick={() => handleOpenModal(referee)}
@@ -676,7 +660,7 @@ const RefereesPage = () => {
       />
       <ConfirmDialog
         open={confirmDialogOpen}
-        onClose={handleCloseConfirmDialog}
+        onClose={handleCloseDialog}
         onConfirm={handleDelete}
         title='Delete Referee'
         message='Are you sure you want to delete this referee?'

@@ -3,6 +3,8 @@ import {
   CheckCircle as ActiveIcon,
   Cancel as InactiveIcon,
   Warning as SuspendedIcon,
+  CalendarMonth as CalendarIcon,
+  DoneAll as CompletedIcon,
 } from "@mui/icons-material";
 
 const statusConfig = {
@@ -20,16 +22,32 @@ const statusConfig = {
     border: "#ef444430",
     icon: InactiveIcon,
   },
-  suspended: {
+   suspended: {
     label: "Suspended",
-    color: "#df5f04dd",
-    bg: "rgba(239, 68, 68, 0.15)",
-    border: "#df5f04dd",
+    color: "#df5f04",
+    bg: "rgba(233, 107, 61, 0.15)",
+    border: "#df5f0430",
     icon: SuspendedIcon,
   },
+  upcoming:{
+    label: "Upcoming",
+    color: "#3b82f6",
+    bg: "rgba(68, 117, 239, 0.15)",
+    border: "#3b82f630",
+    icon: CalendarIcon,
+  },
+
+  completed: {
+    label: "Completed",
+    color: "#f59e0b",
+    bg: "rgba(245, 158, 11, 0.15)",
+    border: "#f59e0b30",
+    icon: CompletedIcon,
+  },
+ 
 };
 
-const UserStatusBadge = ({ status = "inactive" }) => {
+const StatusBadge = ({ status = "inactive" }) => {
   const config = statusConfig[status] || statusConfig.inactive;
   const Icon = config.icon;
 
@@ -56,4 +74,4 @@ const UserStatusBadge = ({ status = "inactive" }) => {
   );
 };
 
-export default UserStatusBadge;
+export default StatusBadge;

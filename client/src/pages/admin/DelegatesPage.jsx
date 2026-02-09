@@ -293,7 +293,7 @@ const DelegatesPage = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              minHeight: "60vh",
+              minHeight: "30vh",
             }}
           >
             <LoadingSpinner />

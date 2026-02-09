@@ -1,15 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Typography,
   TextField,
   InputAdornment,
-  Select,
-  MenuItem,
-  FormControl,
   Button,
   IconButton,
-  CircularProgress,
   Tooltip,
   Table,
   TableBody,
@@ -18,6 +14,9 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -26,263 +25,40 @@ import {
   Delete as DeleteIcon,
   EmojiEvents as TrophyIcon,
   CalendarMonth as CalendarIcon,
-  Download as DownloadIcon,
   Refresh as RefreshIcon,
-  Visibility as ViewIcon,
-  Close as CloseIcon,
-  SportsSoccer as MatchIcon,
+  CheckCircle as ActiveIcon,
+  Warning as SuspendedIcon,
+  DoneAll as CompletedIcon,
 } from "@mui/icons-material";
 import {
   useCompetitions,
   useCreateCompetition,
   useUpdateCompetition,
   useDeleteCompetition,
+  useCompetitionSummary,
 } from "../../hooks/admin";
-
-const CompetitionModal = ({
-  open,
-  onClose,
-  onSubmit,
-  isLoading,
-  editCompetition = null,
-}) => {
-  const [formData, setFormData] = useState({
-    name: editCompetition?.name || "",
-    season: editCompetition?.season || "",
-    type: editCompetition?.type || "league",
-    startDate: editCompetition?.startDate
-      ? new Date(editCompetition.startDate).toISOString().split("T")[0]
-      : "",
-    endDate: editCompetition?.endDate
-      ? new Date(editCompetition.endDate).toISOString().split("T")[0]
-      : "",
-  });
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
-
-  const handleChange = (field) => (e) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleSubmit = () => {
-    if (formData.name && formData.season) {
-      onSubmit(formData);
-    }
-  };
-
-  if (!open) return null;
-
-  const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#1a1a1d",
-      borderRadius: "12px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-    },
-    "& .MuiInputBase-input": {
-      color: "#fff",
-      fontSize: "14px",
-      py: 1.5,
-      px: 2,
-    },
-  };
-
-  const labelStyles = {
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "#9ca3af",
-    mb: 1,
-  };
-
-  return (
-    <Box
-      sx={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1300,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Box
-        onClick={onClose}
-        sx={{
-          position: "absolute",
-          inset: 0,
-          bgcolor: "rgba(0,0,0,0.8)",
-          backdropFilter: "blur(4px)",
-        }}
-      />
-      <Box
-        sx={{
-          position: "relative",
-          bgcolor: "#121214",
-          borderRadius: "16px",
-          border: "1px solid #242428",
-          width: "100%",
-          maxWidth: 500,
-          mx: 2,
-        }}
-      >
-        <Box
-          sx={{
-            px: 3,
-            py: 2,
-            borderBottom: "1px solid #242428",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
-            {editCompetition ? "Edit Competition" : "New Competition"}
-          </Typography>
-          <IconButton onClick={onClose} sx={{ color: "#6b7280" }}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
-          <Box>
-            <Typography sx={labelStyles}>Competition Name *</Typography>
-            <TextField
-              fullWidth
-              placeholder='e.g. Premijer liga BiH'
-              value={formData.name}
-              onChange={handleChange("name")}
-              sx={inputStyles}
-            />
-          </Box>
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-            <Box>
-              <Typography sx={labelStyles}>Season *</Typography>
-              <TextField
-                fullWidth
-                placeholder='2024/2025'
-                value={formData.season}
-                onChange={handleChange("season")}
-                sx={inputStyles}
-              />
-            </Box>
-            <Box>
-              <Typography sx={labelStyles}>Type</Typography>
-              <FormControl fullWidth sx={inputStyles}>
-                <Select
-                  value={formData.type}
-                  onChange={handleChange("type")}
-                  sx={{ "& .MuiSelect-select": { color: "#fff" } }}
-                >
-                  <MenuItem value='league'>League</MenuItem>
-                  <MenuItem value='cup'>Cup</MenuItem>
-                  <MenuItem value='playoff'>Playoff</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-            <Box>
-              <Typography sx={labelStyles}>Start Date</Typography>
-              <TextField
-                fullWidth
-                type='date'
-                value={formData.startDate}
-                onChange={handleChange("startDate")}
-                sx={{
-                  ...inputStyles,
-                  "& input::-webkit-calendar-picker-indicator": {
-                    filter: "invert(1)",
-                  },
-                }}
-              />
-            </Box>
-            <Box>
-              <Typography sx={labelStyles}>End Date</Typography>
-              <TextField
-                fullWidth
-                type='date'
-                value={formData.endDate}
-                onChange={handleChange("endDate")}
-                sx={{
-                  ...inputStyles,
-                  "& input::-webkit-calendar-picker-indicator": {
-                    filter: "invert(1)",
-                  },
-                }}
-              />
-            </Box>
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            px: 3,
-            py: 2,
-            borderTop: "1px solid #242428",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 1.5,
-          }}
-        >
-          <Button
-            onClick={onClose}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              color: "#fff",
-              "&:hover": { bgcolor: "#242428" },
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              "&:hover": { bgcolor: "#7c3aed" },
-            }}
-          >
-            {isLoading ? (
-              <CircularProgress size={20} sx={{ color: "#fff" }} />
-            ) : editCompetition ? (
-              "Update"
-            ) : (
-              "Create"
-            )}
-          </Button>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
+import { CompetitionModal } from "../../components/user/CompetitionModal";
+import StatusBadge from "../../components/user/StatusBadge";
+import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
 
 const CompetitionsPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [competitionToDelete, setCompetitionToDelete] = useState(null);
 
-  const { data, isLoading, refetch } = useCompetitions({
+  const { data, isLoading, refetch, isFetching } = useCompetitions({
     page: page + 1,
     limit: rowsPerPage,
     search,
+    status: statusFilter !== "all" ? statusFilter : undefined,
   });
+
+  const { data: summaryData } = useCompetitionSummary();
 
   const createCompetition = useCreateCompetition();
   const updateCompetition = useUpdateCompetition();
@@ -290,6 +66,14 @@ const CompetitionsPage = () => {
 
   const competitions = data?.data || [];
   const totalCompetitions = data?.pagination?.total || 0;
+  
+  const summary = summaryData?.data || {
+    total: 0,
+    active: 0,
+    completed: 0,
+    upcoming: 0,
+    suspended: 0
+  };
 
   const handleOpenModal = (competition = null) => {
     setEditingCompetition(competition);
@@ -316,46 +100,25 @@ const CompetitionsPage = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this competition?")) {
-      await deleteCompetition.mutateAsync(id);
-    }
+   const handleOpenDialog = (competition) => {
+    console.log(">>>>>>>",competition.id);
+    console.log(">>>>>>>",competition);
+
+    setCompetitionToDelete(competition);
+    setConfirmDialogOpen(true);
   };
 
-  const getTypeBadge = (type) => {
-    const config = {
-      league: {
-        label: "League",
-        color: "#22c55e",
-        bg: "rgba(34, 197, 94, 0.15)",
-      },
-      cup: { label: "Cup", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
-      playoff: {
-        label: "Playoff",
-        color: "#8b5cf6",
-        bg: "rgba(139, 92, 246, 0.15)",
-      },
-    };
-    const { label, color, bg } = config[type] || config.league;
-    return (
-      <Box
-        sx={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 0.5,
-          px: 1.5,
-          py: 0.5,
-          borderRadius: "20px",
-          bgcolor: bg,
-          border: `1px solid ${color}30`,
-        }}
-      >
-        <Typography sx={{ fontSize: "12px", fontWeight: 500, color }}>
-          {label}
-        </Typography>
-      </Box>
-    );
-  };
+  const handleCloseDialog = () => {
+    setConfirmDialogOpen(false);
+    setCompetitionToDelete(null);
+   };
+ 
+   const handleDelete = async () => {
+    await deleteCompetition.mutateAsync(competitionToDelete.id);
+    handleCloseDialog();
+   };
+
+  
 
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
@@ -386,7 +149,7 @@ const CompetitionsPage = () => {
             Competitions
           </Typography>
           <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-            Manage leagues, cups and tournaments
+            Manage leagues
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 1.5 }}>
@@ -402,19 +165,6 @@ const CompetitionsPage = () => {
               }}
             >
               <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title='Export'>
-            <IconButton
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <DownloadIcon />
             </IconButton>
           </Tooltip>
           <Button
@@ -449,27 +199,33 @@ const CompetitionsPage = () => {
         {[
           {
             label: "Total Competitions",
-            value: totalCompetitions,
+            value: summary.total,
             icon: TrophyIcon,
             color: "#8b5cf6",
           },
           {
-            label: "Leagues",
-            value: competitions.filter((c) => c.type === "league").length,
-            icon: TrophyIcon,
+            label: "Active",
+            value: summary.active,
+            icon: ActiveIcon,
             color: "#22c55e",
           },
           {
-            label: "Cups",
-            value: competitions.filter((c) => c.type === "cup").length,
-            icon: TrophyIcon,
+            label: "Completed",
+            value: summary.completed,
+            icon: CompletedIcon,
             color: "#f59e0b",
           },
           {
-            label: "Active",
-            value: competitions.length,
+            label: "Upcoming",
+            value: summary.upcoming,
             icon: CalendarIcon,
             color: "#3b82f6",
+          },
+          {
+            label: "Suspended",
+            value: summary.suspended,
+            icon: SuspendedIcon,
+            color: "#ef4444",
           },
         ].map((stat) => (
           <Box
@@ -537,21 +293,22 @@ const CompetitionsPage = () => {
           }}
           sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
         />
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
+         <FormControl sx={{ minWidth: 80, ...inputStyles }}>
           <Select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             displayEmpty
             sx={{
               "& .MuiSelect-select": {
-                color: typeFilter === "all" ? "#6b7280" : "#fff",
+                color: statusFilter === "all" ? "#6b7280" : "#fff",
               },
             }}
           >
-            <MenuItem value='all'>All Types</MenuItem>
-            <MenuItem value='league'>League</MenuItem>
-            <MenuItem value='cup'>Cup</MenuItem>
-            <MenuItem value='playoff'>Playoff</MenuItem>
+            <MenuItem value='all'>All Status</MenuItem>
+            <MenuItem value='upcoming'>Upcoming</MenuItem>
+            <MenuItem value='active'>Active</MenuItem>
+            <MenuItem value='completed'>Completed</MenuItem>
+            <MenuItem value='suspended'>Suspended</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -565,17 +322,8 @@ const CompetitionsPage = () => {
           overflow: "hidden",
         }}
       >
-        {isLoading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 8,
-            }}
-          >
-            <CircularProgress sx={{ color: "#8b5cf6" }} />
-          </Box>
+        {isLoading || isFetching ? (
+          <LoadingSpinner />
         ) : (
           <>
             <TableContainer>
@@ -613,7 +361,7 @@ const CompetitionsPage = () => {
                         borderColor: "#242428",
                       }}
                     >
-                      Type
+                      Status
                     </TableCell>
                     <TableCell
                       sx={{
@@ -669,7 +417,7 @@ const CompetitionsPage = () => {
                             }}
                           >
                             <TrophyIcon
-                              sx={{ fontSize: 20, color: "#f59e0b" }}
+                              sx={{ fontSize: 20, color: "#8b5cf6" }}
                             />
                           </Box>
                           <Typography
@@ -694,7 +442,9 @@ const CompetitionsPage = () => {
                           {comp.season}
                         </Typography>
                       </TableCell>
-                      <TableCell>{getTypeBadge(comp.type)}</TableCell>
+                       <TableCell>
+                        <StatusBadge status={comp.status} />
+                      </TableCell>
                       <TableCell>
                         <Box
                           sx={{ display: "flex", alignItems: "center", gap: 1 }}
@@ -707,13 +457,23 @@ const CompetitionsPage = () => {
                           >
                             {comp.startDate
                               ? new Date(comp.startDate).toLocaleDateString(
-                                  "bs-BA"
+                                  "en-US",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  },
                                 )
-                              : "N/A"}{" "}
-                            -{" "}
+                              : "N/A"}
+                            -
                             {comp.endDate
                               ? new Date(comp.endDate).toLocaleDateString(
-                                  "bs-BA"
+                                  "en-US",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  },
                                 )
                               : "N/A"}
                           </Typography>
@@ -727,19 +487,6 @@ const CompetitionsPage = () => {
                             gap: 0.5,
                           }}
                         >
-                          <Tooltip title='View'>
-                            <IconButton
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#3b82f6",
-                                },
-                              }}
-                            >
-                              <ViewIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
                           <Tooltip title='Edit'>
                             <IconButton
                               onClick={() => handleOpenModal(comp)}
@@ -756,7 +503,7 @@ const CompetitionsPage = () => {
                           </Tooltip>
                           <Tooltip title='Delete'>
                             <IconButton
-                              onClick={() => handleDelete(comp.id)}
+                              onClick={() => handleOpenDialog(comp)}
                               sx={{
                                 color: "#6b7280",
                                 "&:hover": {
@@ -820,6 +567,15 @@ const CompetitionsPage = () => {
         onSubmit={handleSubmit}
         isLoading={createCompetition.isPending || updateCompetition.isPending}
         editCompetition={editingCompetition}
+      />
+       <ConfirmDialog
+        open={confirmDialogOpen}
+        onClose={handleCloseDialog}
+        onConfirm={handleDelete}
+        title='Delete Competition'
+        message='Are you sure you want to delete this competition?'
+        confirmText='Delete'
+        loading={deleteCompetition.isPending}
       />
     </Box>
   );

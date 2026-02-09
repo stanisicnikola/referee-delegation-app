@@ -35,6 +35,11 @@ export const competitionsApi = {
     const response = await api.get(`/competitions/${id}/statistics`);
     return response.data;
   },
+
+  getSummary: async () => {
+    const response = await api.get("/competitions/summary");
+    return response.data;
+  },
 };
 
 export default competitionsApi;

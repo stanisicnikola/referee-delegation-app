@@ -38,8 +38,8 @@ import {
   useDeleteUser,
 } from "../../hooks/admin";
 import UserModal from "../../components/user/UserModal";
-import UserStatusBadge from "../../components/user/UserStatusBadge";
-import { ConfirmDialog, LoadingSpinner, Modal } from "../../components/ui";
+import StatusBadge from "../../components/user/StatusBadge";
+import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
 
 const UsersPage = () => {
   const [page, setPage] = useState(0);
@@ -504,7 +504,7 @@ const UsersPage = () => {
                       </TableCell>
                       <TableCell>{getRoleBadge(user.role)}</TableCell>
                       <TableCell>
-                        <UserStatusBadge status={user.status} />
+                        <StatusBadge status={user.status} />
                       </TableCell>
                       <TableCell>
                         <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>

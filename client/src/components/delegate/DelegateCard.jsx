@@ -5,7 +5,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import UserStatusBadge from "../user/UserStatusBadge";
+import StatusBadge from "../user/StatusBadge";
 
 const DelegateCard = ({ delegate, onEdit, onDelete }) => {
   const initials = `${delegate?.firstName?.[0] || ""}${
@@ -61,7 +61,7 @@ const DelegateCard = ({ delegate, onEdit, onDelete }) => {
           </Typography>
         </Box>
         <Box sx={{ mt: 2 }}>
-          <UserStatusBadge status={delegate?.status} />
+          <StatusBadge status={delegate?.status} />
         </Box>
       </Box>
 
