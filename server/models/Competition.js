@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       category: {
-        type: DataTypes.ENUM("seniors", "u19", "u17", "u15", "u13"),
+        type: DataTypes.ENUM("seniors", "juniors", "youth"),
         allowNull: false,
         defaultValue: "seniors",
       },
@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: "male",
       },
       status: {
-        type: DataTypes.ENUM("upcoming", "active", "completed", "cancelled"),
+        type: DataTypes.ENUM("upcoming", "active", "completed", "suspended"),
         allowNull: false,
         defaultValue: "active",
       },

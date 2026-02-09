@@ -21,7 +21,29 @@ class CompetitionService {
 
     if (season) where.season = season;
     if (category) where.category = category;
-    if (status) where.status = status;
+    
+    if (status) {
+      const now = new Date().toISOString().split("T")[0];
+      if (status === "suspended") {
+        where.status = "suspended";
+      } else if (status === "active") {
+        where[Op.and] = [
+          { status: { [Op.ne]: "suspended" } },
+          { startDate: { [Op.lte]: now } },
+          { endDate: { [Op.gte]: now } },
+        ];
+      } else if (status === "upcoming") {
+        where[Op.and] = [
+          { status: { [Op.ne]: "suspended" } },
+          { startDate: { [Op.gt]: now } },
+        ];
+      } else if (status === "completed") {
+        where[Op.and] = [
+          { status: { [Op.ne]: "suspended" } },
+          { endDate: { [Op.lt]: now } },
+        ];
+      }
+    }
     if (gender) where.gender = gender;
     if (search) {
       where[Op.or] = [
@@ -40,8 +62,16 @@ class CompetitionService {
       ],
     });
 
+    const mappedRows = rows.map(comp => {
+      const plainComp = comp.get({ plain: true });
+      return {
+        ...plainComp,
+        status: this._calculateStatus(plainComp)
+      };
+    });
+
     return {
-      data: rows,
+      data: mappedRows,
       pagination: {
         total: count,
         page: pageNum,
@@ -58,24 +88,46 @@ class CompetitionService {
       throw new AppError("Competition not found.", 404);
     }
 
-    return competition;
+    const plainComp = competition.get({ plain: true });
+    return {
+      ...plainComp,
+      status: this._calculateStatus(plainComp)
+    };
+  }
+
+  _calculateStatus(competition) {
+    if (competition.status === "suspended") return "suspended";
+
+    const now = new Date().toISOString().split("T")[0];
+    const start = competition.startDate;
+    const end = competition.endDate;
+
+    if (!start || !end) return competition.status;
+
+    if (now < start) return "upcoming";
+    if (now > end) return "completed";
+    return "active";
   }
 
   async create(competitionData) {
-    const competition = await Competition.create(competitionData);
-    return competition;
+    const status = this._calculateStatus(competitionData);
+    const competition = await Competition.create({ ...competitionData, status });
+    return this.findById(competition.id);
   }
 
-  async update(id, competitionData) {
+    async update(id, competitionData) {
     const competition = await Competition.findByPk(id);
 
     if (!competition) {
       throw new AppError("Competition not found.", 404);
     }
 
-    await competition.update(competitionData);
+    const dataToCalculate = { ...competition.get({ plain: true }), ...competitionData };
+    const status = this._calculateStatus(dataToCalculate);
 
-    return competition;
+    await competition.update({ ...competitionData, status });
+
+    return this.findById(id);
   }
 
   async delete(id) {
@@ -85,7 +137,6 @@ class CompetitionService {
       throw new AppError("Competition not found.", 404);
     }
 
-    // Check if there are any matches
     const matchCount = await Match.count({ where: { competitionId: id } });
     if (matchCount > 0) {
       throw new AppError("Cannot delete competition that has matches.", 400);
@@ -104,6 +155,27 @@ class CompetitionService {
     });
 
     return seasons.map((s) => s.season);
+  }
+
+  async getGlobalSummary() {
+    const competitions = await Competition.findAll();
+    
+    const summary = {
+      total: competitions.length,
+      upcoming: 0,
+      active: 0,
+      completed: 0,
+      suspended: 0
+    };
+
+    competitions.forEach(comp => {
+      const calculatedStatus = this._calculateStatus(comp.get({ plain: true }));
+      if (summary[calculatedStatus] !== undefined) {
+        summary[calculatedStatus]++;
+      }
+    });
+
+    return summary;
   }
 
   async getStatistics(id) {

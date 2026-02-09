@@ -10,6 +10,9 @@ router.use(authenticate);
 // Seasons (must be before /:id)
 router.get("/seasons", competitionController.getSeasons);
 
+// Summary (must be before /:id)
+router.get("/summary", competitionController.getCompetitionSummary);
+
 // CRUD operacije
 router.get(
   "/",

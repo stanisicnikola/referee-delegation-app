@@ -99,6 +99,20 @@ const getCompetitionStatistics = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get global competition summary
+ * @route   GET /api/competitions/summary
+ * @access  Private
+ */
+const getCompetitionSummary = asyncHandler(async (req, res) => {
+  const summary = await competitionService.getGlobalSummary();
+
+  res.json({
+    success: true,
+    data: summary,
+  });
+});
+
 module.exports = {
   getCompetitions,
   getCompetition,
@@ -107,4 +121,5 @@ module.exports = {
   deleteCompetition,
   getSeasons,
   getCompetitionStatistics,
+  getCompetitionSummary,
 };
