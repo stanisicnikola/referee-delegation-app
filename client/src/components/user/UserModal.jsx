@@ -24,6 +24,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createUserSchema, updateUserSchema } from "../../hooks/userValidation";
 import RoleSelection from "./RoleSelection";
+import { CustomInput, CustomSelect } from "../ui";
 
 const UserModal = ({
   open,
@@ -228,35 +229,31 @@ const UserModal = ({
           {/* Basic Info */}
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box>
-              <Typography sx={labelStyles}>First Name *</Typography>
               <Controller
                 name='firstName'
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <CustomInput
                     {...field}
-                    fullWidth
+                    label='First Name *'
                     placeholder='Enter first name'
                     error={!!errors.firstName}
                     helperText={errors.firstName?.message}
-                    sx={inputStyles}
                   />
                 )}
               />
             </Box>
             <Box>
-              <Typography sx={labelStyles}>Last Name *</Typography>
               <Controller
                 name='lastName'
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <CustomInput
                     {...field}
-                    fullWidth
+                    label='Last Name *'
                     placeholder='Enter last name'
                     error={!!errors.lastName}
                     helperText={errors.lastName?.message}
-                    sx={inputStyles}
                   />
                 )}
               />
@@ -266,36 +263,32 @@ const UserModal = ({
           {/* Contact */}
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box>
-              <Typography sx={labelStyles}>Email *</Typography>
               <Controller
                 name='email'
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <CustomInput
                     {...field}
-                    fullWidth
+                    label='Email *'
                     type='email'
                     placeholder='email@example.com'
                     error={!!errors.email}
                     helperText={errors.email?.message}
-                    sx={inputStyles}
                   />
                 )}
               />
             </Box>
             <Box>
-              <Typography sx={labelStyles}>Phone</Typography>
               <Controller
                 name='phone'
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <CustomInput
                     {...field}
-                    fullWidth
+                    label='Phone'
                     placeholder='+387 6X XXX XXX'
                     error={!!errors.phone}
                     helperText={errors.phone?.message}
-                    sx={inputStyles}
                   />
                 )}
               />
@@ -306,29 +299,16 @@ const UserModal = ({
                 name='status'
                 control={control}
                 render={({ field }) => (
-                  <FormControl
-                    fullWidth
+                  <CustomSelect
+                    {...field}
+                    options={[
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                      { value: "suspended", label: "Suspended" },
+                    ]}
                     error={!!errors.status}
-                    sx={inputStyles}
-                  >
-                    <InputLabel>Select status</InputLabel>
-                    <Select
-                      {...field}
-                      label='Select status'
-                      sx={{
-                        "& .MuiSelect-select": {
-                          color: field.value ? "#fff" : "#6b7280",
-                        },
-                      }}
-                    >
-                      <MenuItem value='active'>Active</MenuItem>
-                      <MenuItem value='inactive'>Inactive</MenuItem>
-                      <MenuItem value='suspended'>Suspended</MenuItem>
-                    </Select>
-                    {errors.status && (
-                      <FormHelperText>{errors.status.message}</FormHelperText>
-                    )}
-                  </FormControl>
+                    helperText={errors.status?.message}
+                  />
                 )}
               />
             </Box>
@@ -356,18 +336,16 @@ const UserModal = ({
                 sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
               >
                 <Box>
-                  <Typography sx={labelStyles}>License Number *</Typography>
                   <Controller
                     name='licenseNumber'
                     control={control}
                     render={({ field }) => (
-                      <TextField
+                      <CustomInput
                         {...field}
-                        fullWidth
+                        label='License Number *'
                         placeholder='SUD-XXXX-XXX'
                         error={!!errors.licenseNumber}
                         helperText={errors.licenseNumber?.message}
-                        sx={inputStyles}
                       />
                     )}
                   />
@@ -378,35 +356,18 @@ const UserModal = ({
                     name='licenseCategory'
                     control={control}
                     render={({ field }) => (
-                      <FormControl
-                        fullWidth
+                      <CustomSelect
+                        {...field}
+                        options={[
+                          { value: "international", label: "International" },
+                          { value: "A", label: "Category A" },
+                          { value: "B", label: "Category B" },
+                          { value: "C", label: "Category C" },
+                          { value: "regional", label: "Regional" },
+                        ]}
                         error={!!errors.licenseCategory}
-                        sx={inputStyles}
-                      >
-                        <InputLabel>Select category</InputLabel>
-                        <Select
-                          {...field}
-                          label='Select category'
-                          sx={{
-                            "& .MuiSelect-select": {
-                              color: field.value ? "#fff" : "#6b7280",
-                            },
-                          }}
-                        >
-                          <MenuItem value='international'>
-                            International
-                          </MenuItem>
-                          <MenuItem value='A'>Category A</MenuItem>
-                          <MenuItem value='B'>Category B</MenuItem>
-                          <MenuItem value='C'>Category C</MenuItem>
-                          <MenuItem value='regional'>Regional</MenuItem>
-                        </Select>
-                        {errors.licenseCategory && (
-                          <FormHelperText>
-                            {errors.licenseCategory.message}
-                          </FormHelperText>
-                        )}
-                      </FormControl>
+                        helperText={errors.licenseCategory?.message}
+                      />
                     )}
                   />
                 </Box>
@@ -416,36 +377,31 @@ const UserModal = ({
                 sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
               >
                 <Box>
-                  <Typography sx={labelStyles}>City *</Typography>
                   <Controller
                     name='city'
                     control={control}
                     render={({ field }) => (
-                      <TextField
+                      <CustomInput
                         {...field}
-                        fullWidth
+                        label='City *'
                         placeholder='e.g. Sarajevo'
                         error={!!errors.city}
                         helperText={errors.city?.message}
-                        sx={inputStyles}
                       />
                     )}
                   />
                 </Box>
                 <Box>
-                  <Typography sx={labelStyles}>Years of Experience</Typography>
                   <Controller
                     name='experienceYears'
                     control={control}
                     render={({ field }) => (
-                      <TextField
+                      <CustomInput
                         {...field}
-                        fullWidth
-                        type='text'
+                        label='Years of Experience'
                         placeholder='0'
                         error={!!errors.experienceYears}
                         helperText={errors.experienceYears?.message}
-                        sx={inputStyles}
                       />
                     )}
                   />
@@ -512,7 +468,6 @@ const UserModal = ({
                   )}
                 />
               </Box>
-              {console.log(">>>>>>", errors)}
             </Box>
           ) : null}
 
@@ -602,7 +557,6 @@ const UserModal = ({
           <Button
             type='submit'
             disabled={isLoading}
-            onClick={() => console.log("Errors:", errors)}
             sx={{
               px: 3,
               py: 1.25,

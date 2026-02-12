@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { teamsApi } from "../api";
+import { toast } from "react-toastify";
 
 export const teamKeys = {
   all: ["teams"],
@@ -7,6 +8,7 @@ export const teamKeys = {
   list: (params) => [...teamKeys.lists(), params],
   details: () => [...teamKeys.all, "detail"],
   detail: (id) => [...teamKeys.details(), id],
+  stats: () => [...teamKeys.all, "stats"],
 };
 
 export const useTeams = (params = {}) => {
@@ -29,8 +31,13 @@ export const useCreateTeam = () => {
 
   return useMutation({
     mutationFn: (data) => teamsApi.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: teamKeys.stats() });
+      toast.success(data?.message || "Team created successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to create team.");
     },
   });
 };
@@ -40,9 +47,14 @@ export const useUpdateTeam = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => teamsApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
       queryClient.invalidateQueries({ queryKey: teamKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: teamKeys.stats() });
+      toast.success(data?.message || "Team updated successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update team.");
     },
   });
 };
@@ -52,8 +64,13 @@ export const useDeleteTeam = () => {
 
   return useMutation({
     mutationFn: (id) => teamsApi.delete(id),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: teamKeys.stats() });
+      toast.success(data?.message || "Team deleted successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete team.");
     },
   });
 };
@@ -67,5 +84,12 @@ export const useUploadTeamLogo = () => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
       queryClient.invalidateQueries({ queryKey: teamKeys.detail(id) });
     },
+  });
+};
+
+export const useTeamStats = () => {
+  return useQuery({
+    queryKey: teamKeys.stats(),
+    queryFn: () => teamsApi.getStats(),
   });
 };

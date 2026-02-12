@@ -1,47 +1,16 @@
-import { Box, Typography, Breadcrumbs, Link } from "@mui/material";
-import { NavigateNext as NavigateNextIcon } from "@mui/icons-material";
-import { Link as RouterLink } from "react-router-dom";
+import { Box, Typography, IconButton, Tooltip } from "@mui/material";
+import { Refresh as RefreshIcon, Add as AddIcon } from "@mui/icons-material";
+import CustomButton from "./CustomButton";
 
 const PageHeader = ({
   title,
   subtitle,
-  breadcrumbs = [],
-  action,
-  children,
+  onRefresh,
+  onAdd,
+  addLabel = "New",
 }) => {
   return (
     <Box sx={{ mb: 4 }}>
-      {breadcrumbs.length > 0 && (
-        <Breadcrumbs
-          separator={<NavigateNextIcon fontSize='small' />}
-          sx={{ mb: 2 }}
-        >
-          {breadcrumbs.map((crumb, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-            return isLast ? (
-              <Typography
-                key={crumb.label}
-                variant='body2'
-                color='text.primary'
-              >
-                {crumb.label}
-              </Typography>
-            ) : (
-              <Link
-                key={crumb.label}
-                component={RouterLink}
-                to={crumb.path}
-                underline='hover'
-                color='text.secondary'
-                variant='body2'
-              >
-                {crumb.label}
-              </Link>
-            );
-          })}
-        </Breadcrumbs>
-      )}
-
       <Box
         sx={{
           display: "flex",
@@ -52,21 +21,42 @@ const PageHeader = ({
         }}
       >
         <Box>
-          <Typography variant='h4' sx={{ fontWeight: 700 }}>
+          <Typography variant='h3' sx={{ fontWeight: 700 }}>
             {title}
           </Typography>
           {subtitle && (
             <Typography
-              variant='body1'
-              sx={{ color: "text.secondary", mt: 0.5 }}
+              variant='body2'
+              sx={(theme) => ({ color: theme.palette.text.disabled, mt: 1 })}
             >
               {subtitle}
             </Typography>
           )}
         </Box>
-        {action && <Box>{action}</Box>}
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          {onRefresh && (
+            <Tooltip title='Refresh'>
+              <IconButton
+                onClick={onRefresh}
+                sx={{
+                  bgcolor: "#1a1a1d",
+                  border: "1px solid #242428",
+                  borderRadius: "12px",
+                  color: "#9ca3af",
+                  "&:hover": { bgcolor: "#242428", color: "#fff" },
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {onAdd && (
+            <CustomButton startIcon={<AddIcon />} onClick={onAdd}>
+              {addLabel}
+            </CustomButton>
+          )}
+        </Box>
       </Box>
-      {children}
     </Box>
   );
 };

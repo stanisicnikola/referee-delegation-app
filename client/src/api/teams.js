@@ -36,6 +36,11 @@ export const teamsApi = {
     });
     return response.data;
   },
+
+  getStats: async () => {
+    const response = await api.get("/teams/stats");
+    return response.data;
+  },
 };
 
 export default teamsApi;

@@ -32,7 +32,7 @@ import {
   Groups as GroupsIcon,
   EmojiEvents as CompetitionIcon,
   Event as MatchIcon,
-  Groups as TeamsIcon,
+  Groups3 as TeamsIcon,
   LocationOn as VenueIcon,
   Settings as SettingsIcon,
   Notifications as NotificationsIcon,

@@ -1,34 +1,9 @@
 import { useState } from "react";
+import { Box, Typography, Avatar } from "@mui/material";
 import {
-  Box,
-  Typography,
-  TextField,
-  InputAdornment,
-  Select,
-  MenuItem,
-  FormControl,
-  Button,
-  IconButton,
-  Avatar,
-  Tooltip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-} from "@mui/material";
-import {
-  Search as SearchIcon,
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Person as PersonIcon,
   Groups as GroupsIcon,
   VerifiedUser as AdminIcon,
-  Download as DownloadIcon,
-  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import {
   useUsers,
@@ -39,7 +14,16 @@ import {
 } from "../../hooks/admin";
 import UserModal from "../../components/user/UserModal";
 import StatusBadge from "../../components/user/StatusBadge";
-import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
+import {
+  ConfirmDialog,
+  PageHeader,
+  StatsGrid,
+  EditButton,
+  DeleteButton,
+  DataTable,
+  FilterSearch,
+  FilterSelect,
+} from "../../components/ui";
 
 const UsersPage = () => {
   const [page, setPage] = useState(0);
@@ -156,83 +140,19 @@ const UsersPage = () => {
     );
   };
 
-  const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#1a1a1d",
-      borderRadius: "12px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-    },
-    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
-  };
-
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{ fontSize: "28px", fontWeight: 700, color: "#fff", mb: 0.5 }}
-          >
-            Users Management
-          </Typography>
-          <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-            Manage system users, referees, and administrators
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
-          <Tooltip title='Refresh'>
-            <IconButton
-              onClick={() => refetch()}
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenModal()}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              fontSize: "14px",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { bgcolor: "#7c3aed" },
-            }}
-          >
-            New User
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title='Users Management'
+        subtitle='Manage system users, referees, and administrators'
+        onRefresh={() => refetch()}
+        onAdd={() => handleOpenModal()}
+        addLabel='New User'
+      />
 
-      {/* Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        {[
+      <StatsGrid
+        stats={[
           {
             label: "Total Users",
             value: totalUsers,
@@ -257,45 +177,8 @@ const UsersPage = () => {
             icon: AdminIcon,
             color: "#8b5cf6",
           },
-        ].map((stat) => (
-          <Box
-            key={stat.label}
-            sx={{
-              p: 2.5,
-              bgcolor: "#121214",
-              border: "1px solid #242428",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "12px",
-                bgcolor: `${stat.color}15`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <stat.icon sx={{ fontSize: 24, color: stat.color }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
-              >
-                {stat.value}
-              </Typography>
-              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
-                {stat.label}
-              </Typography>
-            </Box>
-          </Box>
-        ))}
-      </Box>
+        ]}
+      />
 
       {/* Filters */}
       <Box
@@ -310,290 +193,133 @@ const UsersPage = () => {
           gap: 2,
         }}
       >
-        <TextField
+        <FilterSearch
           placeholder='Search users...'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchIcon sx={{ color: "#6b7280" }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
         />
 
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
-          <Select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            displayEmpty
-            sx={{
-              "& .MuiSelect-select": {
-                color: roleFilter === "all" ? "#6b7280" : "#fff",
-              },
-            }}
-          >
-            <MenuItem value='all'>All Roles</MenuItem>
-            <MenuItem value='admin'>Admin</MenuItem>
-            <MenuItem value='delegate'>Delegate</MenuItem>
-            <MenuItem value='referee'>Referee</MenuItem>
-          </Select>
-        </FormControl>
+        <FilterSelect
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          placeholder='All Roles'
+          options={[
+            { value: "admin", label: "Admin" },
+            { value: "delegate", label: "Delegate" },
+            { value: "referee", label: "Referee" },
+          ]}
+        />
 
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            displayEmpty
-            sx={{
-              "& .MuiSelect-select": {
-                color: statusFilter === "all" ? "#6b7280" : "#fff",
-              },
-            }}
-          >
-            <MenuItem value='all'>All Status</MenuItem>
-            <MenuItem value='active'>Active</MenuItem>
-            <MenuItem value='inactive'>Inactive</MenuItem>
-            <MenuItem value='suspended'>Suspended</MenuItem>
-          </Select>
-        </FormControl>
+        <FilterSelect
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          placeholder='All Status'
+          options={[
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Inactive" },
+            { value: "suspended", label: "Suspended" },
+          ]}
+        />
       </Box>
 
       {/* Table */}
-      <Box
-        sx={{
-          bgcolor: "#121214",
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          overflow: "hidden",
-        }}
-      >
-        {isLoading || isFetching ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#0a0a0b" }}>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      User
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Email
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Role
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Status
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Created
-                    </TableCell>
-                    <TableCell
-                      align='right'
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      sx={{
-                        "&:hover": { bgcolor: "#1a1a1d" },
-                        "& td": { borderColor: "#242428" },
-                      }}
-                    >
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Avatar
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              bgcolor: "#8b5cf620",
-                              color: "#8b5cf6",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {user.firstName?.[0]}
-                            {user.lastName?.[0]}
-                          </Avatar>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontSize: "14px",
-                                fontWeight: 500,
-                                color: "#fff",
-                              }}
-                            >
-                              {user.firstName} {user.lastName}
-                            </Typography>
-                            {user.referee?.licenseNumber && (
-                              <Typography
-                                sx={{ fontSize: "12px", color: "#6b7280" }}
-                              >
-                                {user.referee.licenseNumber}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                          {user.email}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={user.status} />
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                          {new Date(user.created_at).toLocaleDateString(
-                            "en-US",
-                          )}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Tooltip title='Edit'>
-                            <IconButton
-                              onClick={() => handleOpenModal(user)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#8b5cf6",
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Delete'>
-                            <IconButton
-                              onClick={() => handleOpenDialog(user)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#ef4444",
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {users.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        sx={{
-                          textAlign: "center",
-                          py: 8,
-                          borderColor: "#242428",
-                        }}
-                      >
-                        <Typography sx={{ color: "#6b7280" }}>
-                          No users found
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
+      <DataTable
+        columns={[
+          {
+            id: "user",
+            label: "User",
+            render: (_, user) => (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: "#8b5cf620",
+                    color: "#8b5cf6",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {user.firstName?.[0]}
+                  {user.lastName?.[0]}
+                </Avatar>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#fff",
+                    }}
+                  >
+                    {user.firstName} {user.lastName}
+                  </Typography>
+                  {user.referee?.licenseNumber && (
+                    <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                      {user.referee.licenseNumber}
+                    </Typography>
                   )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              component='div'
-              count={totalUsers}
-              page={page}
-              onPageChange={(_, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              sx={{
-                borderTop: "1px solid #242428",
-                color: "#6b7280",
-                "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
-                "& .MuiIconButton-root": { color: "#6b7280" },
-                "& .Mui-disabled": { color: "#3f3f46 !important" },
-              }}
-            />
-          </>
-        )}
-      </Box>
+                </Box>
+              </Box>
+            ),
+          },
+          {
+            id: "email",
+            label: "Email",
+            render: (email) => (
+              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                {email}
+              </Typography>
+            ),
+          },
+          {
+            id: "role",
+            label: "Role",
+            render: (role) => getRoleBadge(role),
+          },
+          {
+            id: "created_at",
+            label: "Created",
+            render: (date) => (
+              <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
+                {new Date(date).toLocaleDateString("en-US")}
+              </Typography>
+            ),
+          },
+          {
+            id: "status",
+            label: "Status",
+            render: (status) => <StatusBadge status={status} />,
+          },
+          {
+            id: "actions",
+            label: "Actions",
+            align: "right",
+            render: (_, user) => (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 0.5,
+                }}
+              >
+                <EditButton onClick={() => handleOpenModal(user)} />
+                <DeleteButton onClick={() => handleOpenDialog(user)} />
+              </Box>
+            ),
+          },
+        ]}
+        data={users}
+        loading={isLoading || isFetching}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={totalUsers}
+        onPageChange={setPage}
+        onRowsPerPageChange={(newRowsPerPage) => {
+          setRowsPerPage(newRowsPerPage);
+          setPage(0);
+        }}
+        emptyMessage='No users found'
+      />
 
       {/* User Modal */}
       <UserModal

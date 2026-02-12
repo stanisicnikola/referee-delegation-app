@@ -9,15 +9,21 @@ import { useEffect } from "react";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { competitionSchema } from "../../validations/competitionSchema";
-import { CustomSelect, CustomInput, CustomButton } from "../ui";
+import { teamSchema } from "../../validations/teamSchema";
+import { useVenues } from "../../hooks";
+import {
+  CustomSelect,
+  CustomInput,
+  CustomButton,
+  FormValidationError,
+} from "../../components/ui";
 
-export const CompetitionModal = ({
+export const TeamModal = ({
   open,
   onClose,
   onSubmit,
   isLoading,
-  editCompetition = null,
+  editTeam = null,
 }) => {
   const {
     control,
@@ -25,45 +31,38 @@ export const CompetitionModal = ({
     reset,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(competitionSchema),
+    resolver: zodResolver(teamSchema),
     defaultValues: {
       name: "",
-      season: "",
-      category: "seniors",
-      startDate: "",
-      endDate: "",
+      shortName: "",
+      city: "",
+      primaryVenueId: "",
     },
   });
 
-  const currentStatus = editCompetition?.status;
-  const isCompleted = currentStatus === "completed";
-  const isSuspended = currentStatus === "suspended";
+  const { data: venuesData } = useVenues();
+  const venues = venuesData?.data || [];
+  const isSuspended = editTeam?.status === "suspended";
 
   useEffect(() => {
     if (open) {
-      if (editCompetition) {
+      if (editTeam) {
         reset({
-          name: editCompetition.name || "",
-          season: editCompetition.season || "",
-          category: editCompetition.category || "seniors",
-          startDate: editCompetition.startDate
-            ? new Date(editCompetition.startDate).toISOString().split("T")[0]
-            : "",
-          endDate: editCompetition.endDate
-            ? new Date(editCompetition.endDate).toISOString().split("T")[0]
-            : "",
+          name: editTeam.name || "",
+          shortName: editTeam.shortName || "",
+          city: editTeam.city || "",
+          primaryVenueId: editTeam.primaryVenueId || "",
         });
       } else {
         reset({
           name: "",
-          season: "",
-          category: "seniors",
-          startDate: "",
-          endDate: "",
+          shortName: "",
+          city: "",
+          primaryVenueId: "",
         });
       }
     }
-  }, [editCompetition, open, reset]);
+  }, [editTeam, open, reset]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -125,7 +124,7 @@ export const CompetitionModal = ({
           }}
         >
           <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
-            {editCompetition ? "Edit Competition" : "New Competition"}
+            {editTeam ? "Edit Team" : "New Team"}
           </Typography>
           <IconButton onClick={onClose} sx={{ color: "#6b7280" }}>
             <CloseIcon />
@@ -138,44 +137,39 @@ export const CompetitionModal = ({
             render={({ field }) => (
               <CustomInput
                 {...field}
-                label='Competition Name *'
-                placeholder='e.g. Premijer liga BiH'
+                label='Team Name *'
+                placeholder='e.g. KK Bosna'
                 error={errors.name?.message}
               />
             )}
           />
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Controller
-              name='season'
+              name='shortName'
               control={control}
               render={({ field }) => (
                 <CustomInput
                   {...field}
-                  label='Season *'
-                  placeholder='2024/2025'
-                  error={errors.season?.message}
+                  label='Short Name'
+                  placeholder='BOS'
+                  error={errors.shortName?.message}
                 />
               )}
             />
             <Controller
-              name='category'
+              name='city'
               control={control}
               render={({ field }) => (
-                <CustomSelect
+                <CustomInput
                   {...field}
-                  label='Categories'
-                  options={[
-                    { label: "Seniors", value: "seniors" },
-                    { label: "Juniors", value: "juniors" },
-                    { label: "Youth", value: "youth" },
-                  ]}
-                  error={!!errors.category}
+                  label='City *'
+                  placeholder='Sarajevo'
+                  error={errors.city?.message}
                 />
               )}
             />
           </Box>
-
-          {editCompetition && !isCompleted && (
+          {editTeam && (
             <Box
               sx={{
                 p: 2,
@@ -192,64 +186,45 @@ export const CompetitionModal = ({
                   mb: 0.5,
                 }}
               >
-                {isSuspended ? "Resume Competition" : "Suspend Competition"}
+                {isSuspended ? "Unsuspend Team" : "Suspend Team"}
               </Typography>
               <Typography sx={{ fontSize: "13px", color: "#6b7280", mb: 2 }}>
                 {isSuspended
-                  ? "This competition is currently suspended. Click the button below to resume it."
-                  : "Suspending this competition will hide it from the delegation process. You can resume it at any time."}
+                  ? "This team is currently suspended. Click the button below to unsuspend it."
+                  : "Suspending this team will hide it from the delegation process. You can unsuspend it at any time."}
               </Typography>
               <CustomButton
                 variant={isSuspended ? "success-outline" : "danger-outline"}
                 onClick={() =>
                   onSubmit({
-                    ...editCompetition,
+                    ...editTeam,
                     status: isSuspended ? "active" : "suspended",
                   })
                 }
                 loading={isLoading}
                 sx={{ mt: 1 }}
               >
-                {isSuspended ? "Resume Competition" : "Suspend Competition"}
+                {isSuspended ? "Unsuspend Team" : "Suspend Team"}
               </CustomButton>
             </Box>
           )}
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box>
             <Controller
-              name='startDate'
+              name='primaryVenueId'
               control={control}
               render={({ field }) => (
-                <CustomInput
+                <CustomSelect
                   {...field}
-                  type='date'
-                  label='Start Date'
-                  error={errors.startDate?.message}
-                  sx={{
-                    "& input::-webkit-calendar-picker-indicator": {
-                      filter: "invert(1)",
-                    },
-                  }}
+                  options={venues.map((v) => ({ label: v.name, value: v.id }))}
+                  label='Home Venue *'
+                  placeholder='Select Home Venue'
+                  error={!!errors.primaryVenueId}
                 />
               )}
             />
-            <Controller
-              name='endDate'
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  {...field}
-                  type='date'
-                  label='End Date'
-                  error={errors.endDate?.message}
-                  sx={{
-                    "& input::-webkit-calendar-picker-indicator": {
-                      filter: "invert(1)",
-                    },
-                  }}
-                />
-              )}
-            />
+            <FormValidationError>
+              {errors.primaryVenueId?.message}
+            </FormValidationError>
           </Box>
         </Box>
         <Box
@@ -269,7 +244,7 @@ export const CompetitionModal = ({
             onClick={handleSubmit(onFormSubmit)}
             loading={isLoading}
           >
-            {editCompetition ? "Update" : "Create"}
+            {editTeam ? "Update Team" : "Create Team"}
           </CustomButton>
         </Box>
       </Box>

@@ -60,6 +60,11 @@ export const useCreateCompetition = () => {
       queryClient.invalidateQueries({ queryKey: competitionKeys.summary() });
       toast.success(data?.message || "Competition created successfully!");
     },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to create competition.",
+      );
+    },
   });
 };
 
@@ -68,10 +73,16 @@ export const useUpdateCompetition = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => competitionsApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: competitionKeys.lists() });
       queryClient.invalidateQueries({ queryKey: competitionKeys.summary() });
       queryClient.invalidateQueries({ queryKey: competitionKeys.detail(id) });
+      toast.success(data?.message || "Competition updated successfully!");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update competition.",
+      );
     },
   });
 };

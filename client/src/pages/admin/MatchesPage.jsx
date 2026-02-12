@@ -7,10 +7,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Button,
-  IconButton,
-  CircularProgress,
-  Tooltip,
   Table,
   TableBody,
   TableCell,
@@ -21,13 +17,9 @@ import {
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   CalendarMonth as CalendarIcon,
   LocationOn as LocationIcon,
   SportsSoccer as MatchIcon,
-  Refresh as RefreshIcon,
   CheckCircle as AssignedIcon,
   Warning as PendingIcon,
   AccessTime as TimeIcon,
@@ -39,6 +31,13 @@ import {
   useDeleteMatch,
 } from "../../hooks/admin";
 import MatchModal from "../../components/ui/MatchModal";
+import {
+  LoadingSpinner,
+  PageHeader,
+  StatsGrid,
+  EditButton,
+  DeleteButton,
+} from "../../components/ui";
 
 const MatchesPage = () => {
   const [page, setPage] = useState(0);
@@ -48,7 +47,7 @@ const MatchesPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState(null);
 
-  const { data, isLoading, refetch } = useMatches({
+  const { data, isLoading, refetch, isFetching } = useMatches({
     page: page + 1,
     limit: rowsPerPage,
     search,
@@ -206,69 +205,16 @@ const MatchesPage = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{ fontSize: "28px", fontWeight: 700, color: "#fff", mb: 0.5 }}
-          >
-            Matches
-          </Typography>
-          <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-            Manage scheduled matches and referee assignments
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
-          <Tooltip title='Refresh'>
-            <IconButton
-              onClick={() => refetch()}
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenModal()}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              fontSize: "14px",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { bgcolor: "#7c3aed" },
-            }}
-          >
-            New Match
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title='Matches'
+        subtitle='Manage scheduled matches and referee assignments'
+        onRefresh={() => refetch()}
+        onAdd={() => handleOpenModal()}
+        addLabel='New Match'
+      />
 
-      {/* Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        {[
+      <StatsGrid
+        stats={[
           {
             label: "Total Matches",
             value: totalMatches,
@@ -293,45 +239,8 @@ const MatchesPage = () => {
             icon: CalendarIcon,
             color: "#3b82f6",
           },
-        ].map((stat) => (
-          <Box
-            key={stat.label}
-            sx={{
-              p: 2.5,
-              bgcolor: "#121214",
-              border: "1px solid #242428",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "12px",
-                bgcolor: `${stat.color}15`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <stat.icon sx={{ fontSize: 24, color: stat.color }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
-              >
-                {stat.value}
-              </Typography>
-              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
-                {stat.label}
-              </Typography>
-            </Box>
-          </Box>
-        ))}
-      </Box>
+        ]}
+      />
 
       {/* Filters */}
       <Box
@@ -399,17 +308,8 @@ const MatchesPage = () => {
           overflow: "hidden",
         }}
       >
-        {isLoading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 8,
-            }}
-          >
-            <CircularProgress sx={{ color: "#8b5cf6" }} />
-          </Box>
+        {isLoading || isFetching ? (
+          <LoadingSpinner />
         ) : (
           <>
             <TableContainer>
@@ -601,7 +501,7 @@ const MatchesPage = () => {
                             }}
                           >
                             <LocationIcon
-                              sx={{ fontSize: 16, color: "#6b7280" }}
+                              sx={{ fontSize: 16, color: "#3b82f6" }}
                             />
                             <Typography
                               sx={{ fontSize: "14px", color: "#9ca3af" }}
@@ -619,34 +519,12 @@ const MatchesPage = () => {
                               gap: 0.5,
                             }}
                           >
-                            <Tooltip title='Edit'>
-                              <IconButton
-                                onClick={() => handleOpenModal(match)}
-                                sx={{
-                                  color: "#6b7280",
-                                  "&:hover": {
-                                    bgcolor: "#242428",
-                                    color: "#8b5cf6",
-                                  },
-                                }}
-                              >
-                                <EditIcon fontSize='small' />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title='Delete'>
-                              <IconButton
-                                onClick={() => handleDelete(match.id)}
-                                sx={{
-                                  color: "#6b7280",
-                                  "&:hover": {
-                                    bgcolor: "#242428",
-                                    color: "#ef4444",
-                                  },
-                                }}
-                              >
-                                <DeleteIcon fontSize='small' />
-                              </IconButton>
-                            </Tooltip>
+                            <EditButton
+                              onClick={() => handleOpenModal(match)}
+                            />
+                            <DeleteButton
+                              onClick={() => handleDelete(match.id)}
+                            />
                           </Box>
                         </TableCell>
                       </TableRow>

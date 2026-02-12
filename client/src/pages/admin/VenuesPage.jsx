@@ -2,15 +2,12 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  TextField,
-  InputAdornment,
   Select,
   MenuItem,
   FormControl,
   Button,
   IconButton,
   CircularProgress,
-  Tooltip,
   Table,
   TableBody,
   TableCell,
@@ -20,15 +17,8 @@ import {
   TablePagination,
 } from "@mui/material";
 import {
-  Search as SearchIcon,
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Stadium as VenueIcon,
   LocationOn as LocationIcon,
-  Download as DownloadIcon,
-  Refresh as RefreshIcon,
-  Visibility as ViewIcon,
   Close as CloseIcon,
   People as CapacityIcon,
 } from "@mui/icons-material";
@@ -38,6 +28,15 @@ import {
   useUpdateVenue,
   useDeleteVenue,
 } from "../../hooks/admin";
+import {
+  PageHeader,
+  StatsGrid,
+  LoadingSpinner,
+  EditButton,
+  DeleteButton,
+  CustomInput,
+  FilterSearch,
+} from "../../components/ui";
 
 const VenueModal = ({
   open,
@@ -151,44 +150,35 @@ const VenueModal = ({
         <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
           <Box>
             <Typography sx={labelStyles}>Venue Name *</Typography>
-            <TextField
-              fullWidth
+            <CustomInput
               placeholder='e.g. Dvorana Skenderija'
               value={formData.name}
               onChange={handleChange("name")}
-              sx={inputStyles}
             />
           </Box>
           <Box>
             <Typography sx={labelStyles}>Address</Typography>
-            <TextField
-              fullWidth
+            <CustomInput
               placeholder='Full address'
               value={formData.address}
               onChange={handleChange("address")}
-              sx={inputStyles}
             />
           </Box>
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box>
               <Typography sx={labelStyles}>City *</Typography>
-              <TextField
-                fullWidth
+              <CustomInput
                 placeholder='Sarajevo'
                 value={formData.city}
                 onChange={handleChange("city")}
-                sx={inputStyles}
               />
             </Box>
             <Box>
               <Typography sx={labelStyles}>Capacity</Typography>
-              <TextField
-                fullWidth
-                type='number'
+              <CustomInput
                 placeholder='5000'
                 value={formData.capacity}
                 onChange={handleChange("capacity")}
-                sx={inputStyles}
               />
             </Box>
           </Box>
@@ -249,7 +239,7 @@ const VenuesPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVenue, setEditingVenue] = useState(null);
 
-  const { data, isLoading, refetch } = useVenues({
+  const { data, isLoading, refetch, isFetching } = useVenues({
     page: page + 1,
     limit: rowsPerPage,
     search,
@@ -305,83 +295,16 @@ const VenuesPage = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{ fontSize: "28px", fontWeight: 700, color: "#fff", mb: 0.5 }}
-          >
-            Venues
-          </Typography>
-          <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-            Manage sports halls and arenas
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
-          <Tooltip title='Refresh'>
-            <IconButton
-              onClick={() => refetch()}
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title='Export'>
-            <IconButton
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <DownloadIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenModal()}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              fontSize: "14px",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { bgcolor: "#7c3aed" },
-            }}
-          >
-            New Venue
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title='Venues'
+        subtitle='Manage sports halls and arenas'
+        onRefresh={() => refetch()}
+        onAdd={() => handleOpenModal()}
+        addLabel='New Venue'
+      />
 
-      {/* Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        {[
+      <StatsGrid
+        stats={[
           {
             label: "Total Venues",
             value: totalVenues,
@@ -407,51 +330,14 @@ const VenuesPage = () => {
             value: venues.length
               ? Math.round(
                   venues.reduce((sum, v) => sum + (v.capacity || 0), 0) /
-                    venues.length
+                    venues.length,
                 ).toLocaleString()
               : 0,
             icon: VenueIcon,
             color: "#f59e0b",
           },
-        ].map((stat) => (
-          <Box
-            key={stat.label}
-            sx={{
-              p: 2.5,
-              bgcolor: "#121214",
-              border: "1px solid #242428",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "12px",
-                bgcolor: `${stat.color}15`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <stat.icon sx={{ fontSize: 24, color: stat.color }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
-              >
-                {stat.value}
-              </Typography>
-              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
-                {stat.label}
-              </Typography>
-            </Box>
-          </Box>
-        ))}
-      </Box>
+        ]}
+      />
 
       {/* Filters */}
       <Box
@@ -466,18 +352,10 @@ const VenuesPage = () => {
           gap: 2,
         }}
       >
-        <TextField
+        <FilterSearch
           placeholder='Search venues...'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchIcon sx={{ color: "#6b7280" }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
         />
         <FormControl sx={{ minWidth: 150, ...inputStyles }}>
           <Select
@@ -509,17 +387,8 @@ const VenuesPage = () => {
           overflow: "hidden",
         }}
       >
-        {isLoading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              py: 8,
-            }}
-          >
-            <CircularProgress sx={{ color: "#8b5cf6" }} />
-          </Box>
+        {isLoading || isFetching ? (
+          <LoadingSpinner />
         ) : (
           <>
             <TableContainer>
@@ -670,47 +539,10 @@ const VenuesPage = () => {
                             gap: 0.5,
                           }}
                         >
-                          <Tooltip title='View'>
-                            <IconButton
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#3b82f6",
-                                },
-                              }}
-                            >
-                              <ViewIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Edit'>
-                            <IconButton
-                              onClick={() => handleOpenModal(venue)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#8b5cf6",
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Delete'>
-                            <IconButton
-                              onClick={() => handleDelete(venue.id)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#ef4444",
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
+                          <EditButton onClick={() => handleOpenModal(venue)} />
+                          <DeleteButton
+                            onClick={() => handleDelete(venue.id)}
+                          />
                         </Box>
                       </TableCell>
                     </TableRow>

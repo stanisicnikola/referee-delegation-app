@@ -1,34 +1,10 @@
 import { useState } from "react";
+import { Box, Typography, Avatar } from "@mui/material";
 import {
-  Box,
-  Typography,
-  TextField,
-  InputAdornment,
-  Select,
-  MenuItem,
-  FormControl,
-  Button,
-  IconButton,
-  Avatar,
-  Tooltip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-} from "@mui/material";
-import {
-  Search as SearchIcon,
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Person as PersonIcon,
   Star as StarIcon,
   LocationOn as LocationIcon,
   Badge as BadgeIcon,
-  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import {
   useReferees,
@@ -39,8 +15,16 @@ import {
 } from "../../hooks/admin";
 import UserModal from "../../components/user/UserModal";
 import StatusBadge from "../../components/user/StatusBadge";
-import { ConfirmDialog, LoadingSpinner } from "../../components/ui";
-import { toast } from "react-toastify";
+import {
+  ConfirmDialog,
+  PageHeader,
+  StatsGrid,
+  EditButton,
+  DeleteButton,
+  DataTable,
+  FilterSearch,
+  FilterSelect,
+} from "../../components/ui";
 
 const RefereesPage = () => {
   const [page, setPage] = useState(0);
@@ -168,83 +152,19 @@ const RefereesPage = () => {
     );
   };
 
-  const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#1a1a1d",
-      borderRadius: "12px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-    },
-    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
-  };
-
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{ fontSize: "28px", fontWeight: 700, color: "#fff", mb: 0.5 }}
-          >
-            Referees
-          </Typography>
-          <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-            Manage registered referees and their profiles
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
-          <Tooltip title='Refresh'>
-            <IconButton
-              onClick={() => refetch()}
-              sx={{
-                bgcolor: "#1a1a1d",
-                border: "1px solid #242428",
-                borderRadius: "12px",
-                color: "#9ca3af",
-                "&:hover": { bgcolor: "#242428", color: "#fff" },
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenModal()}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              fontSize: "14px",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { bgcolor: "#7c3aed" },
-            }}
-          >
-            New Referee
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title='Referees'
+        subtitle='Manage registered referees and their profiles'
+        onRefresh={() => refetch()}
+        onAdd={() => handleOpenModal()}
+        addLabel='New User'
+      />
 
       {/* Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        {[
+      <StatsGrid
+        stats={[
           {
             label: "Total Referees",
             value: totalReferees,
@@ -292,45 +212,8 @@ const RefereesPage = () => {
             icon: StarIcon,
             color: "#d3f127",
           },
-        ].map((stat) => (
-          <Box
-            key={stat.label}
-            sx={{
-              p: 2.5,
-              bgcolor: "#121214",
-              border: "1px solid #242428",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "12px",
-                bgcolor: `${stat.color}15`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <stat.icon sx={{ fontSize: 24, color: stat.color }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
-              >
-                {stat.value}
-              </Typography>
-              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
-                {stat.label}
-              </Typography>
-            </Box>
-          </Box>
-        ))}
-      </Box>
+        ]}
+      />
 
       {/* Filters */}
       <Box
@@ -345,309 +228,144 @@ const RefereesPage = () => {
           gap: 2,
         }}
       >
-        <TextField
+        <FilterSearch
           placeholder='Search referees...'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchIcon sx={{ color: "#6b7280" }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ ...inputStyles, flex: 1, maxWidth: 400 }}
         />
 
-        <FormControl sx={{ minWidth: 150, ...inputStyles }}>
-          <Select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            displayEmpty
-            sx={{
-              "& .MuiSelect-select": {
-                color: categoryFilter === "all" ? "#6b7280" : "#fff",
-              },
-            }}
-          >
-            <MenuItem value='all'>All Categories</MenuItem>
-            <MenuItem value='international'>International</MenuItem>
-            <MenuItem value='A'>Category A</MenuItem>
-            <MenuItem value='B'>Category B</MenuItem>
-            <MenuItem value='C'>Category C</MenuItem>
-          </Select>
-        </FormControl>
+        <FilterSelect
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          placeholder='All Categories'
+          options={[
+            { value: "international", label: "International" },
+            { value: "A", label: "Category A" },
+            { value: "B", label: "Category B" },
+            { value: "C", label: "Category C" },
+          ]}
+        />
       </Box>
 
       {/* Table */}
-      <Box
-        sx={{
-          bgcolor: "#121214",
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          overflow: "hidden",
+      <DataTable
+        columns={[
+          {
+            id: "referee",
+            label: "Referee",
+            render: (_, referee) => (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: "#22c55e20",
+                    color: "#22c55e",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {referee.user?.firstName?.[0]}
+                  {referee.user?.lastName?.[0]}
+                </Avatar>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#fff",
+                    }}
+                  >
+                    {referee.user?.firstName} {referee.user?.lastName}
+                  </Typography>
+                  <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                    {referee.user?.email}
+                  </Typography>
+                </Box>
+              </Box>
+            ),
+          },
+          {
+            id: "licenseNumber",
+            label: "License",
+            render: (license) => (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <BadgeIcon sx={{ fontSize: 16, color: "#6b7280" }} />
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    color: "#9ca3af",
+                    fontFamily: "monospace",
+                  }}
+                >
+                  {license || "N/A"}
+                </Typography>
+              </Box>
+            ),
+          },
+          {
+            id: "licenseCategory",
+            label: "Category",
+            render: (category) => getCategoryBadge(category),
+          },
+          {
+            id: "city",
+            label: "City",
+            render: (city) => (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LocationIcon sx={{ fontSize: 16, color: "#3b82f6" }} />
+                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                  {city || "N/A"}
+                </Typography>
+              </Box>
+            ),
+          },
+          {
+            id: "experienceYears",
+            label: "Experience",
+            render: (years) => (
+              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                {years ? `${years} years` : "N/A"}
+              </Typography>
+            ),
+          },
+          {
+            id: "status",
+            label: "Status",
+            render: (_, referee) => (
+              <StatusBadge status={referee.user?.status} />
+            ),
+          },
+          {
+            id: "actions",
+            label: "Actions",
+            align: "right",
+            render: (_, referee) => (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 0.5,
+                }}
+              >
+                <EditButton onClick={() => handleOpenModal(referee)} />
+                <DeleteButton onClick={() => handleOpenDialog(referee)} />
+              </Box>
+            ),
+          },
+        ]}
+        data={referees}
+        loading={isLoading || isFetching}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={totalReferees}
+        onPageChange={setPage}
+        onRowsPerPageChange={(newRowsPerPage) => {
+          setRowsPerPage(newRowsPerPage);
+          setPage(0);
         }}
-      >
-        {isLoading || isFetching ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#0a0a0b" }}>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Referee
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      License
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Category
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      City
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Experience
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Status
-                    </TableCell>
-                    <TableCell
-                      align='right'
-                      sx={{
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        borderColor: "#242428",
-                      }}
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {referees.map((referee) => (
-                    <TableRow
-                      key={referee.id}
-                      sx={{
-                        "&:hover": { bgcolor: "#1a1a1d" },
-                        "& td": { borderColor: "#242428" },
-                      }}
-                    >
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Avatar
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              bgcolor: "#22c55e20",
-                              color: "#22c55e",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {referee.user?.firstName?.[0]}
-                            {referee.user?.lastName?.[0]}
-                          </Avatar>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontSize: "14px",
-                                fontWeight: 500,
-                                color: "#fff",
-                              }}
-                            >
-                              {referee.user?.firstName} {referee.user?.lastName}
-                            </Typography>
-                            <Typography
-                              sx={{ fontSize: "12px", color: "#6b7280" }}
-                            >
-                              {referee.user?.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                        >
-                          <BadgeIcon sx={{ fontSize: 16, color: "#6b7280" }} />
-                          <Typography
-                            sx={{
-                              fontSize: "14px",
-                              color: "#9ca3af",
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            {referee.licenseNumber || "N/A"}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        {getCategoryBadge(referee.licenseCategory)}
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                        >
-                          <LocationIcon
-                            sx={{ fontSize: 16, color: "#6b7280" }}
-                          />
-                          <Typography
-                            sx={{ fontSize: "14px", color: "#9ca3af" }}
-                          >
-                            {referee.city || "N/A"}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                          {referee.experienceYears
-                            ? `${referee.experienceYears} years`
-                            : "N/A"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={referee.user?.status} />
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Tooltip title='Edit'>
-                            <IconButton
-                              onClick={() => handleOpenModal(referee)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#8b5cf6",
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Delete'>
-                            <IconButton
-                              onClick={() => handleOpenDialog(referee)}
-                              sx={{
-                                color: "#6b7280",
-                                "&:hover": {
-                                  bgcolor: "#242428",
-                                  color: "#ef4444",
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize='small' />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {referees.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        sx={{
-                          textAlign: "center",
-                          py: 8,
-                          borderColor: "#242428",
-                        }}
-                      >
-                        <Typography sx={{ color: "#6b7280" }}>
-                          No referees found
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              component='div'
-              count={totalReferees}
-              page={page}
-              onPageChange={(_, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              sx={{
-                borderTop: "1px solid #242428",
-                color: "#6b7280",
-                "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
-                "& .MuiIconButton-root": { color: "#6b7280" },
-                "& .Mui-disabled": { color: "#3f3f46 !important" },
-              }}
-            />
-          </>
-        )}
-      </Box>
+        emptyMessage='No referees found'
+      />
 
       {/* User Modal */}
       <UserModal

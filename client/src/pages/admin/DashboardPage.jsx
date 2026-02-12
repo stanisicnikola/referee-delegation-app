@@ -202,7 +202,7 @@ const DashboardPage = () => {
             lg: "repeat(5, 1fr)",
           },
           gap: 2,
-          mb: 4,
+          mb: 3,
         }}
       >
         <StatCard
