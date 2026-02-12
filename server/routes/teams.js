@@ -12,12 +12,14 @@ const { teamSchemas } = require("../validators");
 // All routes require authentication
 router.use(authenticate);
 
+router.get("/stats", teamController.getTeamStats);
+
 // CRUD operacije
 router.get("/", validate(teamSchemas.query, "query"), teamController.getTeams);
 router.get(
   "/:id",
   validate(teamSchemas.params, "params"),
-  teamController.getTeam
+  teamController.getTeam,
 );
 
 // Admin only
@@ -25,20 +27,20 @@ router.post(
   "/",
   authorize("admin"),
   validate(teamSchemas.create),
-  teamController.createTeam
+  teamController.createTeam,
 );
 router.put(
   "/:id",
   authorize("admin"),
   validate(teamSchemas.params, "params"),
   validate(teamSchemas.update),
-  teamController.updateTeam
+  teamController.updateTeam,
 );
 router.delete(
   "/:id",
   authorize("admin"),
   validate(teamSchemas.params, "params"),
-  teamController.deleteTeam
+  teamController.deleteTeam,
 );
 
 // Upload logo
@@ -47,7 +49,7 @@ router.put(
   authorize("admin"),
   validate(teamSchemas.params, "params"),
   uploadTeamLogo,
-  teamController.uploadLogo
+  teamController.uploadLogo,
 );
 
 module.exports = router;

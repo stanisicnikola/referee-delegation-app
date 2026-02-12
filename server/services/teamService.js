@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const { Team, Venue } = require("../models");
 const { AppError } = require("../middlewares");
 
@@ -90,6 +90,24 @@ class TeamService {
     await team.update({ logoUrl });
 
     return this.findById(id);
+  }
+
+  async getStats() {
+    const totalTeams = await Team.count();
+    const cities = await Team.findAll({
+      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("city")), "city"]],
+    });
+    const activeTeams = await Team.count({ where: { status: "active" } });
+    const inactiveTeams = await Team.count({ where: { status: "inactive" } });
+    const suspendedTeams = await Team.count({ where: { status: "suspended" } });
+
+    return {
+      totalTeams,
+      cities,
+      activeTeams,
+      inactiveTeams,
+      suspendedTeams,
+    };
   }
 }
 

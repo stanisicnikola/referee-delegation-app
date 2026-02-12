@@ -93,6 +93,20 @@ const uploadLogo = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get team statistics
+ * @route   GET /api/teams/stats
+ * @access  Private
+ */
+const getTeamStats = asyncHandler(async (req, res) => {
+  const stats = await teamService.getStats();
+
+  res.json({
+    success: true,
+    data: stats,
+  });
+});
+
 module.exports = {
   getTeams,
   getTeam,
@@ -100,4 +114,5 @@ module.exports = {
   updateTeam,
   deleteTeam,
   uploadLogo,
+  getTeamStats,
 };
