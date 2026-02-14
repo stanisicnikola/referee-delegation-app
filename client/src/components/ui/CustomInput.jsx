@@ -1,5 +1,6 @@
 import { TextField, Typography, Box } from "@mui/material";
 import FormValidationError from "./FormValidationError";
+import loginTheme from "../../theme/theme";
 
 /**
  * Reusable Input component that fits the project's dark theme.
@@ -10,7 +11,14 @@ import FormValidationError from "./FormValidationError";
  * @param {object} sx - MUI style overrides for the TextField
  * @param {object} field - react-hook-form field props (from Controller)
  */
-const CustomInput = ({ label, placeholder, error, sx = {}, ...field }) => {
+const CustomInput = ({
+  label,
+  placeholder,
+  type,
+  error,
+  sx = {},
+  ...props
+}) => {
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#1a1a1d",
@@ -40,12 +48,13 @@ const CustomInput = ({ label, placeholder, error, sx = {}, ...field }) => {
     <Box sx={{ width: "100%" }}>
       {label && <Typography sx={labelStyles}>{label}</Typography>}
       <TextField
-        {...field}
         fullWidth
         placeholder={placeholder}
         error={!!error}
-        sx={inputStyles}
+        type={type}
+        sx={type === "login" ? loginTheme.components.MuiTextField : inputStyles}
         variant='outlined'
+        {...props}
       />
       <FormValidationError>{error}</FormValidationError>
     </Box>

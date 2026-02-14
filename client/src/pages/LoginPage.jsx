@@ -27,6 +27,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import { loginSchema } from "../hooks/useAuthValidation";
+import { CustomButton, CustomInput, PasswordInput } from "../components/ui";
 
 // Feature item component
 const FeatureItem = ({ text }) => (
@@ -232,11 +233,7 @@ const LoginPage = () => {
             gap: 4,
             zIndex: 1,
           }}
-        >
-          <StatItem value='500+' label='Matches per year' />
-          <StatItem value='50+' label='Active referees' />
-          <StatItem value='99%' label='Successful delegations' />
-        </Box>
+        ></Box>
 
         {/* Basketball illustration */}
         <Box
@@ -336,7 +333,7 @@ const LoginPage = () => {
               <Typography variant='h5' sx={{ fontWeight: 700, mb: 1 }}>
                 Welcome back
               </Typography>
-              <Typography variant='body2' sx={{ color: "grey.500", mb: 4 }}>
+              <Typography variant='body2' sx={{ color: "#ffffff6c", mb: 4 }}>
                 Sign in to your account
               </Typography>
 
@@ -349,26 +346,27 @@ const LoginPage = () => {
               <Box
                 component='form'
                 onSubmit={handleSubmit(onSubmit)}
-                sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
+                sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
               >
                 <Controller
                   name='email'
                   control={control}
                   render={({ field }) => (
-                    <TextField
+                    <CustomInput
                       {...field}
                       label='Email address'
                       placeholder='your@email.com'
-                      error={!!errors.email}
-                      helperText={errors.email?.message}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position='start'>
-                            <EmailIcon sx={{ color: "grey.500" }} />
-                          </InputAdornment>
-                        ),
+                      error={errors?.email?.message}
+                      type='login'
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <EmailIcon sx={{ color: "grey.500" }} />
+                            </InputAdornment>
+                          ),
+                        },
                       }}
-                      fullWidth
                     />
                   )}
                 />
@@ -377,36 +375,13 @@ const LoginPage = () => {
                   name='password'
                   control={control}
                   render={({ field }) => (
-                    <TextField
+                    <PasswordInput
                       {...field}
-                      type={showPassword ? "text" : "password"}
                       label='Password'
-                      placeholder='••••••••'
-                      error={!!errors.password}
-                      helperText={errors.password?.message}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position='start'>
-                            <LockIcon sx={{ color: "grey.500" }} />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position='end'>
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge='end'
-                              sx={{ color: "grey.200" }}
-                            >
-                              {showPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                      fullWidth
+                      placeholder='Enter your password'
+                      error={errors?.password?.message}
+                      autoComplete='off'
+                      type='login'
                     />
                   )}
                 />
@@ -442,20 +417,14 @@ const LoginPage = () => {
                   </Link>
                 </Box>
 
-                <Button
-                  type='submit'
-                  variant='contained'
-                  size='large'
+                <CustomButton
+                  variant='primary'
                   disabled={isLoading}
-                  fullWidth
-                  sx={{ py: 1.5 }}
+                  loading={isLoading}
+                  onClick={handleSubmit(onSubmit)}
                 >
-                  {isLoading ? (
-                    <CircularProgress size={24} color='inherit' />
-                  ) : (
-                    "Sign in"
-                  )}
-                </Button>
+                  Sign in
+                </CustomButton>
               </Box>
             </CardContent>
           </Card>

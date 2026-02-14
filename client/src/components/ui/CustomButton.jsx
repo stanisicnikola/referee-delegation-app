@@ -33,7 +33,7 @@ const CustomButton = ({
     };
 
     switch (variant) {
-      case "primary":
+      case "admin-primary":
         return {
           ...baseStyles,
           bgcolor: "#8b5cf6",
@@ -45,6 +45,21 @@ const CustomButton = ({
           },
           "&.Mui-disabled": {
             bgcolor: "#8b5cf650",
+            color: "#ffffff60",
+          },
+        };
+      case "primary":
+        return {
+          ...baseStyles,
+          bgcolor: "primary.main",
+          color: "#fff",
+          "&:hover": {
+            bgcolor: "primary.main",
+            transform: "translateY(-1px)",
+            boxShadow: "0 4px 24px rgba(249, 115, 22, 0.15)",
+          },
+          "&.Mui-disabled": {
+            bgcolor: "#97431250",
             color: "#ffffff60",
           },
         };

@@ -45,6 +45,7 @@ import {
   Warning as WarningIcon,
   Info as InfoIcon,
   Close as CloseIcon,
+  CalendarMonth as CalendarIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import { adminTheme } from "../theme";
@@ -470,8 +471,9 @@ const AdminLayout = () => {
 
               <Box sx={{ flexGrow: 1 }} />
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 {/* Date */}
+                <CalendarIcon sx={{ color: "text.secondary" }} />
                 <Typography
                   variant='body2'
                   sx={{

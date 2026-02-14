@@ -85,8 +85,14 @@ const loginTheme = createTheme({
             },
             "&.Mui-focused fieldset": {
               borderColor: "#f97316",
-              boxShadow: "0 0 0 4px rgba(249, 115, 22, 0.15)",
+              boxShadow: "0 0 10px 6px rgba(249, 115, 22, 0.15)",
             },
+          },
+          "& .MuiInputBase-input": {
+            color: "#fff",
+            fontSize: "14px",
+            py: 1.5,
+            px: 2,
           },
         },
       },

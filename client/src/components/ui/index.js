@@ -12,5 +12,6 @@ export { default as StatsGrid } from "./StatsGrid";
 export { default as CustomButton } from "./CustomButton";
 export { default as FormValidationError } from "./FormValidationError";
 export { EditButton, DeleteButton } from "./TableActions";
+export { default as PasswordInput } from "./PasswordInput";
 export { default as FilterSearch } from "./FilterSearch";
 export { default as FilterSelect } from "./FilterSelect";

@@ -1,0 +1,201 @@
+import { Box, Typography, Checkbox, FormControlLabel } from "@mui/material";
+import { Controller } from "react-hook-form";
+import { CustomInput, CustomSelect, PasswordInput } from "../ui";
+
+const AdminDelegateForm = ({ control, errors, editUser }) => {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* General Information */}
+      <Box
+        sx={{
+          p: 2,
+          bgcolor: "rgba(26, 26, 29, 0.5)",
+          borderRadius: "12px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        <Typography
+          sx={{ fontSize: "14px", fontWeight: 500, color: "#9ca3af" }}
+        >
+          General Information
+        </Typography>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box>
+            <Controller
+              name='firstName'
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  {...field}
+                  label='First Name *'
+                  placeholder='Enter first name'
+                  error={errors?.firstName?.message}
+                />
+              )}
+            />
+          </Box>
+          <Box>
+            <Controller
+              name='lastName'
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  {...field}
+                  label='Last Name *'
+                  placeholder='Enter last name'
+                  error={errors?.lastName?.message}
+                />
+              )}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box>
+            <Controller
+              name='email'
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  {...field}
+                  label='Email *'
+                  type='email'
+                  placeholder='email@example.com'
+                  error={errors?.email?.message}
+                />
+              )}
+            />
+          </Box>
+          <Box>
+            <Controller
+              name='phone'
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  {...field}
+                  label='Phone'
+                  placeholder='+387 6X XXX XXX'
+                  error={errors?.phone?.message}
+                />
+              )}
+            />
+          </Box>
+        </Box>
+
+        {editUser && (
+          <Box>
+            <Controller
+              name='status'
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  {...field}
+                  label='Status *'
+                  options={[
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" },
+                    { value: "suspended", label: "Suspended" },
+                  ]}
+                  error={errors?.status?.message}
+                />
+              )}
+            />
+          </Box>
+        )}
+      </Box>
+
+      {/* Password Section (Only on create) */}
+      {!editUser && (
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box>
+            <Controller
+              name='password'
+              control={control}
+              render={({ field }) => (
+                <PasswordInput
+                  {...field}
+                  label='Password *'
+                  placeholder='Minimum 8 characters'
+                  autoComplete='off'
+                  error={errors?.password?.message}
+                />
+              )}
+            />
+          </Box>
+          <Box>
+            <Controller
+              name='confirmPassword'
+              control={control}
+              render={({ field }) => (
+                <PasswordInput
+                  {...field}
+                  label='Confirm Password *'
+                  placeholder='Repeat password'
+                  autoComplete='off'
+                  error={errors?.confirmPassword?.message}
+                />
+              )}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {/* Options */}
+      {!editUser && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <Controller
+            name='sendWelcomeEmail'
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    {...field}
+                    checked={field.value}
+                    sx={{
+                      color: "#3f3f46",
+                      "&.Mui-checked": { color: "#8b5cf6" },
+                    }}
+                  />
+                }
+                label={
+                  <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                    Send welcome email
+                  </Typography>
+                }
+              />
+            )}
+          />
+          <Controller
+            name='requirePasswordChange'
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    {...field}
+                    checked={field.value}
+                    sx={{
+                      color: "#3f3f46",
+                      "&.Mui-checked": { color: "#8b5cf6" },
+                    }}
+                  />
+                }
+                label={
+                  <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                    Require password change
+                  </Typography>
+                }
+              />
+            )}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default AdminDelegateForm;
