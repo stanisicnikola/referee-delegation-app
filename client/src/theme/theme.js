@@ -91,8 +91,7 @@ const loginTheme = createTheme({
           "& .MuiInputBase-input": {
             color: "#fff",
             fontSize: "14px",
-            py: 1.5,
-            px: 2,
+            padding: "14px 0px",
           },
         },
       },

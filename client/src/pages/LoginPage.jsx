@@ -357,11 +357,11 @@ const LoginPage = () => {
                       label='Email address'
                       placeholder='your@email.com'
                       error={errors?.email?.message}
-                      type='login'
+                      loginType
                       slotProps={{
                         input: {
-                          endAdornment: (
-                            <InputAdornment position='end'>
+                          startAdornment: (
+                            <InputAdornment position='start'>
                               <EmailIcon sx={{ color: "grey.500" }} />
                             </InputAdornment>
                           ),
@@ -381,7 +381,7 @@ const LoginPage = () => {
                       placeholder='Enter your password'
                       error={errors?.password?.message}
                       autoComplete='off'
-                      type='login'
+                      loginType
                     />
                   )}
                 />

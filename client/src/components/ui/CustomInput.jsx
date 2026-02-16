@@ -14,7 +14,7 @@ import loginTheme from "../../theme/theme";
 const CustomInput = ({
   label,
   placeholder,
-  type,
+  loginType,
   error,
   sx = {},
   ...props
@@ -32,7 +32,6 @@ const CustomInput = ({
       color: "#fff",
       fontSize: "14px",
       py: 1.5,
-      px: 2,
     },
     ...sx,
   };
@@ -51,8 +50,7 @@ const CustomInput = ({
         fullWidth
         placeholder={placeholder}
         error={!!error}
-        type={type}
-        sx={type === "login" ? loginTheme.components.MuiTextField : inputStyles}
+        sx={loginType ? loginTheme.components.MuiTextField : inputStyles}
         variant='outlined'
         {...props}
       />

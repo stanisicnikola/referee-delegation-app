@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { InputAdornment, IconButton } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
+  Visibility,
+  VisibilityOff,
+  LockOutline as LockIcon,
+} from "@mui/icons-material";
 import CustomInput from "./CustomInput";
 
 const PasswordInput = ({ label, error, ...props }) => {
@@ -18,6 +22,11 @@ const PasswordInput = ({ label, error, ...props }) => {
       {...props}
       slotProps={{
         input: {
+          startAdornment: (
+            <InputAdornment position='start'>
+              <LockIcon edge='start' sx={{ color: "grey.500" }} />
+            </InputAdornment>
+          ),
           endAdornment: (
             <InputAdornment position='end'>
               <IconButton

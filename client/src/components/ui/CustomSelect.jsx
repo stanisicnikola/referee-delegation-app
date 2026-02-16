@@ -63,7 +63,7 @@ const CustomSelect = ({
         }}
         sx={{
           "& .MuiSelect-select": {
-            py: 1.5,
+            py: 1.3,
             px: 2,
           },
           ...inputStyles,
