@@ -75,6 +75,21 @@ class TeamService {
       throw new AppError("Team not found.", 404);
     }
 
+    // Check for dependencies (matches)
+    const { Match } = require("../models");
+    const matchCount = await Match.count({
+      where: {
+        [Op.or]: [{ homeTeamId: id }, { awayTeamId: id }],
+      },
+    });
+
+    if (matchCount > 0) {
+      throw new AppError(
+        "Cannot delete team that has scheduled or played matches.",
+        400,
+      );
+    }
+
     await team.destroy();
 
     return { message: "Team deleted successfully." };

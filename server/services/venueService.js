@@ -71,6 +71,17 @@ class VenueService {
       throw new AppError("Venue not found.", 404);
     }
 
+    // Check for dependencies (matches)
+    const { Match } = require("../models");
+    const matchCount = await Match.count({ where: { venueId: id } });
+
+    if (matchCount > 0) {
+      throw new AppError(
+        "Cannot delete venue that has scheduled or played matches.",
+        400,
+      );
+    }
+
     await venue.destroy();
 
     return { message: "Venue deleted successfully." };

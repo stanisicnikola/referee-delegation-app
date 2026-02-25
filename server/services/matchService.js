@@ -24,6 +24,7 @@ class MatchService {
       dateFrom,
       dateTo,
       round,
+      search,
     } = query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
@@ -33,15 +34,48 @@ class MatchService {
 
     if (competitionId) where.competitionId = competitionId;
     if (venueId) where.venueId = venueId;
-    if (status) where.status = status;
+    const now = new Date();
+
+    if (status === "scheduled") {
+      where.status = "scheduled";
+      where.scheduledAt = { [Op.gt]: now };
+    } else if (status === "in_progress") {
+      where[Op.or] = [
+        { status: "in_progress" },
+        {
+          [Op.and]: [
+            { status: "scheduled" },
+            { scheduledAt: { [Op.lte]: now } },
+          ],
+        },
+      ];
+    } else if (status) {
+      where.status = status;
+    }
+
     if (delegationStatus) where.delegationStatus = delegationStatus;
     if (round) where.round = round;
-    if (teamId) {
-      where[Op.or] = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
-    }
     if (dateFrom) where.scheduledAt = { [Op.gte]: new Date(dateFrom) };
     if (dateTo) {
       where.scheduledAt = { ...where.scheduledAt, [Op.lte]: new Date(dateTo) };
+    }
+
+    const teamFilter = teamId
+      ? [{ homeTeamId: teamId }, { awayTeamId: teamId }]
+      : null;
+    const searchFilter = search
+      ? [
+          { "$homeTeam.name$": { [Op.like]: `%${search}%` } },
+          { "$awayTeam.name$": { [Op.like]: `%${search}%` } },
+        ]
+      : null;
+
+    if (teamFilter && searchFilter) {
+      where[Op.and] = [{ [Op.or]: teamFilter }, { [Op.or]: searchFilter }];
+    } else if (teamFilter) {
+      where[Op.or] = teamFilter;
+    } else if (searchFilter) {
+      where[Op.or] = searchFilter;
     }
 
     const { count, rows } = await Match.findAndCountAll({
@@ -68,6 +102,7 @@ class MatchService {
       offset,
       order: [["scheduledAt", "ASC"]],
       distinct: true,
+      subQuery: false,
     });
 
     return {
@@ -122,7 +157,11 @@ class MatchService {
     const competition = await Competition.findByPk(matchData.competitionId);
     if (!competition) throw new AppError("Competition not found.", 400);
 
-    const match = await Match.create(matchData);
+    // Map delegateId to delegatedBy
+    const { delegateId, ...data } = matchData;
+    if (delegateId) data.delegatedBy = delegateId;
+
+    const match = await Match.create(data);
     return this.findById(match.id);
   }
 
@@ -133,7 +172,11 @@ class MatchService {
       throw new AppError("Match not found.", 404);
     }
 
-    await match.update(matchData);
+    // Map delegateId to delegatedBy
+    const { delegateId, ...data } = matchData;
+    if (delegateId) data.delegatedBy = delegateId;
+
+    await match.update(data);
 
     return this.findById(id);
   }
@@ -217,22 +260,52 @@ class MatchService {
   }
 
   async getStatistics() {
+    const now = new Date();
     const totalMatches = await Match.count();
+
     const scheduledMatches = await Match.count({
-      where: { status: "scheduled" },
+      where: {
+        status: "scheduled",
+        scheduledAt: { [Op.gt]: now },
+      },
     });
+
+    const inProgressMatches = await Match.count({
+      where: {
+        [Op.or]: [
+          { status: "in_progress" },
+          {
+            [Op.and]: [
+              { status: "scheduled" },
+              { scheduledAt: { [Op.lte]: now } },
+            ],
+          },
+        ],
+      },
+    });
+
     const completedMatches = await Match.count({
       where: { status: "completed" },
     });
-    const pendingDelegation = await Match.count({
+    const cancelledMatches = await Match.count({
+      where: { status: "cancelled" },
+    });
+    const postponedMatches = await Match.count({
+      where: { status: "postponed" },
+    });
+
+    const pendingDelegations = await Match.count({
       where: { delegationStatus: { [Op.in]: ["pending", "partial"] } },
     });
 
     return {
       total: totalMatches,
       scheduled: scheduledMatches,
+      inProgress: inProgressMatches,
       completed: completedMatches,
-      pendingDelegation,
+      cancelled: cancelledMatches,
+      postponed: postponedMatches,
+      pendingDelegations: pendingDelegations,
     };
   }
 }

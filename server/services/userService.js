@@ -275,6 +275,9 @@ class UserService {
     const referees = await User.count({ where: { role: "referee" } });
     const delegates = await User.count({ where: { role: "delegate" } });
     const admins = await User.count({ where: { role: "admin" } });
+    const activeDelegatesData = await User.findAll({
+      where: { role: "delegate", status: "active" },
+    });
     const activeDelegates = await User.count({
       where: { role: "delegate", status: "active" },
     });
@@ -293,6 +296,7 @@ class UserService {
       activeDelegates,
       inactiveDelegates,
       suspendedDelegates,
+      activeDelegatesData,
       byRole: {
         referees,
         delegates,
