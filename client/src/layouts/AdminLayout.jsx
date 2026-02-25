@@ -478,8 +478,8 @@ const AdminLayout = () => {
                   variant='body2'
                   sx={{
                     color: "text.secondary",
-                    display: { xs: "none", sm: "block" },
                     fontWeight: 500,
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
                   }}
                 >
                   {getCurrentDate()}

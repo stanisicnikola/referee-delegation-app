@@ -169,7 +169,6 @@ export const CompetitionModal = ({
                     { label: "Juniors", value: "juniors" },
                     { label: "Youth", value: "youth" },
                   ]}
-                  error={!!errors.category}
                 />
               )}
             />
@@ -269,7 +268,7 @@ export const CompetitionModal = ({
             onClick={handleSubmit(onFormSubmit)}
             loading={isLoading}
           >
-            {editCompetition ? "Update" : "Create"}
+            {editCompetition ? "Update Competition" : "Create Competition"}
           </CustomButton>
         </Box>
       </Box>

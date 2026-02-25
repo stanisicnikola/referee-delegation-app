@@ -99,7 +99,6 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                     { value: "inactive", label: "Inactive" },
                     { value: "suspended", label: "Suspended" },
                   ]}
-                  error={errors?.status?.message}
                 />
               )}
             />

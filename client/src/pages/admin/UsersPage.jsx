@@ -147,6 +147,7 @@ const UsersPage = () => {
           border: "1px solid #242428",
           borderRadius: "16px",
           display: "flex",
+          flexWrap: "wrap",
           alignItems: "center",
           gap: 2,
         }}
@@ -239,7 +240,7 @@ const UsersPage = () => {
             label: "Created",
             render: (date) => (
               <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                {new Date(date).toLocaleDateString("en-US")}
+                {new Date(date).toLocaleDateString("en-GB")}
               </Typography>
             ),
           },

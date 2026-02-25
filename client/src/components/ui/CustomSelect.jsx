@@ -1,4 +1,5 @@
 import { FormControl, MenuItem, Select, Typography } from "@mui/material";
+import FormValidationError from "./FormValidationError";
 
 /**
  * Reusable Select component that fits the project's dark theme.
@@ -18,7 +19,7 @@ const CustomSelect = ({
   placeholder = "Select...",
   sx = {},
   formControlSx = {},
-  error = false,
+  error,
   ...field
 }) => {
   const inputStyles = {
@@ -41,7 +42,7 @@ const CustomSelect = ({
   };
 
   return (
-    <FormControl fullWidth error={error} sx={formControlSx}>
+    <FormControl fullWidth error={!!error} sx={formControlSx}>
       {label && <Typography sx={labelStyles}>{label}</Typography>}
       <Select
         {...field}
@@ -104,6 +105,7 @@ const CustomSelect = ({
           </MenuItem>
         ))}
       </Select>
+      <FormValidationError>{error}</FormValidationError>
     </FormControl>
   );
 };

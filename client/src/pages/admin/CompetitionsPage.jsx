@@ -156,6 +156,7 @@ const CompetitionsPage = () => {
           border: "1px solid #242428",
           borderRadius: "16px",
           display: "flex",
+          flexWrap: "wrap",
           alignItems: "center",
           gap: 2,
         }}
@@ -208,9 +209,6 @@ const CompetitionsPage = () => {
                     }}
                   >
                     {comp.name}
-                  </Typography>
-                  <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                    {comp.type}
                   </Typography>
                 </Box>
               </Box>

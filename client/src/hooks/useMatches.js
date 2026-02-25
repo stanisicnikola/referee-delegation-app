@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { matchesApi } from "../api";
+import { toast } from "react-toastify";
 
 export const matchKeys = {
   all: ["matches"],
@@ -53,13 +54,17 @@ export const useCreateMatch = () => {
 
   return useMutation({
     mutationFn: (data) => matchesApi.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: matchKeys.lists() });
       queryClient.invalidateQueries({ queryKey: matchKeys.upcoming() });
       queryClient.invalidateQueries({
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
+      toast.success(data?.message || "Match created successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to create match.");
     },
   });
 };
@@ -69,13 +74,17 @@ export const useUpdateMatch = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => matchesApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: matchKeys.lists() });
       queryClient.invalidateQueries({ queryKey: matchKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: matchKeys.upcoming() });
       queryClient.invalidateQueries({
         queryKey: matchKeys.pendingDelegation(),
       });
+      toast.success(data?.message || "Match updated successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update match.");
     },
   });
 };
@@ -85,13 +94,17 @@ export const useDeleteMatch = () => {
 
   return useMutation({
     mutationFn: (id) => matchesApi.delete(id),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: matchKeys.lists() });
       queryClient.invalidateQueries({ queryKey: matchKeys.upcoming() });
       queryClient.invalidateQueries({
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
+      toast.success(data?.message || "Match deleted successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete match.");
     },
   });
 };

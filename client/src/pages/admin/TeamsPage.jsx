@@ -144,6 +144,7 @@ const TeamsPage = () => {
           border: "1px solid #242428",
           borderRadius: "16px",
           display: "flex",
+          flexWrap: "wrap",
           alignItems: "center",
           gap: 2,
         }}

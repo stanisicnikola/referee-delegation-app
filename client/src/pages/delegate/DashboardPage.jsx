@@ -35,7 +35,7 @@ const DashboardPage = () => {
 
   // Stats calculations
   const pendingDelegations = matches.filter(
-    (m) => m.status === "scheduled" || !m.delegationStatus
+    (m) => m.status === "scheduled" || !m.delegationStatus,
   ).length;
   const weekendMatches = matches.filter((m) => {
     const matchDate = new Date(m.dateTime);
@@ -45,10 +45,10 @@ const DashboardPage = () => {
     return matchDate >= now && matchDate <= weekEnd;
   }).length;
   const activeReferees = referees.filter(
-    (r) => r.user?.status === "active"
+    (r) => r.user?.status === "active",
   ).length;
   const confirmedDelegations = matches.filter(
-    (m) => m.delegationStatus === "confirmed"
+    (m) => m.delegationStatus === "confirmed",
   ).length;
 
   // Upcoming matches for display
@@ -212,7 +212,7 @@ const DashboardPage = () => {
                 fontFamily: "monospace",
               }}
             >
-              {new Date().toLocaleDateString("bs-BA", {
+              {new Date().toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
                 year: "numeric",
@@ -694,8 +694,8 @@ const DashboardPage = () => {
                           statuses[index] === "#22c55e"
                             ? "Dostupan"
                             : statuses[index] === "#eab308"
-                            ? "Djelimično"
-                            : "Nedostupan"
+                              ? "Djelimično"
+                              : "Nedostupan"
                         }
                       />
                     </Box>

@@ -21,7 +21,13 @@ const PageHeader = ({
         }}
       >
         <Box>
-          <Typography variant='h3' sx={{ fontWeight: 700 }}>
+          <Typography
+            variant='h3'
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: "1.75rem", sm: "2.25rem", md: "3rem" },
+            }}
+          >
             {title}
           </Typography>
           {subtitle && (

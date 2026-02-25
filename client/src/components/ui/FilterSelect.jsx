@@ -34,7 +34,7 @@ const FilterSelect = ({
   };
 
   return (
-    <FormControl sx={{ minWidth, ...sx }}>
+    <FormControl sx={{ minWidth, flex: { xs: 1, sm: "none" }, ...sx }}>
       <Select
         value={value}
         onChange={onChange}

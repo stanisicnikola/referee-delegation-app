@@ -10,7 +10,7 @@ import { Button, CircularProgress } from "@mui/material";
  * @param {object} sx - MUI style overrides
  */
 const CustomButton = ({
-  variant = "primary",
+  variant = "admin-primary",
   loading = false,
   disabled = false,
   children,

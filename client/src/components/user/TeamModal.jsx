@@ -11,12 +11,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { teamSchema } from "../../validations/teamSchema";
 import { useVenues } from "../../hooks";
-import {
-  CustomSelect,
-  CustomInput,
-  CustomButton,
-  FormValidationError,
-} from "../../components/ui";
+import { CustomSelect, CustomInput, CustomButton } from "../../components/ui";
 
 export const TeamModal = ({
   open,
@@ -218,13 +213,10 @@ export const TeamModal = ({
                   options={venues.map((v) => ({ label: v.name, value: v.id }))}
                   label='Home Venue *'
                   placeholder='Select Home Venue'
-                  error={!!errors.primaryVenueId}
+                  error={errors.primaryVenueId?.message}
                 />
               )}
             />
-            <FormValidationError>
-              {errors.primaryVenueId?.message}
-            </FormValidationError>
           </Box>
         </Box>
         <Box
