@@ -72,9 +72,16 @@ const changePassword = z.object({
     .regex(/[0-9]/, "Password must contain at least one number."),
 });
 
+const verifyPassword = z.object({
+  password: z
+    .string({ required_error: "Password is required." })
+    .min(1, "Password is required."),
+});
+
 module.exports = {
   login,
   register,
   registerReferee,
   changePassword,
+  verifyPassword,
 };

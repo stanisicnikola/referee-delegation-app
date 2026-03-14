@@ -7,6 +7,7 @@ const competitionRoutes = require("./competitions");
 const matchRoutes = require("./matches");
 const delegationRoutes = require("./delegations");
 const availabilityRoutes = require("./availability");
+const dashboardRoutes = require("./dashboard");
 
 module.exports = {
   authRoutes,
@@ -18,4 +19,5 @@ module.exports = {
   matchRoutes,
   delegationRoutes,
   availabilityRoutes,
+  dashboardRoutes,
 };

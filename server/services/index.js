@@ -7,6 +7,7 @@ const competitionService = require("./competitionService");
 const matchService = require("./matchService");
 const delegationService = require("./delegationService");
 const availabilityService = require("./availabilityService");
+const dashboardService = require("./dashboardService");
 
 module.exports = {
   authService,
@@ -18,4 +19,5 @@ module.exports = {
   matchService,
   delegationService,
   availabilityService,
+  dashboardService,
 };

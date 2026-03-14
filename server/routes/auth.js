@@ -13,8 +13,11 @@ router.put(
   "/change-password",
   authenticate,
   validate(authSchemas.changePassword),
-  authController.changePassword
+  authController.changePassword,
 );
+
+router.post("/verify-password", authenticate, authController.verifyPassword);
+router.delete("/me", authenticate, authController.deleteMe);
 
 // Admin only routes
 router.post(
@@ -22,7 +25,7 @@ router.post(
   authenticate,
   authorize("admin"),
   validate(authSchemas.register),
-  authController.register
+  authController.register,
 );
 
 router.post(
@@ -30,7 +33,7 @@ router.post(
   authenticate,
   authorize("admin"),
   validate(authSchemas.registerReferee),
-  authController.registerReferee
+  authController.registerReferee,
 );
 
 module.exports = router;

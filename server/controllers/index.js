@@ -7,6 +7,7 @@ const competitionController = require("./competitionController");
 const matchController = require("./matchController");
 const delegationController = require("./delegationController");
 const availabilityController = require("./availabilityController");
+const dashboardController = require("./dashboardController");
 
 module.exports = {
   authController,
@@ -18,4 +19,5 @@ module.exports = {
   matchController,
   delegationController,
   availabilityController,
+  dashboardController,
 };

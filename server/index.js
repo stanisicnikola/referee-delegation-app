@@ -15,6 +15,7 @@ const {
   matchRoutes,
   delegationRoutes,
   availabilityRoutes,
+  dashboardRoutes,
 } = require("./routes");
 
 const app = express();
@@ -38,6 +39,7 @@ app.use("/api/competitions", competitionRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/delegations", delegationRoutes);
 app.use("/api/availability", availabilityRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -73,10 +73,41 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Verify current password
+ * @route   POST /api/auth/verify-password
+ * @access  Private
+ */
+const verifyPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  await authService.verifyPassword(req.user.id, password);
+
+  res.json({
+    success: true,
+    message: "Password verified.",
+  });
+});
+
+/**
+ * @desc    Delete current user account
+ * @route   DELETE /api/auth/me
+ * @access  Private
+ */
+const deleteMe = asyncHandler(async (req, res) => {
+  await authService.deleteAccount(req.user.id);
+
+  res.json({
+    success: true,
+    message: "Account deleted successfully.",
+  });
+});
+
 module.exports = {
   login,
   register,
   registerReferee,
   getMe,
   changePassword,
+  verifyPassword,
+  deleteMe,
 };

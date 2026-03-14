@@ -13,7 +13,7 @@ class AuthService {
         role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" },
     );
   }
 
@@ -45,7 +45,7 @@ class AuthService {
 
     const isPasswordValid = await this.comparePassword(
       password,
-      user.passwordHash
+      user.passwordHash,
     );
     if (!isPasswordValid) {
       throw new AppError("Invalid email or password.", 401);
@@ -54,7 +54,7 @@ class AuthService {
     if (user.status !== "active") {
       throw new AppError(
         "Your account is not active. Please contact administrator.",
-        403
+        403,
       );
     }
 
@@ -113,7 +113,7 @@ class AuthService {
       if (existingLicense) {
         throw new AppError(
           "Referee with this license number already exists.",
-          400
+          400,
         );
       }
 
@@ -130,7 +130,7 @@ class AuthService {
           role: "referee",
           status: "active",
         },
-        { transaction }
+        { transaction },
       );
 
       // Create referee
@@ -145,7 +145,7 @@ class AuthService {
           experienceYears: userData.experienceYears || 0,
           bankAccount: userData.bankAccount,
         },
-        { transaction }
+        { transaction },
       );
 
       await transaction.commit();
@@ -174,7 +174,7 @@ class AuthService {
 
     const isPasswordValid = await this.comparePassword(
       currentPassword,
-      user.passwordHash
+      user.passwordHash,
     );
     if (!isPasswordValid) {
       throw new AppError("Current password is incorrect.", 400);
@@ -184,6 +184,38 @@ class AuthService {
     await user.update({ passwordHash: newPasswordHash });
 
     return { message: "Password changed successfully." };
+  }
+
+  // Verify current password
+  async verifyPassword(userId, password) {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new AppError("User not found.", 404);
+    }
+
+    const isPasswordValid = await this.comparePassword(
+      password,
+      user.passwordHash,
+    );
+    if (!isPasswordValid) {
+      throw new AppError("Incorrect password.", 400);
+    }
+
+    return { success: true };
+  }
+
+  // Delete user account
+  async deleteAccount(userId) {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new AppError("User not found.", 404);
+    }
+
+    await user.destroy();
+
+    return { message: "Account deleted successfully." };
   }
 
   // Get current user
