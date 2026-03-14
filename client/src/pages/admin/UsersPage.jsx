@@ -12,6 +12,7 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks/admin";
+import { useAuth } from "../../context";
 import UserModal from "../../components/user/UserModal";
 import StatusBadge from "../../components/user/StatusBadge";
 import RoleBadge from "../../components/user/RoleBadge";
@@ -27,6 +28,7 @@ import {
 } from "../../components/ui";
 
 const UsersPage = () => {
+  const { user: currentUser } = useAuth();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");

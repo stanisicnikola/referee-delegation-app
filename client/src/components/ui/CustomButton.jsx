@@ -17,6 +17,7 @@ const CustomButton = ({
   sx = {},
   ...props
 }) => {
+  console.log(">>>>>>>", variant, loading, disabled, children, sx, props);
   const getStyles = () => {
     const baseStyles = {
       px: 3,
@@ -84,6 +85,17 @@ const CustomButton = ({
             bgcolor: "#dc2626",
             transform: "translateY(-1px)",
             boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+          },
+        };
+      case "admin-outline":
+        return {
+          ...baseStyles,
+          border: "1px solid",
+          borderColor: "rgba(139, 92, 246, 0.5)",
+          color: "#a78bfa",
+          "&:hover": {
+            bgcolor: "rgba(139, 92, 246, 0.05)",
+            borderColor: "#8b5cf6",
           },
         };
       case "outline":

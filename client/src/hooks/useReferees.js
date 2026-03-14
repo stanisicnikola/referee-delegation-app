@@ -94,6 +94,7 @@ export const useUpdateReferee = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: refereeKeys.lists() });
       queryClient.invalidateQueries({ queryKey: refereeKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: refereeKeys.detail(id) });
     },
   });
 };

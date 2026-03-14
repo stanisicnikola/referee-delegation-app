@@ -7,3 +7,4 @@ export * from "./useCompetitions";
 export * from "./useMatches";
 export * from "./useDelegations";
 export * from "./useAvailability";
+export * from "./useDashboard";

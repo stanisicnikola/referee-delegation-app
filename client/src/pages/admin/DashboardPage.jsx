@@ -14,234 +14,86 @@ import {
   CalendarMonth as CalendarIcon,
   CheckCircle as CheckCircleIcon,
   AccessTime as PendingIcon,
-  Add as AddIcon,
   ArrowForward as ArrowForwardIcon,
   PersonAdd as PersonAddIcon,
   Event as EventIcon,
-  Login as LoginIcon,
-  Edit as EditIcon,
-  Download as DownloadIcon,
 } from "@mui/icons-material";
-import {
-  useUsers,
-  useReferees,
-  useMatches,
-  useTeams,
-  useCreateUser,
-  useCreateMatch,
-} from "../../hooks";
+import { useDashboard, useCreateUser, useCreateMatch } from "../../hooks";
 import UserModal from "../../components/user/UserModal";
 import MatchModal from "../../components/ui/MatchModal";
+import {
+  StatsGrid,
+  ActivityFeed,
+  DistributionBar,
+  MatchActivityChart,
+} from "../../components/ui";
 
 const DashboardPage = () => {
-  const [activityPeriod, setActivityPeriod] = useState("7days");
+  const [activityPeriod, setActivityPeriod] = useState("current");
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [matchModalOpen, setMatchModalOpen] = useState(false);
 
-  const { data: usersData, isLoading: usersLoading } = useUsers();
-  const { data: refereesData, isLoading: refereesLoading } = useReferees();
-  const { data: matchesData, isLoading: matchesLoading } = useMatches();
-  const { data: teamsData, isLoading: teamsLoading } = useTeams();
-
+  const { data: dashboardData, isLoading } = useDashboard(activityPeriod);
   const createUser = useCreateUser();
   const createMatch = useCreateMatch();
 
-  const users = usersData?.data?.users || usersData?.data || [];
-  const referees = refereesData?.data?.referees || refereesData?.data || [];
-  const matches = matchesData?.data?.matches || matchesData?.data || [];
-  const _teams = teamsData?.data?.teams || teamsData?.data || []; // Available for future use
+  const dashboard = dashboardData?.data || {};
+  const stats = dashboard.stats || {};
+  const chartData = dashboard.chartData || [];
+  const recentActivity = dashboard.recentActivity || [];
+  const upcomingMatches = dashboard.upcomingMatches || [];
 
-  const totalUsers = Array.isArray(users) ? users.length : 0;
-  const totalReferees = Array.isArray(referees) ? referees.length : 0;
-  const totalMatches = Array.isArray(matches) ? matches.length : 0;
-  const admins = Array.isArray(users)
-    ? users.filter((u) => u.role === "admin").length
-    : 0;
-  const delegates = Array.isArray(users)
-    ? users.filter((u) => u.role === "delegate").length
-    : 0;
-  const pendingDelegations = Array.isArray(matches)
-    ? matches.filter((m) => !m.referees || m.referees.length === 0).length
-    : 0;
-  const matchesWithReferees = Array.isArray(matches)
-    ? matches.filter((m) => m.referees && m.referees.length > 0).length
-    : 0;
-  const delegationRate =
-    totalMatches > 0
-      ? Math.round((matchesWithReferees / totalMatches) * 100)
-      : 0;
+  const distribution = stats.distribution || {};
 
-  const isLoading =
-    usersLoading || refereesLoading || matchesLoading || teamsLoading;
-
-  const chartData = [
-    { day: "Mon", value: 60 },
-    { day: "Tue", value: 80 },
-    { day: "Wed", value: 45 },
-    { day: "Thu", value: 90 },
-    { day: "Fri", value: 70 },
-    { day: "Sat", value: 100 },
-    { day: "Sun", value: 55 },
-  ];
-
-  const recentActivities = [
+  // Stats configuration for the StatsGrid
+  const statCards = [
     {
-      id: 1,
-      type: "create",
-      title: "New delegation created",
-      description: "Admin delegated match KK Bosna vs KK Čelik",
-      time: "15 min ago",
-      icon: AddIcon,
-      color: "#22c55e",
-      bgColor: "rgba(34, 197, 94, 0.1)",
-    },
-    {
-      id: 2,
-      type: "login",
-      title: "User logged in",
-      description: "Referee Adnan Hodžić - IP: 185.xx.xx.xx",
-      time: "32 min ago",
-      icon: LoginIcon,
+      label: "Total users",
+      value: stats.totalUsers ?? 0,
+      icon: PeopleIcon,
       color: "#8b5cf6",
-      bgColor: "rgba(139, 92, 246, 0.1)",
     },
     {
-      id: 3,
-      type: "update",
-      title: "Match updated",
-      description: "Changed time for KK Široki vs KK Zrinjski",
-      time: "1 hour ago",
-      icon: EditIcon,
-      color: "#3b82f6",
-      bgColor: "rgba(59, 130, 246, 0.1)",
-    },
-    {
-      id: 4,
-      type: "create",
-      title: "New user registered",
-      description: "Ivan Perić added as referee (Category B)",
-      time: "2 hours ago",
-      icon: PersonAddIcon,
+      label: "Active referees",
+      value: stats.activeReferees ?? 0,
+      icon: PersonIcon,
       color: "#22c55e",
-      bgColor: "rgba(34, 197, 94, 0.1)",
+    },
+    {
+      label: "Total matches",
+      value: stats.totalMatches ?? 0,
+      icon: CalendarIcon,
+      color: "#3b82f6",
+    },
+    {
+      label: "Delegation rate",
+      value: (stats.delegationRate ?? 0) + "%",
+      icon: CheckCircleIcon,
+      color: "#f97316",
+    },
+    {
+      label: "Pending delegations",
+      value: stats.pendingDelegations ?? 0,
+      icon: PendingIcon,
+      color: "#eab308",
     },
   ];
 
-  const systemStatus = [
-    { name: "API Server", status: "online" },
-    { name: "Database", status: "online" },
-    { name: "Email Service", status: "online" },
-    { name: "SMS Gateway", status: "degraded" },
-  ];
-
-  const StatCard = (props) => {
-    const { title, value, icon: Icon, color, bgColor, trend } = props;
-    return (
-      <Box
-        sx={{
-          bgcolor: "#121214",
-          borderRadius: "16px",
-          p: 2.5,
-          border: "1px solid #242428",
-          transition: "all 0.2s ease",
-          "&:hover": { transform: "translateY(-2px)" },
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 1.5,
-          }}
-        >
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "12px",
-              bgcolor: bgColor,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Icon sx={{ fontSize: 20, color }} />
-          </Box>
-          {trend && (
-            <Typography sx={{ fontSize: "12px", color: "#22c55e" }}>
-              {trend}
-            </Typography>
-          )}
-        </Box>
-        <Typography
-          sx={{ fontSize: "24px", fontWeight: 700, color: "#fff", mb: 0.5 }}
-        >
-          {isLoading ? (
-            <Skeleton width={60} sx={{ bgcolor: "#242428" }} />
-          ) : (
-            value
-          )}
-        </Typography>
-        <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-          {title}
-        </Typography>
-      </Box>
-    );
+  const formatMatchDate = (dateStr) => {
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const month = date.toLocaleDateString("en-US", { month: "short" });
+    const time = date.toLocaleTimeString("bs-BA", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return { day, month, time };
   };
 
   return (
     <Box sx={{ color: "#fff" }}>
       {/* Stats Grid */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, 1fr)",
-            md: "repeat(3, 1fr)",
-            lg: "repeat(5, 1fr)",
-          },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <StatCard
-          title='Total Users'
-          value={totalUsers}
-          icon={PeopleIcon}
-          color='#8b5cf6'
-          bgColor='rgba(139, 92, 246, 0.1)'
-          trend='+3 this month'
-        />
-        <StatCard
-          title='Active Referees'
-          value={totalReferees}
-          icon={PersonIcon}
-          color='#22c55e'
-          bgColor='rgba(34, 197, 94, 0.1)'
-        />
-        <StatCard
-          title='Season Matches'
-          value={totalMatches}
-          icon={CalendarIcon}
-          color='#3b82f6'
-          bgColor='rgba(59, 130, 246, 0.1)'
-        />
-        <StatCard
-          title='Confirmation Rate'
-          value={delegationRate + "%"}
-          icon={CheckCircleIcon}
-          color='#f97316'
-          bgColor='rgba(249, 115, 22, 0.1)'
-        />
-        <StatCard
-          title='Awaiting Delegation'
-          value={pendingDelegations}
-          icon={PendingIcon}
-          color='#eab308'
-          bgColor='rgba(234, 179, 8, 0.1)'
-        />
-      </Box>
+      <StatsGrid stats={statCards} loading={isLoading} columns={4} />
 
       {/* Charts & Distribution Row */}
       <Box
@@ -270,7 +122,7 @@ const DashboardPage = () => {
             }}
           >
             <Typography sx={{ fontSize: "18px", fontWeight: 600 }}>
-              System Activity
+              Match activity
             </Typography>
             <FormControl size='small'>
               <Select
@@ -287,89 +139,14 @@ const DashboardPage = () => {
                   "& .MuiSvgIcon-root": { color: "#6b7280" },
                 }}
               >
-                <MenuItem value='7days'>Last 7 days</MenuItem>
-                <MenuItem value='30days'>Last 30 days</MenuItem>
-                <MenuItem value='season'>This season</MenuItem>
+                <MenuItem value='current'>Current</MenuItem>
+                <MenuItem value='thisMonth'>This month</MenuItem>
+                <MenuItem value='lastMonth'>Last month</MenuItem>
               </Select>
             </FormControl>
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              height: 200,
-              gap: 2,
-              px: 1,
-            }}
-          >
-            {chartData.map((item, index) => (
-              <Box
-                key={index}
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 1.5,
-                }}
-              >
-                <Box
-                  sx={{
-                    width: "100%",
-                    maxWidth: 50,
-                    bgcolor:
-                      index === 5 ? "#f97316" : "rgba(139, 92, 246, 0.3)",
-                    borderRadius: "8px 8px 0 0",
-                    height: item.value * 1.8 + "px",
-                    transition: "height 0.5s ease",
-                  }}
-                />
-                <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                  {item.day}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              mt: 3,
-              pt: 3,
-              borderTop: "1px solid #242428",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "4px",
-                  bgcolor: "rgba(139, 92, 246, 0.3)",
-                }}
-              />
-              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                Delegations
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "4px",
-                  bgcolor: "#f97316",
-                }}
-              />
-              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                Matches
-              </Typography>
-            </Box>
-          </Box>
+          <MatchActivityChart data={chartData} loading={isLoading} />
         </Box>
 
         {/* User Distribution */}
@@ -382,147 +159,42 @@ const DashboardPage = () => {
           }}
         >
           <Typography sx={{ fontSize: "18px", fontWeight: 600, mb: 3 }}>
-            User Distribution
+            User distribution
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mb: 1,
-                }}
-              >
-                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  Referees
-                </Typography>
-                <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
-                  {totalReferees}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  height: 8,
-                  bgcolor: "#242428",
-                  borderRadius: "4px",
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: "100%",
-                    bgcolor: "#22c55e",
-                    borderRadius: "4px",
-                    width:
-                      totalUsers > 0
-                        ? Math.min((totalReferees / totalUsers) * 100, 100) +
-                          "%"
-                        : "0%",
-                    transition: "width 0.5s ease",
-                  }}
+            {isLoading ? (
+              <>
+                <Skeleton height={40} sx={{ bgcolor: "#242428" }} />
+                <Skeleton height={40} sx={{ bgcolor: "#242428" }} />
+                <Skeleton height={40} sx={{ bgcolor: "#242428" }} />
+              </>
+            ) : (
+              <>
+                <DistributionBar
+                  label='Referees'
+                  value={distribution.referees || 0}
+                  total={stats.totalUsers || 0}
+                  color='#22c55e'
                 />
-              </Box>
-            </Box>
-            <Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mb: 1,
-                }}
-              >
-                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  Delegates
-                </Typography>
-                <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
-                  {delegates}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  height: 8,
-                  bgcolor: "#242428",
-                  borderRadius: "4px",
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: "100%",
-                    bgcolor: "#3b82f6",
-                    borderRadius: "4px",
-                    width:
-                      totalUsers > 0
-                        ? Math.min((delegates / totalUsers) * 100, 100) + "%"
-                        : "0%",
-                    transition: "width 0.5s ease",
-                  }}
+                <DistributionBar
+                  label='Delegates'
+                  value={distribution.delegates || 0}
+                  total={stats.totalUsers || 0}
+                  color='#3b82f6'
                 />
-              </Box>
-            </Box>
-            <Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mb: 1,
-                }}
-              >
-                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  Admins
-                </Typography>
-                <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
-                  {admins}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  height: 8,
-                  bgcolor: "#242428",
-                  borderRadius: "4px",
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: "100%",
-                    bgcolor: "#8b5cf6",
-                    borderRadius: "4px",
-                    width:
-                      totalUsers > 0
-                        ? Math.min((admins / totalUsers) * 100, 100) + "%"
-                        : "0%",
-                    transition: "width 0.5s ease",
-                  }}
+                <DistributionBar
+                  label='Admins'
+                  value={distribution.admins || 0}
+                  total={stats.totalUsers || 0}
+                  color='#8b5cf6'
                 />
-              </Box>
-            </Box>
-          </Box>
-          <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid #242428" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                Online now
-              </Typography>
-              <Typography
-                sx={{ fontSize: "14px", fontWeight: 500, color: "#22c55e" }}
-              >
-                1 user
-              </Typography>
-            </Box>
+              </>
+            )}
           </Box>
         </Box>
       </Box>
 
-      {/* Recent Activity & Quick Actions */}
+      {/* Recent Activity & Quick Actions / Upcoming */}
       <Box
         sx={{
           display: "grid",
@@ -549,82 +221,25 @@ const DashboardPage = () => {
             }}
           >
             <Typography sx={{ fontSize: "18px", fontWeight: 600 }}>
-              Recent Activities
+              Recent activities
             </Typography>
-            <Button
-              endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                color: "#8b5cf6",
-                fontSize: "14px",
-                textTransform: "none",
-                "&:hover": { bgcolor: "transparent", color: "#a78bfa" },
-              }}
-            >
-              View all
-            </Button>
           </Box>
-          <Box>
-            {recentActivities.map((activity, index) => (
-              <Box
-                key={activity.id}
-                sx={{
-                  p: 2,
-                  px: 3,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  borderBottom:
-                    index < recentActivities.length - 1
-                      ? "1px solid #242428"
-                      : "none",
-                  borderLeft: "3px solid " + activity.color,
-                  transition: "background 0.15s ease",
-                  "&:hover": { bgcolor: "rgba(255,255,255,0.02)" },
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    bgcolor: activity.bgColor,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <activity.icon sx={{ fontSize: 20, color: activity.color }} />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
-                    sx={{ fontSize: "14px", fontWeight: 500, mb: 0.25 }}
-                  >
-                    {activity.title}
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: "13px", color: "#6b7280" }}
-                    noWrap
-                  >
-                    {activity.description}
-                  </Typography>
-                </Box>
-                <Typography
-                  sx={{
-                    fontSize: "12px",
-                    color: "#6b7280",
-                    fontFamily: "monospace",
-                    flexShrink: 0,
-                  }}
-                >
-                  {activity.time}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+          {isLoading ? (
+            <Box sx={{ p: 3 }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  height={56}
+                  sx={{ bgcolor: "#242428", mb: 1 }}
+                />
+              ))}
+            </Box>
+          ) : (
+            <ActivityFeed items={recentActivity} />
+          )}
         </Box>
 
-        {/* Right Column */}
+        {/* Right Column: Quick Actions + Upcoming */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Quick Actions */}
           <Box
@@ -636,7 +251,7 @@ const DashboardPage = () => {
             }}
           >
             <Typography sx={{ fontSize: "18px", fontWeight: 600, mb: 2 }}>
-              Quick Actions
+              Quick actions
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <Button
@@ -670,7 +285,7 @@ const DashboardPage = () => {
                   "&:hover": { bgcolor: "#242428" },
                 }}
               >
-                Add User
+                Add user
               </Button>
               <Button
                 fullWidth
@@ -703,44 +318,12 @@ const DashboardPage = () => {
                   "&:hover": { bgcolor: "#242428" },
                 }}
               >
-                New Match
-              </Button>
-              <Button
-                fullWidth
-                startIcon={
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: "8px",
-                      bgcolor: "rgba(59, 130, 246, 0.1)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <DownloadIcon sx={{ fontSize: 20, color: "#3b82f6" }} />
-                  </Box>
-                }
-                sx={{
-                  justifyContent: "flex-start",
-                  bgcolor: "#1a1a1d",
-                  color: "#fff",
-                  py: 1.5,
-                  px: 2,
-                  borderRadius: "12px",
-                  textTransform: "none",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  "&:hover": { bgcolor: "#242428" },
-                }}
-              >
-                Export Report
+                New match
               </Button>
             </Box>
           </Box>
 
-          {/* System Status */}
+          {/* Upcoming Matches */}
           <Box
             sx={{
               bgcolor: "#121214",
@@ -749,43 +332,113 @@ const DashboardPage = () => {
               p: 3,
             }}
           >
-            <Typography sx={{ fontSize: "18px", fontWeight: 600, mb: 2 }}>
-              System Status
-            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 2,
+              }}
+            >
+              <Typography sx={{ fontSize: "18px", fontWeight: 600 }}>
+                Upcoming matches
+              </Typography>
+            </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {systemStatus.map((item) => (
-                <Box
-                  key={item.name}
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    height={64}
+                    sx={{ bgcolor: "#242428", borderRadius: "10px" }}
+                  />
+                ))
+              ) : upcomingMatches.length === 0 ? (
+                <Typography
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    fontSize: "14px",
+                    color: "#6b7280",
+                    textAlign: "center",
+                    py: 2,
                   }}
                 >
-                  <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                    {item.name}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  No upcoming matches
+                </Typography>
+              ) : (
+                upcomingMatches.map((match) => {
+                  const { day, month, time } = formatMatchDate(
+                    match.scheduledAt,
+                  );
+                  return (
                     <Box
+                      key={match.id}
                       sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        bgcolor:
-                          item.status === "online" ? "#22c55e" : "#eab308",
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        fontSize: "14px",
-                        color: item.status === "online" ? "#22c55e" : "#eab308",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        p: 1.5,
+                        bgcolor: "#1a1a1d",
+                        borderRadius: "10px",
+                        transition: "all 0.15s ease",
+                        "&:hover": { bgcolor: "#242428" },
                       }}
                     >
-                      {item.status === "online" ? "Online" : "Degraded"}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
+                      <Box
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: "10px",
+                          bgcolor: "rgba(59, 130, 246, 0.1)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            color: "#3b82f6",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {day}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "10px",
+                            color: "#3b82f6",
+                            textTransform: "uppercase",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {month}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          sx={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: "#fff",
+                          }}
+                          noWrap
+                        >
+                          {match.homeTeam?.name} vs {match.awayTeam?.name}
+                        </Typography>
+                        <Typography
+                          sx={{ fontSize: "12px", color: "#6b7280" }}
+                          noWrap
+                        >
+                          {match.competition?.name} · {time}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                })
+              )}
             </Box>
           </Box>
         </Box>

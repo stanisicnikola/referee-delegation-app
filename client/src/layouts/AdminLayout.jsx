@@ -143,12 +143,6 @@ const AdminLayout = () => {
         { title: "Venues", path: "/admin/venues", icon: VenueIcon },
       ],
     },
-    {
-      title: "SYSTEM",
-      items: [
-        { title: "Settings", path: "/admin/settings", icon: SettingsIcon },
-      ],
-    },
   ];
 
   const handleDrawerToggle = () => {
@@ -347,7 +341,7 @@ const AdminLayout = () => {
             alignItems: "center",
             gap: 1.5,
             p: 1.5,
-            borderRadius: 2,
+            borderRadius: 1,
             cursor: "pointer",
             "&:hover": {
               bgcolor: "rgba(255, 255, 255, 0.05)",
@@ -382,7 +376,18 @@ const AdminLayout = () => {
               {user?.role}
             </Typography>
           </Box>
-          <IconButton size='small' sx={{ color: "text.secondary" }}>
+          <IconButton
+            size='small'
+            sx={(theme) => ({
+              color: theme.palette.grey[400],
+              "&:hover": {
+                color: theme.palette.error.main,
+                border: "1px solid",
+                borderColor: "#1a1a1d",
+              },
+            })}
+            onClick={handleLogout}
+          >
             <LogoutIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Box>
@@ -628,9 +633,14 @@ const AdminLayout = () => {
             },
           }}
         >
-          <MenuItem onClick={handleMenuClose}>
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              navigate("/admin/profile");
+            }}
+          >
             <ListItemIcon>
-              <PersonIcon fontSize='small' />
+              <PersonIcon fontSize='small' sx={{ color: "text.secondary" }} />
             </ListItemIcon>
             <ListItemText primary='Profile' />
           </MenuItem>
@@ -641,14 +651,20 @@ const AdminLayout = () => {
             }}
           >
             <ListItemIcon>
-              <SettingsIcon fontSize='small' />
+              <SettingsIcon fontSize='small' sx={{ color: "text.secondary" }} />
             </ListItemIcon>
             <ListItemText primary='Settings' />
           </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+          <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.05)" }} />
+          <MenuItem
+            onClick={handleLogout}
+            sx={(theme) => ({ color: theme.palette.error.main })}
+          >
             <ListItemIcon>
-              <LogoutIcon fontSize='small' sx={{ color: "error.main" }} />
+              <LogoutIcon
+                fontSize='small'
+                sx={(theme) => ({ color: theme.palette.error.main })}
+              />
             </ListItemIcon>
             <ListItemText primary='Logout' />
           </MenuItem>

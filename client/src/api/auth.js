@@ -30,6 +30,16 @@ export const authApi = {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
   },
+
+  verifyPassword: async (password) => {
+    const response = await api.post("/auth/verify-password", { password });
+    return response.data;
+  },
+
+  deleteMe: async () => {
+    const response = await api.delete("/auth/me");
+    return response.data;
+  },
 };
 
 export default authApi;

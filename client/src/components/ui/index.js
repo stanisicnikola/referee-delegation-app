@@ -15,3 +15,6 @@ export { EditButton, DeleteButton } from "./TableActions";
 export { default as PasswordInput } from "./PasswordInput";
 export { default as FilterSearch } from "./FilterSearch";
 export { default as FilterSelect } from "./FilterSelect";
+export { default as ActivityFeed } from "./ActivityFeed";
+export { default as DistributionBar } from "./DistributionBar";
+export { default as MatchActivityChart } from "./MatchActivityChart";

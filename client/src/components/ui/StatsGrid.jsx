@@ -1,22 +1,21 @@
 import { Box } from "@mui/material";
 import StatCard from "./StatCard";
 
-const StatsGrid = ({ stats = [], loading = false }) => {
+const StatsGrid = ({ stats = [], loading = false, columns = 4 }) => {
   return (
     <Box
       sx={{
         display: "grid",
         gridTemplateColumns: {
           xs: "repeat(2, 1fr)",
-          md: "repeat(3, 1fr)",
-          lg: "repeat(4, 1fr)",
+          lg: `repeat(${columns}, 1fr)`,
         },
         gap: 2,
         mb: 3,
       }}
     >
       {loading
-        ? Array.from({ length: 4 }).map((_, index) => (
+        ? Array.from({ length: columns }).map((_, index) => (
             <StatCard key={index} loading={true} />
           ))
         : stats.map((stat, index) => (

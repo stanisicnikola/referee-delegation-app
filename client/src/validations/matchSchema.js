@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const matchSchema = z
   .object({
-    id: z.uuid().optional(),
+    id: z.preprocess(
+      (val) => (val === "" ? undefined : val),
+      z.uuid().optional(),
+    ),
     competitionId: z.uuid("Competition is required"),
     homeTeamId: z.uuid("Home team is required"),
     awayTeamId: z.uuid("Away team is required"),

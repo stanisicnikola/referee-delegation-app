@@ -19,6 +19,7 @@ import {
   RefereeNotificationsPage,
   RefereeHistoryPage,
   RefereeProfilePage,
+  AdminProfilePage,
 } from "../pages";
 import {
   DashboardPage as DelegateDashboard,
@@ -105,6 +106,7 @@ const AppRoutes = () => {
           <Route path='teams' element={<TeamsPage />} />
           <Route path='venues' element={<VenuesPage />} />
           <Route path='settings' element={<SettingsPage />} />
+          <Route path='profile' element={<AdminProfilePage />} />
         </Route>
 
         {/* Delegate routes */}
