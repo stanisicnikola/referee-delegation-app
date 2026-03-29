@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, fn, col, literal } = require("sequelize");
 const { Venue } = require("../models");
 const { AppError } = require("../middlewares");
 
@@ -71,13 +71,13 @@ class VenueService {
       throw new AppError("Venue not found.", 404);
     }
 
-    // Check for dependencies (matches)
-    const { Match } = require("../models");
-    const matchCount = await Match.count({ where: { venueId: id } });
+    // Check for dependencies (teams using this venue)
+    const { Team } = require("../models");
+    const teamCount = await Team.count({ where: { primaryVenueId: id } });
 
-    if (matchCount > 0) {
+    if (teamCount > 0) {
       throw new AppError(
-        "Cannot delete venue that has scheduled or played matches.",
+        "Cannot delete venue that is assigned to a team.",
         400,
       );
     }
@@ -85,6 +85,32 @@ class VenueService {
     await venue.destroy();
 
     return { message: "Venue deleted successfully." };
+  }
+
+  async getStatistics() {
+    const total = await Venue.count();
+
+    const citiesResult = await Venue.findAll({
+      attributes: [[fn("DISTINCT", col("city")), "city"]],
+      where: { city: { [Op.ne]: null } },
+      raw: true,
+    });
+    const cities = citiesResult.length;
+
+    const capacityResult = await Venue.findOne({
+      attributes: [
+        [fn("SUM", col("capacity")), "totalCapacity"],
+        [fn("AVG", col("capacity")), "avgCapacity"],
+      ],
+      raw: true,
+    });
+
+    return {
+      total,
+      cities,
+      totalCapacity: parseInt(capacityResult?.totalCapacity) || 0,
+      avgCapacity: Math.round(parseFloat(capacityResult?.avgCapacity)) || 0,
+    };
   }
 }
 

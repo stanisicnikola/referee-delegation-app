@@ -11,12 +11,13 @@ router.use(authenticate);
 router.get(
   "/",
   validate(venueSchemas.query, "query"),
-  venueController.getVenues
+  venueController.getVenues,
 );
+router.get("/statistics", venueController.getVenueStatistics);
 router.get(
   "/:id",
   validate(venueSchemas.params, "params"),
-  venueController.getVenue
+  venueController.getVenue,
 );
 
 // Admin only
@@ -24,20 +25,20 @@ router.post(
   "/",
   authorize("admin"),
   validate(venueSchemas.create),
-  venueController.createVenue
+  venueController.createVenue,
 );
 router.put(
   "/:id",
   authorize("admin"),
   validate(venueSchemas.params, "params"),
   validate(venueSchemas.update),
-  venueController.updateVenue
+  venueController.updateVenue,
 );
 router.delete(
   "/:id",
   authorize("admin"),
   validate(venueSchemas.params, "params"),
-  venueController.deleteVenue
+  venueController.deleteVenue,
 );
 
 module.exports = router;

@@ -71,10 +71,25 @@ const deleteVenue = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get venue statistics
+ * @route   GET /api/venues/statistics
+ * @access  Private
+ */
+const getVenueStatistics = asyncHandler(async (req, res) => {
+  const statistics = await venueService.getStatistics();
+
+  res.json({
+    success: true,
+    data: statistics,
+  });
+});
+
 module.exports = {
   getVenues,
   getVenue,
   createVenue,
   updateVenue,
   deleteVenue,
+  getVenueStatistics,
 };
