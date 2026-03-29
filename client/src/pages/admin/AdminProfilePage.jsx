@@ -21,7 +21,6 @@ import { CustomButton, PageHeader } from "../../components/ui";
 
 const AdminProfilePage = () => {
   const { user } = useAuth();
-  console.log(user);
   const navigate = useNavigate();
 
   return (

@@ -92,8 +92,13 @@ const TeamsPage = () => {
   };
 
   const handleDelete = async () => {
-    await deleteTeam.mutateAsync(teamToDelete.id);
-    handleCloseDialog();
+    try {
+      await deleteTeam.mutateAsync(teamToDelete.id);
+    } catch (error) {
+      // Error toast handled by hook
+    } finally {
+      handleCloseDialog();
+    }
   };
 
   return (

@@ -34,10 +34,14 @@ export const useCreateTeam = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
       queryClient.invalidateQueries({ queryKey: teamKeys.stats() });
-      toast.success(data?.message || "Team created successfully!");
+      toast.success(data?.message || "Team created successfully!", {
+        toastId: "team-create",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to create team.");
+      toast.error(error.response?.data?.message || "Failed to create team.", {
+        toastId: "team-create-error",
+      });
     },
   });
 };
@@ -51,10 +55,14 @@ export const useUpdateTeam = () => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
       queryClient.invalidateQueries({ queryKey: teamKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: teamKeys.stats() });
-      toast.success(data?.message || "Team updated successfully!");
+      toast.success(data?.message || "Team updated successfully!", {
+        toastId: "team-update",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to update team.");
+      toast.error(error.response?.data?.message || "Failed to update team.", {
+        toastId: "team-update-error",
+      });
     },
   });
 };
@@ -67,10 +75,14 @@ export const useDeleteTeam = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
       queryClient.invalidateQueries({ queryKey: teamKeys.stats() });
-      toast.success(data?.message || "Team deleted successfully!");
+      toast.success(data?.message || "Team deleted successfully!", {
+        toastId: "team-delete",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to delete team.");
+      toast.error(error.response?.data?.message || "Failed to delete team.", {
+        toastId: "team-delete-error",
+      });
     },
   });
 };
@@ -80,9 +92,18 @@ export const useUploadTeamLogo = () => {
 
   return useMutation({
     mutationFn: ({ id, file }) => teamsApi.uploadLogo(id, file),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
       queryClient.invalidateQueries({ queryKey: teamKeys.detail(id) });
+      toast.success(data?.message || "Team logo uploaded successfully!", {
+        toastId: "team-logo-upload",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to upload team logo.",
+        { toastId: "team-logo-upload-error" },
+      );
     },
   });
 };

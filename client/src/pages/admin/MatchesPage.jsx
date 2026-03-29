@@ -50,7 +50,6 @@ const MatchesPage = () => {
   const updateMatch = useUpdateMatch();
   const deleteMatch = useDeleteMatch();
   const { data: statistics } = useMatchStatistics();
-  console.log(">>>>>>>", statistics);
 
   const matches = data?.data || [];
   const totalMatches = statistics?.data?.total || 0;
@@ -95,8 +94,13 @@ const MatchesPage = () => {
   };
 
   const handleDelete = async () => {
-    await deleteMatch.mutateAsync(matchToDelete.id);
-    handleCloseDialog();
+    try {
+      await deleteMatch.mutateAsync(matchToDelete.id);
+    } catch (error) {
+      // Error toast handled by hook
+    } finally {
+      handleCloseDialog();
+    }
   };
 
   const formatDateTime = (dateTime) => {

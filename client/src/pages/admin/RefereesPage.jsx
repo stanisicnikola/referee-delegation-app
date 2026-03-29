@@ -95,8 +95,13 @@ const RefereesPage = () => {
   };
 
   const handleDelete = async () => {
-    await deleteUser.mutateAsync(refereeToDelete.userId);
-    handleCloseDialog();
+    try {
+      await deleteUser.mutateAsync(refereeToDelete.userId);
+    } catch (error) {
+      // Error toast handled by hook
+    } finally {
+      handleCloseDialog();
+    }
   };
 
   const getCategoryBadge = (category) => {
@@ -159,7 +164,7 @@ const RefereesPage = () => {
         subtitle='Manage registered referees and their profiles'
         onRefresh={() => refetch()}
         onAdd={() => handleOpenModal()}
-        addLabel='New User'
+        addLabel='New Referee'
       />
 
       {/* Stats Cards */}

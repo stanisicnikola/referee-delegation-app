@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { refereesApi } from "../api";
+import { toast } from "react-toastify";
 
 export const refereeKeys = {
   all: ["referees"],
@@ -80,8 +81,17 @@ export const useCreateReferee = () => {
 
   return useMutation({
     mutationFn: (data) => refereesApi.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: refereeKeys.lists() });
+      toast.success(data?.message || "Referee created successfully!", {
+        toastId: "referee-create",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to create referee.",
+        { toastId: "referee-create-error" },
+      );
     },
   });
 };
@@ -91,10 +101,18 @@ export const useUpdateReferee = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => refereesApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: refereeKeys.lists() });
       queryClient.invalidateQueries({ queryKey: refereeKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: refereeKeys.detail(id) });
+      toast.success(data?.message || "Referee updated successfully!", {
+        toastId: "referee-update",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update referee.",
+        { toastId: "referee-update-error" },
+      );
     },
   });
 };
@@ -104,8 +122,17 @@ export const useDeleteReferee = () => {
 
   return useMutation({
     mutationFn: (id) => refereesApi.delete(id),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: refereeKeys.lists() });
+      toast.success(data?.message || "Referee deleted successfully!", {
+        toastId: "referee-delete",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to delete referee.",
+        { toastId: "referee-delete-error" },
+      );
     },
   });
 };

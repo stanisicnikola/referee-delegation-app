@@ -27,11 +27,14 @@ export const useChangePassword = () => {
   return useMutation({
     mutationFn: (data) => authApi.changePassword(data),
     onSuccess: (data) => {
-      toast.success(data?.message || "Password changed successfully!");
+      toast.success(data?.message || "Password changed successfully!", {
+        toastId: "auth-change-password",
+      });
     },
     onError: (error) => {
       toast.error(
         error.response?.data?.message || "Failed to change password.",
+        { toastId: "auth-change-password-error" },
       );
     },
   });
@@ -45,10 +48,15 @@ export const useDeleteMe = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(authKeys.me, null);
       queryClient.removeQueries();
-      toast.success(data?.message || "Account deleted successfully!");
+      toast.success(data?.message || "Account deleted successfully!", {
+        toastId: "auth-delete-me",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to delete account.");
+      toast.error(
+        error.response?.data?.message || "Failed to delete account.",
+        { toastId: "auth-delete-me-error" },
+      );
     },
   });
 };

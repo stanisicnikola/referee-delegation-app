@@ -43,8 +43,6 @@ const MatchModal = ({
     },
   });
 
-  console.log(">>>>>>>errors", errors);
-
   const { data: teamsData } = useTeams({ limit: 100 });
   const { data: venuesData } = useVenues({ limit: 100 });
   const { data: competitionsData } = useCompetitions({ limit: 100 });
@@ -114,7 +112,6 @@ const MatchModal = ({
   }, [editMatch, open, reset]);
 
   const onFormSubmit = (data) => {
-    console.log("KARINAAAAAAAAA", data);
     const { date, time, ...rest } = data;
     const scheduledAt = new Date(`${date}T${time}`).toISOString();
     onSubmit({ ...rest, scheduledAt });

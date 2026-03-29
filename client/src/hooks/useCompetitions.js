@@ -58,11 +58,14 @@ export const useCreateCompetition = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: competitionKeys.lists() });
       queryClient.invalidateQueries({ queryKey: competitionKeys.summary() });
-      toast.success(data?.message || "Competition created successfully!");
+      toast.success(data?.message || "Competition created successfully!", {
+        toastId: "competition-create",
+      });
     },
     onError: (error) => {
       toast.error(
         error.response?.data?.message || "Failed to create competition.",
+        { toastId: "competition-create-error" },
       );
     },
   });
@@ -77,11 +80,14 @@ export const useUpdateCompetition = () => {
       queryClient.invalidateQueries({ queryKey: competitionKeys.lists() });
       queryClient.invalidateQueries({ queryKey: competitionKeys.summary() });
       queryClient.invalidateQueries({ queryKey: competitionKeys.detail(id) });
-      toast.success(data?.message || "Competition updated successfully!");
+      toast.success(data?.message || "Competition updated successfully!", {
+        toastId: "competition-update",
+      });
     },
     onError: (error) => {
       toast.error(
         error.response?.data?.message || "Failed to update competition.",
+        { toastId: "competition-update-error" },
       );
     },
   });
@@ -95,11 +101,14 @@ export const useDeleteCompetition = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: competitionKeys.lists() });
       queryClient.invalidateQueries({ queryKey: competitionKeys.summary() });
-      toast.success(data?.message || "Competition deleted successfully!");
+      toast.success(data?.message || "Competition deleted successfully!", {
+        toastId: "competition-delete",
+      });
     },
     onError: (error) => {
       toast.error(
         error.response?.data?.message || "Failed to delete competition.",
+        { toastId: "competition-delete-error" },
       );
     },
   });

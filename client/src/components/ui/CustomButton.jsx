@@ -17,7 +17,6 @@ const CustomButton = ({
   sx = {},
   ...props
 }) => {
-  console.log(">>>>>>>", variant, loading, disabled, children, sx, props);
   const getStyles = () => {
     const baseStyles = {
       px: 3,

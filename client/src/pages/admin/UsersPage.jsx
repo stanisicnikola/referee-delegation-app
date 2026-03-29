@@ -96,8 +96,13 @@ const UsersPage = () => {
   };
 
   const handleDelete = async () => {
-    await deleteUser.mutateAsync(userToDelete.id);
-    handleCloseConfirmDialog();
+    try {
+      await deleteUser.mutateAsync(userToDelete.id);
+    } catch (error) {
+      // Error toast handled by hook
+    } finally {
+      handleCloseConfirmDialog();
+    }
   };
 
   return (

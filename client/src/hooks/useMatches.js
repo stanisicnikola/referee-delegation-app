@@ -61,10 +61,14 @@ export const useCreateMatch = () => {
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
-      toast.success(data?.message || "Match created successfully!");
+      toast.success(data?.message || "Match created successfully!", {
+        toastId: "match-create",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to create match.");
+      toast.error(error.response?.data?.message || "Failed to create match.", {
+        toastId: "match-create-error",
+      });
     },
   });
 };
@@ -81,10 +85,14 @@ export const useUpdateMatch = () => {
       queryClient.invalidateQueries({
         queryKey: matchKeys.pendingDelegation(),
       });
-      toast.success(data?.message || "Match updated successfully!");
+      toast.success(data?.message || "Match updated successfully!", {
+        toastId: "match-update",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to update match.");
+      toast.error(error.response?.data?.message || "Failed to update match.", {
+        toastId: "match-update-error",
+      });
     },
   });
 };
@@ -101,10 +109,14 @@ export const useDeleteMatch = () => {
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
-      toast.success(data?.message || "Match deleted successfully!");
+      toast.success(data?.message || "Match deleted successfully!", {
+        toastId: "match-delete",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to delete match.");
+      toast.error(error.response?.data?.message || "Failed to delete match.", {
+        toastId: "match-delete-error",
+      });
     },
   });
 };
@@ -114,9 +126,18 @@ export const useUpdateMatchResult = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => matchesApi.updateResult(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: matchKeys.lists() });
       queryClient.invalidateQueries({ queryKey: matchKeys.detail(id) });
+      toast.success(data?.message || "Match result updated successfully!", {
+        toastId: "match-result-update",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update match result.",
+        { toastId: "match-result-update-error" },
+      );
     },
   });
 };

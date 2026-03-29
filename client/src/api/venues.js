@@ -25,6 +25,11 @@ export const venuesApi = {
     const response = await api.delete(`/venues/${id}`);
     return response.data;
   },
+
+  getStatistics: async () => {
+    const response = await api.get("/venues/statistics");
+    return response.data;
+  },
 };
 
 export default venuesApi;

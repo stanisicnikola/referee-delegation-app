@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { delegationsApi } from "../api";
+import { toast } from "react-toastify";
 import { matchKeys } from "./useMatches";
 
 export const delegationKeys = {
@@ -50,7 +51,7 @@ export const useDelegateReferees = () => {
   return useMutation({
     mutationFn: ({ matchId, data }) =>
       delegationsApi.delegateReferees(matchId, data),
-    onSuccess: (_, { matchId }) => {
+    onSuccess: (data, { matchId }) => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.matchDelegation(matchId),
       });
@@ -58,6 +59,15 @@ export const useDelegateReferees = () => {
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.detail(matchId) });
+      toast.success(data?.message || "Referees delegated successfully!", {
+        toastId: "delegation-create",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to delegate referees.",
+        { toastId: "delegation-create-error" },
+      );
     },
   });
 };
@@ -68,10 +78,19 @@ export const useUpdateRefereeRole = () => {
   return useMutation({
     mutationFn: ({ matchId, refereeId, data }) =>
       delegationsApi.updateRefereeRole(matchId, refereeId, data),
-    onSuccess: (_, { matchId }) => {
+    onSuccess: (data, { matchId }) => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.matchDelegation(matchId),
       });
+      toast.success(data?.message || "Referee role updated successfully!", {
+        toastId: "delegation-role-update",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update referee role.",
+        { toastId: "delegation-role-update-error" },
+      );
     },
   });
 };
@@ -82,13 +101,23 @@ export const useRemoveRefereeFromMatch = () => {
   return useMutation({
     mutationFn: ({ matchId, refereeId }) =>
       delegationsApi.removeReferee(matchId, refereeId),
-    onSuccess: (_, { matchId }) => {
+    onSuccess: (data, { matchId }) => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.matchDelegation(matchId),
       });
       queryClient.invalidateQueries({
         queryKey: matchKeys.pendingDelegation(),
       });
+      toast.success(
+        data?.message || "Referee removed from match successfully!",
+        { toastId: "delegation-remove" },
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to remove referee.",
+        { toastId: "delegation-remove-error" },
+      );
     },
   });
 };
@@ -98,13 +127,22 @@ export const useConfirmAssignment = () => {
 
   return useMutation({
     mutationFn: (matchId) => delegationsApi.confirmAssignment(matchId),
-    onSuccess: (_, matchId) => {
+    onSuccess: (data, matchId) => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.matchDelegation(matchId),
       });
       queryClient.invalidateQueries({
         queryKey: delegationKeys.myDelegations(),
       });
+      toast.success(data?.message || "Assignment confirmed successfully!", {
+        toastId: "delegation-confirm",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to confirm assignment.",
+        { toastId: "delegation-confirm-error" },
+      );
     },
   });
 };
@@ -115,13 +153,22 @@ export const useRejectAssignment = () => {
   return useMutation({
     mutationFn: ({ matchId, data }) =>
       delegationsApi.rejectAssignment(matchId, data),
-    onSuccess: (_, { matchId }) => {
+    onSuccess: (data, { matchId }) => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.matchDelegation(matchId),
       });
       queryClient.invalidateQueries({
         queryKey: delegationKeys.myDelegations(),
       });
+      toast.success(data?.message || "Assignment rejected successfully!", {
+        toastId: "delegation-reject",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to reject assignment.",
+        { toastId: "delegation-reject-error" },
+      );
     },
   });
 };

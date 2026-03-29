@@ -42,10 +42,14 @@ export const useCreateUser = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.statistics() });
       queryClient.invalidateQueries({ queryKey: ["referees"] });
-      toast.success(data?.message || "User created successfully!");
+      toast.success(data?.message || "User created successfully!", {
+        toastId: "user-create",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to update user.");
+      toast.error(error.response?.data?.message || "Failed to create user.", {
+        toastId: "user-create-error",
+      });
     },
   });
 };
@@ -59,10 +63,14 @@ export const useUpdateUser = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
-      toast.success(data?.message || "User updated successfully!");
+      toast.success(data?.message || "User updated successfully!", {
+        toastId: "user-update",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to update user.");
+      toast.error(error.response?.data?.message || "Failed to update user.", {
+        toastId: "user-update-error",
+      });
     },
   });
 };
@@ -76,10 +84,14 @@ export const useDeleteUser = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.statistics() });
       queryClient.invalidateQueries({ queryKey: ["referees"] });
-      toast.success(data?.message || "User deleted successfully!");
+      toast.success(data?.message || "User deleted successfully!", {
+        toastId: "user-delete",
+      });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to delete user.");
+      toast.error(error.response?.data?.message || "Failed to delete user.", {
+        toastId: "user-delete-error",
+      });
     },
   });
 };
