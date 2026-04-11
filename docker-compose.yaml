@@ -1,0 +1,48 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: referee-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: referee_delegation
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uapp", "-papp123"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: referee-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: app
+      DB_PASS: app123
+      DB_NAME: referee_delegation
+      DB_DIALECT: mysql
+      PORT: 8000
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: development
+      UPLOAD_PATH: uploads
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server/uploads:/app/uploads
+    command: sh -c "npm run db:migrate && node index.js"
+
+volumes:
+  mysql_data:
