@@ -157,6 +157,20 @@ const rejectAssignment = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get delegate dashboard data
+ * @route   GET /api/delegations/delegate/dashboard
+ * @access  Private/Admin,Delegate
+ */
+const getDelegateDashboard = asyncHandler(async (req, res) => {
+  const data = await delegationService.getDelegateDashboard();
+
+  res.json({
+    success: true,
+    data,
+  });
+});
+
 module.exports = {
   delegateReferees,
   getMatchDelegation,
@@ -167,4 +181,5 @@ module.exports = {
   getDelegationStatistics,
   confirmAssignment,
   rejectAssignment,
+  getDelegateDashboard,
 };

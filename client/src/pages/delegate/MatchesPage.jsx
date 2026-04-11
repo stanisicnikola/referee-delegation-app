@@ -304,14 +304,7 @@ const MatchesPage = () => {
               New match
             </Button>
           ) : (
-            <Chip
-              label="Admin creates matches"
-              sx={{
-                bgcolor: "rgba(107, 114, 128, 0.16)",
-                color: "#9ca3af",
-                border: "1px solid rgba(107, 114, 128, 0.26)",
-              }}
-            />
+            null
           )}
         </Box>
       </Box>

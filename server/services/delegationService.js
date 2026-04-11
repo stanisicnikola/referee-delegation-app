@@ -239,17 +239,14 @@ class DelegationService {
       ...new Set([...unavailableRefereeIds, ...busyRefereeIds]),
     ];
 
-    const whereClause = {
-      status: "active",
-    };
-
+    const whereClause = {};
     if (excludeIds.length > 0) {
       whereClause.id = { [Op.notIn]: excludeIds };
     }
 
     const availableReferees = await Referee.findAll({
       where: whereClause,
-      include: [{ model: User, as: "user" }],
+      include: [{ model: User, as: "user", where: { status: "active" } }],
       order: [[{ model: User, as: "user" }, "lastName", "ASC"]],
     });
 
@@ -335,8 +332,11 @@ class DelegationService {
     const partial = await Match.count({
       where: { delegationStatus: "partial" },
     });
-    const delegated = await Match.count({
-      where: { delegationStatus: "delegated" },
+    const complete = await Match.count({
+      where: { delegationStatus: "complete" },
+    });
+    const confirmed = await Match.count({
+      where: { delegationStatus: "confirmed" },
     });
 
     // Matches awaiting delegation in the next 7 days
@@ -354,9 +354,204 @@ class DelegationService {
       total,
       pending,
       partial,
-      delegated,
+      complete,
+      confirmed,
       upcomingPending,
     };
+  }
+
+  /**
+   * Get delegate dashboard data
+   * KPI rule: count only future matches (scheduledAt >= now)
+   */
+  async getDelegateDashboard() {
+    const now = new Date();
+    const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Summary counts for future matches only
+    const [
+      pendingDelegations,
+      upcomingMatchesCount,
+      activeReferees,
+      confirmedDelegations,
+      notificationCount,
+    ] = await Promise.all([
+      Match.count({
+        where: {
+          delegationStatus: "pending",
+          scheduledAt: { [Op.gte]: now },
+        },
+      }),
+      Match.count({
+        where: {
+          scheduledAt: { [Op.gte]: now },
+        },
+      }),
+      Referee.count({
+        include: [{ model: User, as: "user", where: { status: "active" } }],
+      }),
+      Match.count({
+        where: {
+          delegationStatus: "confirmed",
+          scheduledAt: { [Op.gte]: now },
+        },
+      }),
+      // Notifications: matches awaiting delegation in next 7 days
+      Match.count({
+        where: {
+          delegationStatus: { [Op.in]: ["pending", "partial"] },
+          scheduledAt: {
+            [Op.gte]: now,
+            [Op.lte]: next7Days,
+          },
+        },
+      }),
+    ]);
+
+    // Upcoming matches (max 4, sorted by scheduledAt ASC)
+    const upcomingMatches = await Match.findAll({
+      where: {
+        scheduledAt: { [Op.gte]: now },
+      },
+      include: [
+        { model: Team, as: "homeTeam", attributes: ["name", "logoUrl"] },
+        { model: Team, as: "awayTeam", attributes: ["name", "logoUrl"] },
+        { model: Competition, as: "competition", attributes: ["name"] },
+        { model: Venue, as: "venue", attributes: ["name", "city"] },
+      ],
+      order: [["scheduledAt", "ASC"]],
+      limit: 4,
+    });
+
+    // Availability for next 7 days (daily counts + sample referees)
+    const availabilityData = await this._getDelegateAvailabilityData(now, next7Days);
+
+    return {
+      summary: {
+        pendingDelegations,
+        upcomingMatchesCount,
+        activeReferees,
+        confirmedDelegations,
+        notificationCount,
+      },
+      upcomingMatches,
+      availability: availabilityData,
+    };
+  }
+
+  /**
+   * Helper: get delegate availability data for next 7 days
+   * Returns array of 7 days with counts and sample referees
+   */
+  async _getDelegateAvailabilityData(startDate, endDate) {
+    const result = [];
+    const current = new Date(startDate);
+    current.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 7; i++) {
+      const dateKey = current.toISOString().split("T")[0];
+      const nextDay = new Date(current);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      // Count referees explicitly unavailable
+      const unavailableCount = await RefereeAvailability.count({
+        where: {
+          date: dateKey,
+          isAvailable: false,
+        },
+      });
+
+      // Count referees already assigned to matches on this day
+      const assignedCount = await MatchReferee.count({
+        distinct: true,
+        col: "referee_id",
+        include: [
+          {
+            model: Match,
+            as: "match",
+            where: {
+              scheduledAt: {
+                [Op.gte]: current,
+                [Op.lt]: nextDay,
+              },
+            },
+          },
+        ],
+      });
+
+      // Total active referees
+      const totalActive = await Referee.count({
+        include: [{ model: User, as: "user", where: { status: "active" } }],
+      });
+
+      const availableCount = Math.max(0, totalActive - unavailableCount - assignedCount);
+
+      // Get sample available referees (max 3)
+      const unavailableIds = await RefereeAvailability.findAll({
+        where: { date: dateKey, isAvailable: false },
+        attributes: ["refereeId"],
+        raw: true,
+      });
+
+      const assignedIds = await MatchReferee.findAll({
+        include: [
+          {
+            model: Match,
+            as: "match",
+            where: {
+              scheduledAt: {
+                [Op.gte]: current,
+                [Op.lt]: nextDay,
+              },
+            },
+          },
+        ],
+        attributes: ["refereeId"],
+        raw: true,
+      });
+
+      const excludeIds = [
+        ...new Set([
+          ...unavailableIds.map((r) => r.refereeId),
+          ...assignedIds.map((r) => r.refereeId),
+        ]),
+      ];
+
+      const whereClause = {};
+      if (excludeIds.length > 0) {
+        whereClause.id = { [Op.notIn]: excludeIds };
+      }
+
+      const sampleReferees = await Referee.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: User,
+            as: "user",
+            where: { status: "active" },
+            attributes: ["firstName", "lastName"],
+          },
+        ],
+        limit: 3,
+        order: [[{ model: User, as: "user" }, "lastName", "ASC"]],
+      });
+
+      result.push({
+        date: dateKey,
+        availableCount,
+        unavailableCount,
+        assignedCount,
+        referees: sampleReferees.map((r) => ({
+          id: r.id,
+          name: `${r.user.firstName} ${r.user.lastName}`,
+          licenseCategory: r.licenseCategory,
+        })),
+      });
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return result;
   }
 
   /**

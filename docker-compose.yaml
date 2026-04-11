@@ -41,8 +41,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./server:/app
+      - /app/node_modules
       - ./server/uploads:/app/uploads
-    command: sh -c "npm run db:migrate && node index.js"
+    command: sh -c "npm run db:migrate && npm run dev"
 
 volumes:
   mysql_data:

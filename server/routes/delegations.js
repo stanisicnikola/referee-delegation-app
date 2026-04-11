@@ -21,6 +21,13 @@ router.get(
   delegationController.getMyDelegations
 );
 
+// Delegate dashboard
+router.get(
+  "/delegate/dashboard",
+  authorize("admin", "delegate"),
+  delegationController.getDelegateDashboard
+);
+
 // Delegate referees to match
 router.post(
   "/matches/:matchId",
@@ -33,6 +40,7 @@ router.post(
 // Get delegation for match
 router.get(
   "/matches/:matchId",
+  authorize("admin", "delegate", "referee"),
   validate(delegationSchemas.matchParams, "params"),
   delegationController.getMatchDelegation
 );
