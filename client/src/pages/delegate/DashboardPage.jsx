@@ -2,75 +2,41 @@ import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
-  IconButton,
-  Badge,
-  Avatar,
   CircularProgress,
   Skeleton,
 } from "@mui/material";
 import {
-  Notifications as NotificationsIcon,
   AccessTime as PendingIcon,
   CalendarMonth as MatchesIcon,
   Groups as RefereesIcon,
   CheckCircle as ConfirmedIcon,
-  ArrowForward as ArrowIcon,
+  Schedule as PartialIcon,
+  Verified as CompleteIcon,
 } from "@mui/icons-material";
-import { useMatches, useReferees } from "../../hooks";
+import { useDelegateDashboard } from "../../hooks/useDelegations";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { data: dashboardData, isLoading } = useDelegateDashboard();
 
-  const { data: matchesData, isLoading: matchesLoading } = useMatches({
-    limit: 100,
-  });
-  const { data: refereesData, isLoading: refereesLoading } = useReferees({
-    limit: 100,
-  });
-
-  const matches = matchesData?.data || [];
-  const referees = refereesData?.data || [];
-
-  const isLoading = matchesLoading || refereesLoading;
-
-  // Stats calculations
-  const pendingDelegations = matches.filter(
-    (m) => m.status === "scheduled" || !m.delegationStatus,
-  ).length;
-  const weekendMatches = matches.filter((m) => {
-    const matchDate = new Date(m.dateTime);
-    const now = new Date();
-    const weekEnd = new Date(now);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    return matchDate >= now && matchDate <= weekEnd;
-  }).length;
-  const activeReferees = referees.filter(
-    (r) => r.user?.status === "active",
-  ).length;
-  const confirmedDelegations = matches.filter(
-    (m) => m.delegationStatus === "confirmed",
-  ).length;
-
-  // Upcoming matches for display
-  const upcomingMatches = matches
-    .filter((m) => new Date(m.dateTime) >= new Date())
-    .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
-    .slice(0, 4);
+  const summary = dashboardData?.data?.summary || {};
+  const upcomingMatches = dashboardData?.data?.upcomingMatches || [];
+  const availability = dashboardData?.data?.availability || [];
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const days = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const months = [
       "Jan",
       "Feb",
       "Mar",
       "Apr",
-      "Maj",
+      "May",
       "Jun",
       "Jul",
       "Aug",
       "Sep",
-      "Okt",
+      "Oct",
       "Nov",
       "Dec",
     ];
@@ -78,7 +44,7 @@ const DashboardPage = () => {
       day: days[date.getDay()],
       date: date.getDate(),
       month: months[date.getMonth()],
-      time: date.toLocaleTimeString("bs-BA", {
+      time: date.toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -86,27 +52,40 @@ const DashboardPage = () => {
   };
 
   const getStatusBadge = (match) => {
-    if (match.delegationStatus === "confirmed") {
-      return (
-        <Box
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 0.75,
-            fontSize: "12px",
-            fontWeight: 500,
-            color: "#22c55e",
-            bgcolor: "rgba(34, 197, 94, 0.1)",
-            px: 1.5,
-            py: 0.75,
-            borderRadius: "9999px",
-          }}
-        >
-          <CheckCircle sx={{ fontSize: 14 }} />
-          Delegirano
-        </Box>
-      );
-    }
+    const styles = {
+      pending: {
+        color: "#eab308",
+        bg: "rgba(234, 179, 8, 0.1)",
+        label: "Pending assignment",
+        icon: <PendingIcon sx={{ fontSize: 13 }} />,
+      },
+      partial: {
+        color: "#f97316",
+        bg: "rgba(249, 115, 22, 0.1)",
+        label: "Partially assigned",
+        icon: <PartialIcon sx={{ fontSize: 13 }} />,
+      },
+      complete: {
+        color: "#38bdf8",
+        bg: "rgba(56, 189, 248, 0.12)",
+        label: "Crew assigned",
+        icon: <CompleteIcon sx={{ fontSize: 13 }} />,
+      },
+      confirmed: {
+        color: "#22c55e",
+        bg: "rgba(34, 197, 94, 0.1)",
+        label: "Confirmed",
+        icon: <ConfirmedIcon sx={{ fontSize: 13 }} />,
+      },
+    };
+
+    const style = styles[match.delegationStatus] || {
+      color: "#9ca3af",
+      bg: "rgba(107, 114, 128, 0.14)",
+      label: "Unknown",
+      icon: null,
+    };
+
     return (
       <Box
         sx={{
@@ -115,44 +94,18 @@ const DashboardPage = () => {
           gap: 0.75,
           fontSize: "12px",
           fontWeight: 500,
-          color: "#eab308",
-          bgcolor: "rgba(234, 179, 8, 0.1)",
+          color: style.color,
+          bgcolor: style.bg,
           px: 1.5,
           py: 0.75,
           borderRadius: "9999px",
         }}
       >
-        <Box
-          sx={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            bgcolor: "#eab308",
-            animation: "pulse 2s infinite",
-            "@keyframes pulse": {
-              "0%, 100%": { opacity: 1 },
-              "50%": { opacity: 0.5 },
-            },
-          }}
-        />
-        Čeka delegiranje
+        {style.icon}
+        {style.label}
       </Box>
     );
   };
-
-  const CheckCircle = ({ sx }) => (
-    <svg
-      width='14'
-      height='14'
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='currentColor'
-      strokeWidth='2'
-      style={sx}
-    >
-      <path strokeLinecap='round' strokeLinejoin='round' d='M5 13l4 4L19 7' />
-    </svg>
-  );
 
   return (
     <Box>
@@ -183,42 +136,22 @@ const DashboardPage = () => {
               Dashboard
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Pregled stanja za sezonu 2024/2025
+              Delegation overview
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton sx={{ color: "#9ca3af", position: "relative" }}>
-              <Badge
-                badgeContent={3}
-                sx={{
-                  "& .MuiBadge-badge": {
-                    bgcolor: "#f97316",
-                    color: "#fff",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    minWidth: 16,
-                    height: 16,
-                  },
-                }}
-              >
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <Box sx={{ width: 1, height: 32, bgcolor: "#242428" }} />
-            <Typography
-              sx={{
-                fontSize: "14px",
-                color: "#9ca3af",
-                fontFamily: "monospace",
-              }}
-            >
-              {new Date().toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </Typography>
-          </Box>
+          <Typography
+            sx={{
+              fontSize: "14px",
+              color: "#9ca3af",
+              fontFamily: "monospace",
+            }}
+          >
+            {new Date().toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </Typography>
         </Box>
       </Box>
 
@@ -275,7 +208,7 @@ const DashboardPage = () => {
                   borderRadius: "9999px",
                 }}
               >
-                Hitno
+                Urgent
               </Box>
             </Box>
             <Typography
@@ -284,15 +217,15 @@ const DashboardPage = () => {
               {isLoading ? (
                 <Skeleton width={40} sx={{ bgcolor: "#242428" }} />
               ) : (
-                pendingDelegations
+                summary.pendingDelegations || 0
               )}
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Čeka delegiranje
+              Pending assignment
             </Typography>
           </Box>
 
-          {/* Weekend Matches */}
+          {/* Upcoming Matches */}
           <Box
             sx={{
               bgcolor: "#121214",
@@ -331,11 +264,11 @@ const DashboardPage = () => {
               {isLoading ? (
                 <Skeleton width={40} sx={{ bgcolor: "#242428" }} />
               ) : (
-                weekendMatches
+                summary.upcomingMatchesCount || 0
               )}
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Utakmica ovog vikenda
+              Upcoming matches
             </Typography>
           </Box>
 
@@ -378,11 +311,11 @@ const DashboardPage = () => {
               {isLoading ? (
                 <Skeleton width={40} sx={{ bgcolor: "#242428" }} />
               ) : (
-                activeReferees
+                summary.activeReferees || 0
               )}
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Aktivnih sudija
+              Active referees
             </Typography>
           </Box>
 
@@ -425,17 +358,23 @@ const DashboardPage = () => {
               {isLoading ? (
                 <Skeleton width={40} sx={{ bgcolor: "#242428" }} />
               ) : (
-                confirmedDelegations
+                summary.confirmedDelegations || 0
               )}
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Potvrđenih delegacija
+              Confirmed delegations
             </Typography>
           </Box>
         </Box>
 
         {/* Two Column Layout */}
-        <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 3 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+            gap: 3,
+          }}
+        >
           {/* Upcoming Matches */}
           <Box
             sx={{
@@ -447,143 +386,287 @@ const DashboardPage = () => {
           >
             <Box
               sx={{
-                p: 3,
+                px: 3,
+                py: 2.5,
                 borderBottom: "1px solid #242428",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
               }}
             >
-              <Typography
-                sx={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}
-              >
-                Nadolazeće utakmice
-              </Typography>
+              <Box>
+                <Typography
+                  sx={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}
+                >
+                  Upcoming matches
+                </Typography>
+                <Typography sx={{ fontSize: "12px", color: "#4b5563", mt: 0.25 }}>
+                  Next scheduled fixtures
+                </Typography>
+              </Box>
               <Box
                 onClick={() => navigate("/delegate/matches")}
                 sx={{
-                  fontSize: "14px",
+                  fontSize: "13px",
+                  fontWeight: 500,
                   color: "#f97316",
                   cursor: "pointer",
-                  transition: "color 0.2s",
-                  "&:hover": { color: "#fb923c" },
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  px: 1.5,
+                  py: 0.75,
+                  borderRadius: "8px",
+                  transition: "all 0.15s",
+                  "&:hover": {
+                    color: "#fb923c",
+                    bgcolor: "rgba(249, 115, 22, 0.08)",
+                  },
                 }}
               >
-                Prikaži sve →
+                View all →
               </Box>
             </Box>
 
             {isLoading ? (
-              <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
-                <CircularProgress size={32} sx={{ color: "#f97316" }} />
+              <Box>
+                {[0, 1, 2].map((i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      px: 2.5,
+                      py: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2.5,
+                      borderBottom: i < 2 ? "1px solid #1a1a1d" : "none",
+                    }}
+                  >
+                    <Skeleton
+                      variant="rounded"
+                      width={56}
+                      height={64}
+                      sx={{ bgcolor: "#1e1e22", borderRadius: "12px", flexShrink: 0 }}
+                    />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+                        <Skeleton variant="rounded" width={88} height={20} sx={{ bgcolor: "#1e1e22" }} />
+                        <Skeleton variant="rounded" width={52} height={20} sx={{ bgcolor: "#1e1e22" }} />
+                      </Box>
+                      <Skeleton variant="text" width="65%" height={22} sx={{ bgcolor: "#1e1e22" }} />
+                      <Skeleton variant="text" width="40%" height={18} sx={{ bgcolor: "#1e1e22", mt: 0.25 }} />
+                    </Box>
+                    <Skeleton
+                      variant="rounded"
+                      width={112}
+                      height={28}
+                      sx={{ bgcolor: "#1e1e22", borderRadius: "9999px", flexShrink: 0 }}
+                    />
+                  </Box>
+                ))}
               </Box>
             ) : upcomingMatches.length === 0 ? (
-              <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography sx={{ color: "#6b7280" }}>
-                  Nema nadolazećih utakmica
+              <Box
+                sx={{
+                  py: 7,
+                  px: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1.5,
+                  textAlign: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: "14px",
+                    bgcolor: "rgba(249, 115, 22, 0.07)",
+                    border: "1px solid rgba(249, 115, 22, 0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mb: 0.5,
+                  }}
+                >
+                  <MatchesIcon sx={{ fontSize: 26, color: "#f97316", opacity: 0.55 }} />
+                </Box>
+                <Typography sx={{ fontSize: "15px", fontWeight: 600, color: "#9ca3af" }}>
+                  No upcoming matches
+                </Typography>
+                <Typography sx={{ fontSize: "13px", color: "#4b5563", maxWidth: 240 }}>
+                  No fixtures scheduled for the next period
                 </Typography>
               </Box>
             ) : (
-              <Box
-                sx={{
-                  "& > *:not(:last-child)": {
-                    borderBottom: "1px solid #242428",
-                  },
-                }}
-              >
-                {upcomingMatches.map((match) => {
-                  const dateInfo = formatDate(match.dateTime);
+              <Box>
+                {upcomingMatches.map((match, idx) => {
+                  const dateInfo = formatDate(match.scheduledAt);
+                  const isConfirmed = match.delegationStatus === "confirmed";
                   return (
                     <Box
                       key={match.id}
-                      onClick={() =>
-                        navigate(`/delegate/delegation/${match.id}`)
-                      }
+                      onClick={() => navigate(`/delegate/delegation/${match.id}`)}
                       sx={{
-                        p: 2.5,
+                        px: 2.5,
+                        py: 2,
                         cursor: "pointer",
-                        transition: "background 0.15s",
-                        "&:hover": { bgcolor: "rgba(26, 26, 29, 0.5)" },
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2.5,
+                        borderBottom:
+                          idx < upcomingMatches.length - 1
+                            ? "1px solid #1a1a1d"
+                            : "none",
+                        borderLeft: "2px solid transparent",
+                        transition: "all 0.15s ease",
+                        "&:hover": {
+                          bgcolor: "rgba(249, 115, 22, 0.04)",
+                          borderLeftColor: isConfirmed ? "#22c55e" : "#f97316",
+                        },
                       }}
                     >
+                      {/* Date block */}
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        sx={{
+                          width: 56,
+                          height: 64,
+                          borderRadius: "12px",
+                          bgcolor: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid #242428",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          gap: "1px",
+                        }}
                       >
-                        <Box sx={{ textAlign: "center", minWidth: 60 }}>
-                          <Typography
-                            sx={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {dateInfo.day}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: "20px",
-                              fontWeight: 700,
-                              color: "#fff",
-                            }}
-                          >
-                            {dateInfo.date}
-                          </Typography>
-                          <Typography
-                            sx={{ fontSize: "12px", color: "#6b7280" }}
-                          >
-                            {dateInfo.month}
-                          </Typography>
-                        </Box>
+                        <Typography
+                          sx={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            color: "#f97316",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {dateInfo.day}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "22px",
+                            fontWeight: 800,
+                            color: "#fff",
+                            lineHeight: 1.1,
+                          }}
+                        >
+                          {dateInfo.date}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "10px",
+                            color: "#6b7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {dateInfo.month}
+                        </Typography>
+                      </Box>
+
+                      {/* Match info */}
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        {/* Badges row */}
                         <Box
-                          sx={{ height: 48, width: 1, bgcolor: "#242428" }}
-                        />
-                        <Box sx={{ flex: 1 }}>
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.75,
+                            mb: 0.75,
+                            flexWrap: "wrap",
+                          }}
+                        >
                           <Box
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                fontSize: "12px",
-                                fontWeight: 500,
-                                color: "#f97316",
-                                bgcolor: "rgba(249, 115, 22, 0.1)",
-                                px: 1,
-                                py: 0.25,
-                                borderRadius: "4px",
-                              }}
-                            >
-                              {match.competition?.name || "Liga"}
-                            </Box>
-                            <Typography
-                              sx={{ fontSize: "12px", color: "#6b7280" }}
-                            >
-                              Kolo {match.round || "-"}
-                            </Typography>
-                          </Box>
-                          <Typography
-                            sx={{
-                              fontSize: "15px",
+                              fontSize: "11px",
                               fontWeight: 600,
-                              color: "#fff",
+                              color: "#f97316",
+                              bgcolor: "rgba(249, 115, 22, 0.1)",
+                              px: 1,
+                              py: "2px",
+                              borderRadius: "4px",
+                              lineHeight: 1.7,
+                              maxWidth: 150,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            {match.homeTeam?.name || "TBA"} vs{" "}
-                            {match.awayTeam?.name || "TBA"}
-                          </Typography>
-                          <Typography
-                            sx={{ fontSize: "14px", color: "#6b7280" }}
+                            {match.competition?.name || "League"}
+                          </Box>
+                          <Box
+                            sx={{
+                              fontSize: "11px",
+                              color: "#4b5563",
+                              bgcolor: "#1a1a1d",
+                              px: 1,
+                              py: "2px",
+                              borderRadius: "4px",
+                              lineHeight: 1.7,
+                            }}
                           >
-                            {match.venue?.name || "TBA"}, {dateInfo.time}
-                          </Typography>
+                            Round {match.round || "–"}
+                          </Box>
                         </Box>
-                        <Box sx={{ textAlign: "right" }}>
-                          {getStatusBadge(match)}
-                        </Box>
+
+                        {/* Teams matchup */}
+                        <Typography
+                          sx={{
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            color: "#f3f4f6",
+                            lineHeight: 1.3,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {match.homeTeam?.name || "TBA"}
+                          <Box
+                            component="span"
+                            sx={{ color: "#4b5563", fontWeight: 400, mx: 0.75 }}
+                          >
+                            vs
+                          </Box>
+                          {match.awayTeam?.name || "TBA"}
+                        </Typography>
+
+                        {/* Venue + time */}
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            mt: 0.5,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {match.venue?.name || "Venue TBA"}
+                          <Box component="span" sx={{ mx: 0.75, color: "#333338" }}>
+                            ·
+                          </Box>
+                          {dateInfo.time}
+                        </Typography>
+                      </Box>
+
+                      {/* Status chip */}
+                      <Box sx={{ flexShrink: 0 }}>
+                        {getStatusBadge(match)}
                       </Box>
                     </Box>
                   );
@@ -605,16 +688,22 @@ const DashboardPage = () => {
               <Typography
                 sx={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}
               >
-                Dostupnost sudija
+                Referee availability
               </Typography>
               <Typography sx={{ fontSize: "14px", color: "#6b7280", mt: 0.5 }}>
-                Ovaj vikend
+                Next 7 days
               </Typography>
             </Box>
 
             {isLoading ? (
               <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
                 <CircularProgress size={32} sx={{ color: "#f97316" }} />
+              </Box>
+            ) : availability.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: "center" }}>
+                <Typography sx={{ color: "#6b7280" }}>
+                  No availability data
+                </Typography>
               </Box>
             ) : (
               <Box
@@ -625,79 +714,79 @@ const DashboardPage = () => {
                   gap: 1.5,
                 }}
               >
-                {referees.slice(0, 5).map((referee, index) => {
-                  const colors = [
-                    "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-                    "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-                    "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                    "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-                    "linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%)",
-                  ];
-                  const statuses = [
-                    "#22c55e",
-                    "#22c55e",
-                    "#eab308",
-                    "#ef4444",
-                    "#22c55e",
-                  ];
+                {availability.slice(0, 5).map((day) => {
+                  const availableReferees = day.referees || [];
+                  const statusColor =
+                    day.availableCount > 10
+                      ? "#22c55e"
+                      : day.availableCount > 5
+                        ? "#eab308"
+                        : "#ef4444";
 
                   return (
                     <Box
-                      key={referee.id}
+                      key={day.date}
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
                         p: 1.5,
                         borderRadius: "12px",
                         bgcolor: "rgba(26, 26, 29, 0.5)",
-                        opacity: statuses[index] === "#ef4444" ? 0.6 : 1,
                       }}
                     >
-                      <Avatar
+                      <Box
                         sx={{
-                          width: 40,
-                          height: 40,
-                          background: colors[index % colors.length],
-                          fontSize: "14px",
-                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          mb: 1,
                         }}
                       >
-                        {referee.user?.firstName?.[0]}
-                        {referee.user?.lastName?.[0]}
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
                           sx={{
-                            fontSize: "14px",
+                            fontSize: "13px",
                             fontWeight: 500,
                             color: "#fff",
+                          }}
+                        >
+                          {new Date(day.date).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              bgcolor: statusColor,
+                            }}
+                          />
+                          <Typography
+                            sx={{ fontSize: "12px", color: "#6b7280" }}
+                          >
+                            {day.availableCount} available
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {availableReferees.length > 0 && (
+                        <Box
+                          sx={{
+                            fontSize: "11px",
+                            color: "#6b7280",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                           }}
                         >
-                          {referee.user?.firstName} {referee.user?.lastName}
-                        </Typography>
-                        <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Kategorija {referee.licenseCategory || "N/A"}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          bgcolor: statuses[index],
-                        }}
-                        title={
-                          statuses[index] === "#22c55e"
-                            ? "Dostupan"
-                            : statuses[index] === "#eab308"
-                              ? "Djelimično"
-                              : "Nedostupan"
-                        }
-                      />
+                          {availableReferees.map((r) => r.name).join(", ")}
+                        </Box>
+                      )}
                     </Box>
                   );
                 })}
@@ -717,7 +806,7 @@ const DashboardPage = () => {
                   "&:hover": { color: "#fb923c" },
                 }}
               >
-                Prikaži sve sudije →
+                View all referees →
               </Box>
             </Box>
           </Box>

@@ -7,6 +7,7 @@ export const delegationKeys = {
   all: ["delegations"],
   statistics: () => [...delegationKeys.all, "statistics"],
   myDelegations: () => [...delegationKeys.all, "my-delegations"],
+  delegateDashboard: () => [...delegationKeys.all, "delegate-dashboard"],
   matchDelegation: (matchId) => [...delegationKeys.all, "match", matchId],
   availableReferees: (matchId) => [
     ...delegationKeys.all,
@@ -26,6 +27,13 @@ export const useMyDelegations = () => {
   return useQuery({
     queryKey: delegationKeys.myDelegations(),
     queryFn: () => delegationsApi.getMyDelegations(),
+  });
+};
+
+export const useDelegateDashboard = () => {
+  return useQuery({
+    queryKey: delegationKeys.delegateDashboard(),
+    queryFn: () => delegationsApi.getDelegateDashboard(),
   });
 };
 

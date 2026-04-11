@@ -4,17 +4,14 @@ import {
   Typography,
   Avatar,
   IconButton,
-  Badge,
   Tooltip,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
   CalendarMonth as MatchesIcon,
-  Groups as DelegationIcon,
   Person as RefereesIcon,
   EmojiEvents as CompetitionsIcon,
   Groups3 as TeamsIcon,
-  Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   Public as LogoIcon,
@@ -32,26 +29,24 @@ const DelegateLayout = () => {
   };
 
   const navItems = [
-    { path: "/delegate", icon: DashboardIcon, label: "Dashboard", exact: true },
+    {
+      path: "/delegate/dashboard",
+      icon: DashboardIcon,
+      label: "Dashboard",
+      exact: true,
+    },
     {
       path: "/delegate/matches",
       icon: MatchesIcon,
-      label: "Utakmice",
-      badge: 12,
+      label: "Matches",
     },
-    {
-      path: "/delegate/delegation",
-      icon: DelegationIcon,
-      label: "Delegiranje",
-      pulse: true,
-    },
-    { path: "/delegate/referees", icon: RefereesIcon, label: "Sudije" },
+    { path: "/delegate/referees", icon: RefereesIcon, label: "Referees" },
     {
       path: "/delegate/competitions",
       icon: CompetitionsIcon,
-      label: "Takmičenja",
+      label: "Competitions",
     },
-    { path: "/delegate/teams", icon: TeamsIcon, label: "Timovi" },
+    { path: "/delegate/teams", icon: TeamsIcon, label: "Teams" },
   ];
 
   const isActive = (path, exact = false) => {
@@ -110,7 +105,7 @@ const DelegateLayout = () => {
                 RefDelegate
               </Typography>
               <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                Delegat Panel
+                Delegate Panel
               </Typography>
             </Box>
           </Box>
@@ -173,43 +168,6 @@ const DelegateLayout = () => {
                       {item.badge}
                     </Box>
                   )}
-                  {item.pulse && (
-                    <Box
-                      sx={{
-                        position: "relative",
-                        display: "flex",
-                        width: 8,
-                        height: 8,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: "9999px",
-                          bgcolor: "#f97316",
-                          opacity: 0.75,
-                          animation:
-                            "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite",
-                          "@keyframes ping": {
-                            "75%, 100%": {
-                              transform: "scale(2)",
-                              opacity: 0,
-                            },
-                          },
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: "relative",
-                          width: 8,
-                          height: 8,
-                          borderRadius: "9999px",
-                          bgcolor: "#f97316",
-                        }}
-                      />
-                    </Box>
-                  )}
                 </Box>
               </NavLink>
             );
@@ -256,10 +214,10 @@ const DelegateLayout = () => {
                 {user?.firstName} {user?.lastName}
               </Typography>
               <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                Delegat
+                Delegate
               </Typography>
             </Box>
-            <Tooltip title='Postavke'>
+            <Tooltip title='Settings'>
               <IconButton size='small' sx={{ color: "#6b7280" }}>
                 <SettingsIcon fontSize='small' />
               </IconButton>
@@ -283,7 +241,7 @@ const DelegateLayout = () => {
           >
             <LogoutIcon sx={{ fontSize: 20 }} />
             <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
-              Odjava
+              Logout
             </Typography>
           </Box>
         </Box>

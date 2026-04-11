@@ -16,22 +16,24 @@ import {
   ArrowForward as ArrowIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useCompetitions } from "../../hooks";
+import { useCompetitions, useCompetitionSummary } from "../../hooks";
 
 const CompetitionsPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: competitionsData, isLoading } = useCompetitions();
+  const { data: competitionsData, isLoading } = useCompetitions({ limit: 100 });
+  const { data: summaryData } = useCompetitionSummary();
   const competitions = competitionsData?.data || [];
+  const summary = summaryData?.data || {};
 
   // Filter competitions
   const filteredCompetitions = competitions.filter((comp) => {
     const matchesSearch =
       search === "" || comp.name?.toLowerCase().includes(search.toLowerCase());
-    // Mock status filter
-    return matchesSearch;
+    const matchesStatus = statusFilter === "all" || comp.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusStyle = (status) => {
@@ -41,21 +43,28 @@ const CompetitionsPage = () => {
           bg: "rgba(34, 197, 94, 0.1)",
           color: "#22c55e",
           border: "rgba(34, 197, 94, 0.3)",
-          label: "Aktivno",
+          label: "Active",
         };
       case "upcoming":
         return {
           bg: "rgba(249, 115, 22, 0.1)",
           color: "#f97316",
           border: "rgba(249, 115, 22, 0.3)",
-          label: "Uskoro",
+          label: "Upcoming",
         };
       case "completed":
         return {
           bg: "rgba(107, 114, 128, 0.1)",
           color: "#6b7280",
           border: "rgba(107, 114, 128, 0.3)",
-          label: "Završeno",
+          label: "Completed",
+        };
+      case "suspended":
+        return {
+          bg: "rgba(239, 68, 68, 0.1)",
+          color: "#ef4444",
+          border: "rgba(239, 68, 68, 0.3)",
+          label: "Suspended",
         };
       default:
         return {
@@ -78,10 +87,64 @@ const CompetitionsPage = () => {
     return gradients[index % gradients.length];
   };
 
-  // Mock data for demo
-  const getCompetitionStatus = (index) => {
-    const statuses = ["active", "active", "upcoming", "completed", "active"];
-    return statuses[index % statuses.length];
+  const getCompetitionProgress = (competition) => {
+    if (!competition.startDate || !competition.endDate) return 0;
+
+    const now = new Date();
+    const startDate = new Date(competition.startDate);
+    const endDate = new Date(competition.endDate);
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      return 0;
+    }
+    if (now <= startDate) return 0;
+    if (now >= endDate) return 100;
+
+    const totalDuration = endDate.getTime() - startDate.getTime();
+    if (totalDuration <= 0) return 0;
+
+    const elapsed = now.getTime() - startDate.getTime();
+    return Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+  };
+
+  const formatDateRange = (competition) => {
+    if (!competition.startDate || !competition.endDate) {
+      return "Period not defined";
+    }
+
+    const startDate = new Date(competition.startDate);
+    const endDate = new Date(competition.endDate);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      return "Period not defined";
+    }
+
+    return `${startDate.toLocaleDateString("en-GB")} - ${endDate.toLocaleDateString(
+      "en-GB"
+    )}`;
+  };
+
+  const formatCategory = (category) => {
+    switch (category) {
+      case "seniors":
+        return "Seniors";
+      case "juniors":
+        return "Juniors";
+      case "youth":
+        return "Youth";
+      default:
+        return "N/A";
+    }
+  };
+
+  const formatGender = (gender) => {
+    switch (gender) {
+      case "male":
+        return "Men";
+      case "female":
+        return "Women";
+      default:
+        return "N/A";
+    }
   };
 
   const inputStyles = {
@@ -121,10 +184,10 @@ const CompetitionsPage = () => {
             <Typography
               sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
             >
-              Takmičenja
+              Competitions
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Pregled aktivnih takmičenja i liga
+              Overview of active competitions and leagues
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -143,10 +206,10 @@ const CompetitionsPage = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <TrophyIcon sx={{ color: "#f97316", fontSize: 20 }} />
                 <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                  {competitions.length}
+                  {summary.total ?? competitions.length}
                 </Typography>
                 <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                  takmičenja
+                  competitions
                 </Typography>
               </Box>
             </Box>
@@ -158,7 +221,7 @@ const CompetitionsPage = () => {
         {/* Filters */}
         <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
           <TextField
-            placeholder='Pretraži takmičenja...'
+            placeholder='Search competitions...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             size='small'
@@ -172,7 +235,7 @@ const CompetitionsPage = () => {
             }}
           />
           <Box sx={{ display: "flex", gap: 1 }}>
-            {["all", "active", "upcoming", "completed"].map((status) => (
+            {["all", "active", "upcoming", "completed", "suspended"].map((status) => (
               <Button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -193,12 +256,14 @@ const CompetitionsPage = () => {
                 }}
               >
                 {status === "all"
-                  ? "Sva"
+                  ? "All"
                   : status === "active"
-                  ? "Aktivna"
+                  ? "Active"
                   : status === "upcoming"
-                  ? "Uskoro"
-                  : "Završena"}
+                  ? "Upcoming"
+                  : status === "completed"
+                  ? "Completed"
+                  : "Suspended"}
               </Button>
             ))}
           </Box>
@@ -218,8 +283,9 @@ const CompetitionsPage = () => {
             }}
           >
             {filteredCompetitions.map((competition, index) => {
-              const status = getCompetitionStatus(index);
+              const status = competition.status;
               const statusStyle = getStatusStyle(status);
+              const progress = getCompetitionProgress(competition);
               return (
                 <Box
                   key={competition.id}
@@ -277,7 +343,7 @@ const CompetitionsPage = () => {
                           color: "rgba(255,255,255,0.8)",
                         }}
                       >
-                        {competition.season || "Sezona 2024/25"}
+                        {competition.season || "Season 2024/25"}
                       </Typography>
                     </Box>
                     <Chip
@@ -320,11 +386,10 @@ const CompetitionsPage = () => {
                           sx={{ color: "#6b7280", fontSize: 20, mb: 0.5 }}
                         />
                         <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                          {competition.teamsCount ||
-                            Math.floor(Math.random() * 12) + 8}
+                          {formatCategory(competition.category)}
                         </Typography>
                         <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Timova
+                          Category
                         </Typography>
                       </Box>
                       <Box
@@ -339,11 +404,10 @@ const CompetitionsPage = () => {
                           sx={{ color: "#6b7280", fontSize: 20, mb: 0.5 }}
                         />
                         <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                          {competition.matchesCount ||
-                            Math.floor(Math.random() * 50) + 20}
+                          {formatGender(competition.gender)}
                         </Typography>
                         <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Utakmica
+                          Gender
                         </Typography>
                       </Box>
                       <Box
@@ -361,11 +425,10 @@ const CompetitionsPage = () => {
                             fontSize: "20px",
                           }}
                         >
-                          {competition.currentRound ||
-                            Math.floor(Math.random() * 20) + 1}
+                          {statusStyle.label}
                         </Typography>
                         <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Trenutno kolo
+                          Status
                         </Typography>
                       </Box>
                     </Box>
@@ -380,7 +443,7 @@ const CompetitionsPage = () => {
                         }}
                       >
                         <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Napredak sezone
+                          Season progress
                         </Typography>
                         <Typography
                           sx={{
@@ -389,11 +452,12 @@ const CompetitionsPage = () => {
                             color: "#fff",
                           }}
                         >
-                          {competition.progress ||
-                            Math.floor(Math.random() * 60) + 20}
-                          %
+                          {progress}%
                         </Typography>
                       </Box>
+                      <Typography sx={{ fontSize: "12px", color: "#6b7280", mb: 1 }}>
+                        {formatDateRange(competition)}
+                      </Typography>
                       <Box
                         sx={{
                           height: 6,
@@ -404,10 +468,7 @@ const CompetitionsPage = () => {
                       >
                         <Box
                           sx={{
-                            width: `${
-                              competition.progress ||
-                              Math.floor(Math.random() * 60) + 20
-                            }%`,
+                            width: `${progress}%`,
                             height: "100%",
                             background: getCompetitionGradient(index),
                             borderRadius: "3px",
@@ -438,7 +499,7 @@ const CompetitionsPage = () => {
                         },
                       }}
                     >
-                      Pregledaj utakmice
+                      View matches
                     </Button>
                   </Box>
                 </Box>

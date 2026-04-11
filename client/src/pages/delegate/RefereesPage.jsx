@@ -7,29 +7,39 @@ import {
   Button,
   Avatar,
   Chip,
-  IconButton,
-  Menu,
-  MenuItem,
   CircularProgress,
 } from "@mui/material";
+import RefereeDetailsModal from "../../components/delegate/RefereeDetailsModal";
 import {
   Search as SearchIcon,
-  FilterList as FilterIcon,
-  MoreVert as MoreIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
   LocationOn as LocationIcon,
   Star as StarIcon,
 } from "@mui/icons-material";
-import { useReferees } from "../../hooks";
+import {
+  useReferees,
+  useAvailableRefereesForDate,
+  useUnavailableRefereesForDate,
+} from "../../hooks";
 
 const RefereesPage = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [detailsReferee, setDetailsReferee] = useState(null);
 
+  const todayDate = new Date().toLocaleDateString("en-CA");
   const { data: refereesData, isLoading } = useReferees({ limit: 100 });
+  const { data: availableRefereesData } = useAvailableRefereesForDate(todayDate);
+  const { data: unavailableRefereesData } =
+    useUnavailableRefereesForDate(todayDate);
   const referees = refereesData?.data || [];
+  const availableRefereeIds = new Set(
+    (availableRefereesData?.data || []).map((referee) => referee.id)
+  );
+  const unavailableRefereeIds = new Set(
+    (unavailableRefereesData?.data || []).map((availability) => availability.refereeId)
+  );
 
   // Filter referees
   const filteredReferees = referees.filter((referee) => {
@@ -42,24 +52,10 @@ const RefereesPage = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  // Mock availability status
-  const getAvailability = (index) => {
-    const statuses = [
-      "available",
-      "available",
-      "available",
-      "partial",
-      "unavailable",
-    ];
-    return statuses[index % statuses.length];
+  const getAvailability = (refereeId) => {
+    if (unavailableRefereeIds.has(refereeId)) return "unavailable";
+    if (availableRefereeIds.has(refereeId)) return "available";
+    return "unknown";
   };
 
   const getAvailabilityStyle = (status) => {
@@ -69,21 +65,14 @@ const RefereesPage = () => {
           bg: "rgba(34, 197, 94, 0.1)",
           color: "#22c55e",
           dot: "#22c55e",
-          label: "Dostupan",
-        };
-      case "partial":
-        return {
-          bg: "rgba(250, 204, 21, 0.1)",
-          color: "#facc15",
-          dot: "#facc15",
-          label: "Djelimično",
+          label: "Available",
         };
       case "unavailable":
         return {
           bg: "rgba(239, 68, 68, 0.1)",
           color: "#ef4444",
           dot: "#ef4444",
-          label: "Nedostupan",
+          label: "Unavailable",
         };
       default:
         return {
@@ -106,6 +95,14 @@ const RefereesPage = () => {
     return colors[index % colors.length];
   };
 
+  const handleOpenDetails = (referee) => {
+    setDetailsReferee(referee);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsReferee(null);
+  };
+
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#121214",
@@ -120,11 +117,17 @@ const RefereesPage = () => {
   // Stats
   const totalReferees = referees.length;
   const availableCount = referees.filter(
-    (_, i) => getAvailability(i) === "available"
+    (referee) => getAvailability(referee.id) === "available"
   ).length;
-  const partialCount = referees.filter(
-    (_, i) => getAvailability(i) === "partial"
+  const unavailableCount = referees.filter(
+    (referee) => getAvailability(referee.id) === "unavailable"
   ).length;
+  const detailsAvailabilityStyle = detailsReferee
+    ? getAvailabilityStyle(getAvailability(detailsReferee.id))
+    : getAvailabilityStyle("unknown");
+  const detailsIndex = detailsReferee
+    ? Math.max(0, referees.findIndex((r) => r.id === detailsReferee.id))
+    : 0;
 
   return (
     <Box>
@@ -152,10 +155,10 @@ const RefereesPage = () => {
             <Typography
               sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
             >
-              Sudije
+              Referees
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Pregled i upravljanje dostupnošću sudija
+              View and manage referee availability
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -179,7 +182,7 @@ const RefereesPage = () => {
                   {totalReferees}
                 </Typography>
                 <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                  Ukupno
+                  Total
                 </Typography>
               </Box>
               <Box sx={{ width: 1, height: 32, bgcolor: "#242428" }} />
@@ -190,18 +193,18 @@ const RefereesPage = () => {
                   {availableCount}
                 </Typography>
                 <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                  Dostupno
+                  Available
                 </Typography>
               </Box>
               <Box sx={{ width: 1, height: 32, bgcolor: "#242428" }} />
               <Box sx={{ textAlign: "center" }}>
                 <Typography
-                  sx={{ fontSize: "20px", fontWeight: 700, color: "#facc15" }}
+                  sx={{ fontSize: "20px", fontWeight: 700, color: "#ef4444" }}
                 >
-                  {partialCount}
+                  {unavailableCount}
                 </Typography>
                 <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                  Djelimično
+                  Unavailable
                 </Typography>
               </Box>
             </Box>
@@ -213,7 +216,7 @@ const RefereesPage = () => {
         {/* Filters */}
         <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
           <TextField
-            placeholder='Pretraži po imenu...'
+            placeholder='Search by name...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             size='small'
@@ -227,31 +230,37 @@ const RefereesPage = () => {
             }}
           />
           <Box sx={{ display: "flex", gap: 1 }}>
-            {["all", "I", "II", "III"].map((category) => (
+            {[
+              { value: "all", label: "All categories" },
+              { value: "international", label: "International" },
+              { value: "A", label: "Category A" },
+              { value: "B", label: "Category B" },
+              { value: "C", label: "Category C" },
+              { value: "regional", label: "Regional" },
+            ].map((category) => (
               <Button
-                key={category}
-                onClick={() => setCategoryFilter(category)}
+                key={category.value}
+                onClick={() => setCategoryFilter(category.value)}
                 sx={{
                   px: 2.5,
                   py: 1,
                   borderRadius: "10px",
-                  bgcolor: categoryFilter === category ? "#f97316" : "#121214",
+                  bgcolor:
+                    categoryFilter === category.value ? "#f97316" : "#121214",
                   border: "1px solid",
                   borderColor:
-                    categoryFilter === category ? "#f97316" : "#242428",
-                  color: categoryFilter === category ? "#fff" : "#9ca3af",
+                    categoryFilter === category.value ? "#f97316" : "#242428",
+                  color: categoryFilter === category.value ? "#fff" : "#9ca3af",
                   fontSize: "14px",
                   fontWeight: 500,
                   textTransform: "none",
                   "&:hover": {
                     bgcolor:
-                      categoryFilter === category ? "#ea580c" : "#1a1a1d",
+                      categoryFilter === category.value ? "#ea580c" : "#1a1a1d",
                   },
                 }}
               >
-                {category === "all"
-                  ? "Sve kategorije"
-                  : `Kategorija ${category}`}
+                {category.label}
               </Button>
             ))}
           </Box>
@@ -271,7 +280,7 @@ const RefereesPage = () => {
             }}
           >
             {filteredReferees.map((referee, index) => {
-              const availability = getAvailability(index);
+              const availability = getAvailability(referee.id);
               const availStyle = getAvailabilityStyle(availability);
               return (
                 <Box
@@ -315,19 +324,11 @@ const RefereesPage = () => {
                         sx={{
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "space-between",
                         }}
                       >
                         <Typography sx={{ fontWeight: 600, color: "#fff" }}>
                           {referee.user?.firstName} {referee.user?.lastName}
                         </Typography>
-                        <IconButton
-                          size='small'
-                          onClick={(e) => handleMenuOpen(e, referee)}
-                          sx={{ color: "#6b7280" }}
-                        >
-                          <MoreIcon />
-                        </IconButton>
                       </Box>
                       <Box
                         sx={{
@@ -341,7 +342,7 @@ const RefereesPage = () => {
                           icon={
                             <StarIcon sx={{ fontSize: "14px !important" }} />
                           }
-                          label={`Kategorija ${
+                          label={`Category ${
                             referee.licenseCategory || "N/A"
                           }`}
                           size='small'
@@ -444,85 +445,27 @@ const RefereesPage = () => {
                         </Typography>
                       </Box>
                     </Box>
-
-                    {/* Stats Row */}
                     <Box
                       sx={{
-                        mt: 2.5,
-                        pt: 2.5,
+                        mt: 2,
+                        pt: 2,
                         borderTop: "1px solid #242428",
                         display: "flex",
-                        gap: 2,
+                        justifyContent: "flex-end",
                       }}
                     >
-                      <Box
+                      <Button
+                        size='small'
+                        onClick={() => handleOpenDetails(referee)}
                         sx={{
-                          flex: 1,
-                          textAlign: "center",
-                          p: 1.5,
-                          bgcolor: "#0a0a0b",
-                          borderRadius: "8px",
+                          color: "#f97316",
+                          textTransform: "none",
+                          fontWeight: 600,
+                          "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
                         }}
                       >
-                        <Typography
-                          sx={{
-                            fontSize: "18px",
-                            fontWeight: 600,
-                            color: "#fff",
-                          }}
-                        >
-                          {referee.matchesCount ||
-                            Math.floor(Math.random() * 30) + 5}
-                        </Typography>
-                        <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Utakmica
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: 1,
-                          textAlign: "center",
-                          p: 1.5,
-                          bgcolor: "#0a0a0b",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "18px",
-                            fontWeight: 600,
-                            color: "#fff",
-                          }}
-                        >
-                          {referee.rating || (4 + Math.random()).toFixed(1)}
-                        </Typography>
-                        <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Ocjena
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: 1,
-                          textAlign: "center",
-                          p: 1.5,
-                          bgcolor: "#0a0a0b",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "18px",
-                            fontWeight: 600,
-                            color: "#22c55e",
-                          }}
-                        >
-                          {referee.experience ||
-                            Math.floor(Math.random() * 10) + 1}
-                        </Typography>
-                        <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          God. iskustva
-                        </Typography>
-                      </Box>
+                        View details
+                      </Button>
                     </Box>
                   </Box>
                 </Box>
@@ -530,54 +473,15 @@ const RefereesPage = () => {
             })}
           </Box>
         )}
-
-        {/* Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          PaperProps={{
-            sx: {
-              bgcolor: "#1a1a1d",
-              border: "1px solid #242428",
-              borderRadius: "8px",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-              minWidth: 160,
-            },
-          }}
-        >
-          <MenuItem
-            onClick={handleMenuClose}
-            sx={{
-              color: "#fff",
-              fontSize: "14px",
-              "&:hover": { bgcolor: "#242428" },
-            }}
-          >
-            Pogledaj profil
-          </MenuItem>
-          <MenuItem
-            onClick={handleMenuClose}
-            sx={{
-              color: "#fff",
-              fontSize: "14px",
-              "&:hover": { bgcolor: "#242428" },
-            }}
-          >
-            Pozovi
-          </MenuItem>
-          <MenuItem
-            onClick={handleMenuClose}
-            sx={{
-              color: "#fff",
-              fontSize: "14px",
-              "&:hover": { bgcolor: "#242428" },
-            }}
-          >
-            Pošalji email
-          </MenuItem>
-        </Menu>
       </Box>
+
+      <RefereeDetailsModal
+        open={Boolean(detailsReferee)}
+        referee={detailsReferee}
+        onClose={handleCloseDetails}
+        avatarColor={getAvatarColor(detailsIndex)}
+        availabilityStyle={detailsAvailabilityStyle}
+      />
     </Box>
   );
 };

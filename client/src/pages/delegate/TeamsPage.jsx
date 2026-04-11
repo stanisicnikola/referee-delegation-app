@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
   TextField,
   InputAdornment,
-  Button,
   Avatar,
   CircularProgress,
   Table,
@@ -23,14 +22,24 @@ import {
   MoreVert as MoreIcon,
   Groups as GroupsIcon,
 } from "@mui/icons-material";
-import { useTeams } from "../../hooks";
+import { useMatches, useTeams } from "../../hooks";
+import TeamDetailsDialog from "../../components/delegate/TeamDetailsDialog";
+import TeamMatchesDialog from "../../components/delegate/TeamMatchesDialog";
 
 const TeamsPage = () => {
   const [search, setSearch] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
+  const [menuTeam, setMenuTeam] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [matchesOpen, setMatchesOpen] = useState(false);
 
   const { data: teamsData, isLoading } = useTeams({ limit: 100 });
+  const { data: matchesData, isLoading: isMatchesLoading } = useMatches({
+    limit: 500,
+  });
   const teams = teamsData?.data || [];
+  const matches = matchesData?.data || [];
 
   // Filter teams
   const filteredTeams = teams.filter((team) => {
@@ -39,13 +48,32 @@ const TeamsPage = () => {
     );
   });
 
-  const handleMenuOpen = (event) => {
+  const handleMenuOpen = (event, team) => {
     setAnchorEl(event.currentTarget);
+    setMenuTeam(team);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+    setMenuTeam(null);
   };
+
+  const handleOpenDetails = () => {
+    if (!menuTeam) return;
+    setSelectedTeam(menuTeam);
+    setDetailsOpen(true);
+    handleMenuClose();
+  };
+
+  const handleOpenMatches = () => {
+    if (!menuTeam) return;
+    setSelectedTeam(menuTeam);
+    setMatchesOpen(true);
+    handleMenuClose();
+  };
+
+  const handleCloseDetails = () => setDetailsOpen(false);
+  const handleCloseMatches = () => setMatchesOpen(false);
 
   const getTeamColor = (index) => {
     const colors = [
@@ -78,6 +106,23 @@ const TeamsPage = () => {
     px: 2,
   };
 
+  const matchesByTeamId = useMemo(() => {
+    return matches.reduce((acc, match) => {
+      const homeId = match.homeTeamId;
+      const awayId = match.awayTeamId;
+      if (homeId) acc[homeId] = [...(acc[homeId] || []), match];
+      if (awayId) acc[awayId] = [...(acc[awayId] || []), match];
+      return acc;
+    }, {});
+  }, [matches]);
+
+  const selectedTeamMatches = selectedTeam
+    ? (matchesByTeamId[selectedTeam.id] || []).slice().sort((a, b) => {
+        return new Date(a.scheduledAt) - new Date(b.scheduledAt);
+      })
+    : [];
+  const getTeamMatchesCount = (teamId) => (matchesByTeamId[teamId] || []).length;
+
   return (
     <Box>
       {/* Header */}
@@ -104,10 +149,10 @@ const TeamsPage = () => {
             <Typography
               sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
             >
-              Timovi
+              Teams
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Pregled svih timova u takmičenjima
+              Overview of all teams in competitions
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -129,7 +174,7 @@ const TeamsPage = () => {
                   {teams.length}
                 </Typography>
                 <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                  timova
+                  teams
                 </Typography>
               </Box>
             </Box>
@@ -141,7 +186,7 @@ const TeamsPage = () => {
         {/* Search */}
         <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
           <TextField
-            placeholder='Pretraži timove...'
+            placeholder='Search teams...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             size='small'
@@ -184,7 +229,7 @@ const TeamsPage = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Tim
+                      Team
                     </TableCell>
                     <TableCell
                       sx={{
@@ -196,7 +241,7 @@ const TeamsPage = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Skraćeno
+                      Short
                     </TableCell>
                     <TableCell
                       sx={{
@@ -208,7 +253,7 @@ const TeamsPage = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Grad
+                      City
                     </TableCell>
                     <TableCell
                       sx={{
@@ -220,7 +265,7 @@ const TeamsPage = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Dvorana
+                      Venue
                     </TableCell>
                     <TableCell
                       sx={{
@@ -233,7 +278,7 @@ const TeamsPage = () => {
                         textAlign: "center",
                       }}
                     >
-                      Utakmica
+                      Matches
                     </TableCell>
                     <TableCell
                       sx={{
@@ -318,15 +363,14 @@ const TeamsPage = () => {
                       </TableCell>
                       <TableCell sx={tableCellStyles}>
                         <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                          {team.venue?.name || "N/A"}
+                          {team.primaryVenue?.name || "N/A"}
                         </Typography>
                       </TableCell>
                       <TableCell
                         sx={{ ...tableCellStyles, textAlign: "center" }}
                       >
                         <Typography sx={{ fontWeight: 500, color: "#fff" }}>
-                          {team.matchesCount ||
-                            Math.floor(Math.random() * 20) + 5}
+                          {isMatchesLoading ? "..." : getTeamMatchesCount(team.id)}
                         </Typography>
                       </TableCell>
                       <TableCell sx={tableCellStyles}>
@@ -365,26 +409,41 @@ const TeamsPage = () => {
           }}
         >
           <MenuItem
-            onClick={handleMenuClose}
+            onClick={handleOpenDetails}
             sx={{
               color: "#fff",
               fontSize: "14px",
               "&:hover": { bgcolor: "#242428" },
             }}
           >
-            Pogledaj detalje
+            View details
           </MenuItem>
           <MenuItem
-            onClick={handleMenuClose}
+            onClick={handleOpenMatches}
             sx={{
               color: "#fff",
               fontSize: "14px",
               "&:hover": { bgcolor: "#242428" },
             }}
           >
-            Pogledaj utakmice
+            View matches
           </MenuItem>
         </Menu>
+        <TeamDetailsDialog
+          open={detailsOpen}
+          onClose={handleCloseDetails}
+          team={selectedTeam}
+          matchesCount={selectedTeam ? getTeamMatchesCount(selectedTeam.id) : 0}
+          isMatchesLoading={isMatchesLoading}
+        />
+
+        <TeamMatchesDialog
+          open={matchesOpen}
+          onClose={handleCloseMatches}
+          team={selectedTeam}
+          matches={selectedTeamMatches}
+          isLoading={isMatchesLoading}
+        />
       </Box>
     </Box>
   );

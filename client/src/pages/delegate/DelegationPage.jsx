@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -9,6 +9,7 @@ import {
   Avatar,
   IconButton,
   CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -16,69 +17,139 @@ import {
   Check as CheckIcon,
   Close as CloseIcon,
   LocationOn as LocationIcon,
+  Event as EventIcon,
+  AccessTime as TimeIcon,
+  Person as PersonIcon,
 } from "@mui/icons-material";
-import { useMatch, useReferees, useDelegateReferees } from "../../hooks";
+import {
+  useMatch,
+  useDelegateReferees,
+  useAvailableRefereesForMatch,
+} from "../../hooks";
+
+const EMPTY_ASSIGNMENTS = {
+  main: null,
+  second: null,
+  third: null,
+};
+
+const ROLE_TO_SLOT = {
+  first_referee: "main",
+  second_referee: "second",
+  third_referee: "third",
+};
+
+const SLOT_TO_ROLE = {
+  main: "first_referee",
+  second: "second_referee",
+  third: "third_referee",
+};
+
+const SLOT_CONFIG = [
+  {
+    slot: "main",
+    role: "first_referee",
+    label: "Main Referee",
+    hint: "Leads game decisions and crew coordination",
+    accent: "#f97316",
+    buttonLabel: "Main",
+  },
+  {
+    slot: "second",
+    role: "second_referee",
+    label: "Second Referee",
+    hint: "Supports primary calls and transitions",
+    accent: "#3b82f6",
+    buttonLabel: "Second",
+  },
+  {
+    slot: "third",
+    role: "third_referee",
+    label: "Third Referee",
+    hint: "Covers opposite side and off-ball actions",
+    accent: "#22c55e",
+    buttonLabel: "Third",
+  },
+];
 
 const DelegationPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [notes, setNotes] = useState("");
-  const [assignedReferees, setAssignedReferees] = useState({
-    main: null,
-    second: null,
-    third: null,
-  });
+  const [assignedReferees, setAssignedReferees] = useState(EMPTY_ASSIGNMENTS);
 
   const { data: matchData, isLoading: matchLoading } = useMatch(matchId);
-  const { data: refereesData, isLoading: refereesLoading } = useReferees({
-    limit: 100,
-  });
+  const { data: availableRefereesData, isLoading: refereesLoading } =
+    useAvailableRefereesForMatch(matchId);
   const delegateReferees = useDelegateReferees();
 
   const match = matchData?.data || matchData;
-  const allReferees = refereesData?.data || [];
+  const allAvailableReferees = availableRefereesData?.data || [];
 
-  // Filter referees based on search
-  const availableReferees = allReferees.filter((referee) => {
-    const fullName =
-      `${referee.user?.firstName} ${referee.user?.lastName}`.toLowerCase();
-    const matchesSearch =
-      search === "" || fullName.includes(search.toLowerCase());
-    const notAssigned = !Object.values(assignedReferees).some(
-      (r) => r?.id === referee.id
+  useEffect(() => {
+    if (!match?.refereeAssignments) return;
+
+    const nextAssignments = { ...EMPTY_ASSIGNMENTS };
+    match.refereeAssignments.forEach((assignment) => {
+      const slot = ROLE_TO_SLOT[assignment.role];
+      if (slot) {
+        nextAssignments[slot] = assignment.referee || null;
+      }
+    });
+
+    setAssignedReferees(nextAssignments);
+  }, [match?.id, match?.refereeAssignments]);
+
+  const assignedCount = Object.values(assignedReferees).filter(Boolean).length;
+
+  const availableReferees = useMemo(() => {
+    return allAvailableReferees
+      .filter((referee) => {
+        const fullName =
+          `${referee.user?.firstName} ${referee.user?.lastName}`.toLowerCase();
+        const matchesSearch =
+          search.trim() === "" || fullName.includes(search.toLowerCase());
+        const notAssigned = !Object.values(assignedReferees).some(
+          (assigned) => assigned?.id === referee.id
+        );
+        return matchesSearch && notAssigned;
+      })
+      .sort((a, b) => {
+        const aName = `${a.user?.lastName || ""} ${a.user?.firstName || ""}`;
+        const bName = `${b.user?.lastName || ""} ${b.user?.firstName || ""}`;
+        return aName.localeCompare(bName);
+      });
+  }, [allAvailableReferees, assignedReferees, search]);
+
+  const availableWithoutSearch = useMemo(() => {
+    return allAvailableReferees.filter(
+      (referee) =>
+        !Object.values(assignedReferees).some(
+          (assigned) => assigned?.id === referee.id
+        )
     );
-    return matchesSearch && notAssigned;
-  });
-
-  // Split into available and unavailable (mock for now)
-  const available = availableReferees.filter((_, i) => i % 5 !== 4);
-  const unavailable = availableReferees.filter((_, i) => i % 5 === 4);
+  }, [allAvailableReferees, assignedReferees]);
 
   const handleAssign = (referee, slot) => {
-    setAssignedReferees((prev) => ({
-      ...prev,
-      [slot]: referee,
-    }));
+    setAssignedReferees((prev) => ({ ...prev, [slot]: referee }));
   };
 
   const handleRemove = (slot) => {
-    setAssignedReferees((prev) => ({
-      ...prev,
-      [slot]: null,
-    }));
+    setAssignedReferees((prev) => ({ ...prev, [slot]: null }));
   };
 
   const handleConfirmDelegation = async () => {
     try {
-      const refereeIds = [];
-      if (assignedReferees.main) refereeIds.push(assignedReferees.main.id);
-      if (assignedReferees.second) refereeIds.push(assignedReferees.second.id);
-      if (assignedReferees.third) refereeIds.push(assignedReferees.third.id);
+      const refereeAssignments = Object.entries(assignedReferees)
+        .filter(([, referee]) => !!referee?.id)
+        .map(([slot, referee]) => ({
+          refereeId: referee.id,
+          role: SLOT_TO_ROLE[slot],
+        }));
 
       await delegateReferees.mutateAsync({
         matchId,
-        data: { refereeIds, notes },
+        data: { refereeAssignments },
       });
       navigate("/delegate/matches");
     } catch (error) {
@@ -86,83 +157,272 @@ const DelegationPage = () => {
     }
   };
 
-  const isLoading = matchLoading || refereesLoading;
-
-  const formatDate = (dateString) => {
-    if (!dateString) return { day: "-", month: "-", time: "-" };
+  const formatMatchDate = (dateString) => {
+    if (!dateString) return { shortDay: "–", fullDate: "TBA", time: "–:–" };
     const date = new Date(dateString);
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "Maj",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Okt",
-      "Nov",
-      "Dec",
-    ];
     return {
-      day: date.getDate(),
-      month: months[date.getMonth()],
-      year: date.getFullYear(),
-      time: date.toLocaleTimeString("bs-BA", {
+      shortDay: date
+        .toLocaleDateString("en-GB", { weekday: "short" })
+        .toUpperCase(),
+      fullDate: date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      }),
+      time: date.toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
       }),
     };
   };
 
-  const getAvatarColor = (index) => {
-    const colors = [
-      "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-      "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-      "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-      "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-      "linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%)",
-    ];
-    return colors[index % colors.length];
-  };
-
-  const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#1a1a1d",
-      borderRadius: "8px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#f97316" },
-    },
-    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
-  };
-
-  if (isLoading) {
+  const getStatusChip = (delegationStatus) => {
+    const map = {
+      pending: {
+        label: "Pending assignment",
+        color: "#eab308",
+        bg: "rgba(234, 179, 8, 0.12)",
+      },
+      partial: {
+        label: "Partially assigned",
+        color: "#f97316",
+        bg: "rgba(249, 115, 22, 0.12)",
+      },
+      complete: {
+        label: "Crew assigned",
+        color: "#38bdf8",
+        bg: "rgba(56, 189, 248, 0.14)",
+      },
+      confirmed: {
+        label: "Confirmed",
+        color: "#22c55e",
+        bg: "rgba(34, 197, 94, 0.12)",
+      },
+    };
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress sx={{ color: "#f97316" }} />
+      map[delegationStatus] || {
+        label: "Unknown",
+        color: "#9ca3af",
+        bg: "rgba(107, 114, 128, 0.2)",
+      }
+    );
+  };
+
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (matchLoading || refereesLoading) {
+    return (
+      <Box>
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            bgcolor: "rgba(10, 10, 11, 0.86)",
+            backdropFilter: "blur(12px)",
+            borderBottom: "1px solid #242428",
+            zIndex: 40,
+          }}
+        >
+          <Box
+            sx={{
+              px: 4,
+              py: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Skeleton
+                variant="circular"
+                width={40}
+                height={40}
+                sx={{ bgcolor: "#1e1e22", flexShrink: 0 }}
+              />
+              <Box>
+                <Skeleton
+                  variant="text"
+                  width={180}
+                  height={28}
+                  sx={{ bgcolor: "#1e1e22" }}
+                />
+                <Skeleton
+                  variant="text"
+                  width={140}
+                  height={20}
+                  sx={{ bgcolor: "#1e1e22" }}
+                />
+              </Box>
+            </Box>
+            <Skeleton
+              variant="rounded"
+              width={160}
+              height={42}
+              sx={{ bgcolor: "#1e1e22", borderRadius: "12px" }}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ p: 4, display: "grid", gap: 3 }}>
+          <Skeleton
+            variant="rounded"
+            height={156}
+            sx={{ bgcolor: "#1a1a1d", borderRadius: "16px" }}
+          />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", lg: "1.4fr 1fr" },
+              gap: 3,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: "#121214",
+                borderRadius: "16px",
+                border: "1px solid #242428",
+                overflow: "hidden",
+              }}
+            >
+              <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid #242428" }}>
+                <Skeleton
+                  variant="text"
+                  width={140}
+                  height={28}
+                  sx={{ bgcolor: "#1e1e22" }}
+                />
+                <Skeleton
+                  variant="text"
+                  width={220}
+                  height={20}
+                  sx={{ bgcolor: "#1e1e22" }}
+                />
+              </Box>
+              <Box sx={{ p: 2.5, display: "grid", gap: 1.5 }}>
+                {[0, 1, 2].map((i) => (
+                  <Skeleton
+                    key={i}
+                    variant="rounded"
+                    height={72}
+                    sx={{ bgcolor: "#1e1e22", borderRadius: "12px" }}
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                bgcolor: "#121214",
+                borderRadius: "16px",
+                border: "1px solid #242428",
+                overflow: "hidden",
+              }}
+            >
+              <Box sx={{ p: 2, borderBottom: "1px solid #242428" }}>
+                <Skeleton
+                  variant="rounded"
+                  height={40}
+                  sx={{ bgcolor: "#1e1e22", borderRadius: "10px" }}
+                />
+                <Skeleton
+                  variant="text"
+                  width={130}
+                  height={18}
+                  sx={{ bgcolor: "#1e1e22", mt: 1 }}
+                />
+              </Box>
+              <Box sx={{ p: 1.5, display: "grid", gap: 1 }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <Skeleton
+                    key={i}
+                    variant="rounded"
+                    height={60}
+                    sx={{ bgcolor: "#1e1e22", borderRadius: "10px" }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
       </Box>
     );
   }
 
-  const dateInfo = formatDate(match?.dateTime);
+  // ── Not found ─────────────────────────────────────────────────────────────
+  if (!match) {
+    return (
+      <Box
+        sx={{
+          p: 4,
+          pt: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2,
+          textAlign: "center",
+        }}
+      >
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: "16px",
+            bgcolor: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.15)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <EventIcon sx={{ fontSize: 30, color: "#ef4444", opacity: 0.7 }} />
+        </Box>
+        <Typography sx={{ color: "#fff", fontSize: 18, fontWeight: 600 }}>
+          Match not found
+        </Typography>
+        <Typography
+          sx={{ color: "#6b7280", fontSize: 14, maxWidth: 280 }}
+        >
+          This match doesn't exist or you don't have access to it.
+        </Typography>
+        <Button
+          startIcon={<BackIcon />}
+          onClick={() => navigate("/delegate/matches")}
+          sx={{
+            mt: 1,
+            color: "#f97316",
+            bgcolor: "rgba(249,115,22,0.08)",
+            borderRadius: "10px",
+            textTransform: "none",
+            px: 2.5,
+            py: 1,
+            fontWeight: 600,
+            "&:hover": { bgcolor: "rgba(249,115,22,0.14)" },
+          }}
+        >
+          Back to matches
+        </Button>
+      </Box>
+    );
+  }
+
+  const dateInfo = formatMatchDate(match?.scheduledAt);
+  const statusChip = getStatusChip(match?.delegationStatus);
+
+  const emptyCandidatesMessage =
+    allAvailableReferees.length === 0
+      ? "No eligible referees for this date. Everyone is unavailable or already assigned elsewhere."
+      : availableWithoutSearch.length === 0
+      ? "All eligible referees are already assigned to this match. Remove a slot to swap."
+      : "No referees match your search.";
 
   return (
     <Box>
-      {/* Header */}
+      {/* ── Sticky header ───────────────────────────────────────────────── */}
       <Box
         sx={{
           position: "sticky",
           top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.8)",
+          bgcolor: "rgba(10, 10, 11, 0.86)",
           backdropFilter: "blur(12px)",
           borderBottom: "1px solid #242428",
           zIndex: 40,
@@ -175,6 +435,8 @@ const DelegationPage = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -184,338 +446,492 @@ const DelegationPage = () => {
             >
               <BackIcon />
             </IconButton>
+
             <Box>
               <Typography
-                sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+                sx={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}
               >
-                Delegiranje sudija
+                Referee Assignment
               </Typography>
-              <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
+              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
                 {match?.homeTeam?.name || "TBA"} vs{" "}
-                {match?.awayTeam?.name || "TBA"} • {dateInfo.day}.{" "}
-                {dateInfo.month} {dateInfo.year}, {dateInfo.time}
+                {match?.awayTeam?.name || "TBA"}
               </Typography>
             </Box>
           </Box>
-          <Button
-            startIcon={<CheckIcon />}
-            onClick={handleConfirmDelegation}
-            disabled={
-              !assignedReferees.main &&
-              !assignedReferees.second &&
-              !assignedReferees.third
-            }
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              bgcolor: "#f97316",
-              color: "#fff",
-              fontSize: "14px",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { bgcolor: "#ea580c" },
-              "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
-            }}
-          >
-            Potvrdi delegaciju
-          </Button>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            {/* Progress indicator */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: 2,
+                py: 0.875,
+                borderRadius: "10px",
+                bgcolor:
+                  assignedCount === 3
+                    ? "rgba(34,197,94,0.09)"
+                    : assignedCount > 0
+                    ? "rgba(249,115,22,0.09)"
+                    : "rgba(107,114,128,0.09)",
+                border: "1px solid",
+                borderColor:
+                  assignedCount === 3
+                    ? "rgba(34,197,94,0.25)"
+                    : assignedCount > 0
+                    ? "rgba(249,115,22,0.25)"
+                    : "rgba(107,114,128,0.22)",
+              }}
+            >
+              <Box sx={{ display: "flex", gap: 0.5 }}>
+                {[0, 1, 2].map((i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      bgcolor:
+                        i < assignedCount
+                          ? assignedCount === 3
+                            ? "#22c55e"
+                            : "#f97316"
+                          : "#3f3f46",
+                      transition: "background 0.3s",
+                    }}
+                  />
+                ))}
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color:
+                    assignedCount === 3
+                      ? "#22c55e"
+                      : assignedCount > 0
+                      ? "#f97316"
+                      : "#9ca3af",
+                }}
+              >
+                {assignedCount}/3 assigned
+              </Typography>
+            </Box>
+
+            <Button
+              startIcon={
+                delegateReferees.isPending ? (
+                  <CircularProgress size={14} sx={{ color: "#fff" }} />
+                ) : (
+                  <CheckIcon />
+                )
+              }
+              onClick={handleConfirmDelegation}
+              disabled={assignedCount === 0 || delegateReferees.isPending}
+              sx={{
+                px: 3,
+                py: 1.25,
+                borderRadius: "12px",
+                bgcolor: "#f97316",
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#ea580c" },
+                "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
+              }}
+            >
+              {delegateReferees.isPending ? "Saving..." : "Save Assignment"}
+            </Button>
+          </Box>
         </Box>
       </Box>
 
-      <Box sx={{ p: 4 }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 4 }}>
-          {/* Left Column */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {/* Match Info Card */}
-            <Box
-              sx={{
-                bgcolor: "#121214",
-                borderRadius: "16px",
-                border: "1px solid #242428",
-                p: 3,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                {/* Home Team */}
-                <Box sx={{ flex: 1, textAlign: "center" }}>
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      mx: "auto",
-                      borderRadius: "16px",
-                      background:
-                        "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontSize: "24px",
-                      fontWeight: 700,
-                      mb: 1.5,
-                    }}
-                  >
-                    {match?.homeTeam?.shortName ||
-                      match?.homeTeam?.name?.substring(0, 3).toUpperCase() ||
-                      "HOM"}
-                  </Box>
-                  <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                    {match?.homeTeam?.name || "TBA"}
-                  </Typography>
-                  <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                    Domaćin
-                  </Typography>
-                </Box>
-
-                {/* VS */}
-                <Box sx={{ textAlign: "center", px: 4 }}>
-                  <Typography
-                    sx={{
-                      fontSize: "12px",
-                      color: "#6b7280",
-                      textTransform: "uppercase",
-                      mb: 1,
-                    }}
-                  >
-                    {match?.competition?.name || "Liga"} • Kolo{" "}
-                    {match?.round || "-"}
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: "40px", fontWeight: 700, color: "#3f3f46" }}
-                  >
-                    VS
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: "14px", color: "#9ca3af", mt: 1 }}
-                  >
-                    {dateInfo.day}. {dateInfo.month} {dateInfo.year}
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: "18px", fontWeight: 600, color: "#f97316" }}
-                  >
-                    {dateInfo.time}
-                  </Typography>
-                </Box>
-
-                {/* Away Team */}
-                <Box sx={{ flex: 1, textAlign: "center" }}>
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      mx: "auto",
-                      borderRadius: "16px",
-                      background:
-                        "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontSize: "24px",
-                      fontWeight: 700,
-                      mb: 1.5,
-                    }}
-                  >
-                    {match?.awayTeam?.shortName ||
-                      match?.awayTeam?.name?.substring(0, 3).toUpperCase() ||
-                      "AWY"}
-                  </Box>
-                  <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                    {match?.awayTeam?.name || "TBA"}
-                  </Typography>
-                  <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-                    Gost
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Venue */}
+      <Box sx={{ p: 4, display: "grid", gap: 3 }}>
+        {/* ── Match summary card ──────────────────────────────────────────── */}
+        <Box
+          sx={{
+            bgcolor: "#121214",
+            borderRadius: "16px",
+            border: "1px solid #242428",
+            p: 3,
+          }}
+        >
+          {/* Top row: badges + status */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 1.5,
+              mb: 2.5,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Box
                 sx={{
-                  mt: 3,
-                  pt: 3,
-                  borderTop: "1px solid #242428",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 1,
-                  color: "#9ca3af",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#f97316",
+                  bgcolor: "rgba(249, 115, 22, 0.1)",
+                  border: "1px solid rgba(249, 115, 22, 0.25)",
+                  px: 1.25,
+                  py: 0.5,
+                  borderRadius: "6px",
+                  lineHeight: 1.6,
                 }}
               >
-                <LocationIcon sx={{ fontSize: 16 }} />
-                <Typography sx={{ fontSize: "14px" }}>
-                  {match?.venue?.name || "TBA"}, {match?.venue?.city || ""}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Delegation Slots */}
-            <Box
-              sx={{
-                bgcolor: "#121214",
-                borderRadius: "16px",
-                border: "1px solid #242428",
-              }}
-            >
-              <Box sx={{ p: 3, borderBottom: "1px solid #242428" }}>
-                <Typography
-                  sx={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}
-                >
-                  Sudijska trojka
-                </Typography>
-                <Typography
-                  sx={{ fontSize: "14px", color: "#6b7280", mt: 0.5 }}
-                >
-                  Dodijelite tri sudije za ovu utakmicu
-                </Typography>
+                {match?.competition?.name || "League"}
               </Box>
               <Box
-                sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}
+                sx={{
+                  fontSize: "12px",
+                  color: "#9ca3af",
+                  bgcolor: "rgba(107, 114, 128, 0.1)",
+                  border: "1px solid rgba(107, 114, 128, 0.2)",
+                  px: 1.25,
+                  py: 0.5,
+                  borderRadius: "6px",
+                  lineHeight: 1.6,
+                }}
               >
-                {/* Slot 1 - Main Referee */}
-                <RefereeSlot
-                  number={1}
-                  label='GLAVNI SUDIJA'
-                  referee={assignedReferees.main}
-                  onRemove={() => handleRemove("main")}
-                  isMain
-                />
-
-                {/* Slot 2 - Second Referee */}
-                <RefereeSlot
-                  number={2}
-                  label='2. SUDIJA'
-                  referee={assignedReferees.second}
-                  onRemove={() => handleRemove("second")}
-                />
-
-                {/* Slot 3 - Third Referee */}
-                <RefereeSlot
-                  number={3}
-                  label='3. SUDIJA'
-                  referee={assignedReferees.third}
-                  onRemove={() => handleRemove("third")}
-                />
+                Round {match?.round || "–"}
               </Box>
             </Box>
 
-            {/* Notes */}
             <Box
               sx={{
-                bgcolor: "#121214",
-                borderRadius: "16px",
-                border: "1px solid #242428",
-                p: 3,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.75,
+                fontSize: "13px",
+                fontWeight: 600,
+                color: statusChip.color,
+                bgcolor: statusChip.bg,
+                border: `1px solid ${statusChip.color}33`,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: "9999px",
+              }}
+            >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  bgcolor: statusChip.color,
+                  ...(match?.delegationStatus === "pending" && {
+                    animation: "pulse 2s infinite",
+                    "@keyframes pulse": {
+                      "0%, 100%": { opacity: 1 },
+                      "50%": { opacity: 0.4 },
+                    },
+                  }),
+                }}
+              />
+              {statusChip.label}
+            </Box>
+          </Box>
+
+          {/* Teams vs block */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr auto 1fr" },
+              alignItems: "center",
+              gap: 2,
+              py: 1,
+            }}
+          >
+            <TeamSummary
+              team={match?.homeTeam}
+              sideLabel="Home"
+              color="#3b82f6"
+            />
+
+            <Box
+              sx={{
+                textAlign: "center",
+                px: { xs: 0, md: 2 },
+                py: { xs: 1, md: 0 },
               }}
             >
               <Typography
                 sx={{
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#9ca3af",
-                  mb: 1.5,
+                  color: "#2e2e33",
+                  fontSize: 30,
+                  fontWeight: 800,
+                  letterSpacing: "0.1em",
+                  lineHeight: 1,
                 }}
               >
-                Napomene za sudije
+                VS
               </Typography>
-              <TextField
-                multiline
-                rows={3}
-                placeholder='Unesite eventualne napomene...'
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                fullWidth
+              <Box
                 sx={{
-                  ...inputStyles,
-                  "& .MuiOutlinedInput-root": {
-                    ...inputStyles["& .MuiOutlinedInput-root"],
-                    borderRadius: "12px",
-                  },
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  justifyContent: "center",
+                  mt: 1,
                 }}
-              />
+              >
+                <EventIcon sx={{ fontSize: 14, color: "#6b7280" }} />
+                <Typography sx={{ color: "#9ca3af", fontSize: 12 }}>
+                  {dateInfo.shortDay}, {dateInfo.fullDate}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  justifyContent: "center",
+                  mt: 0.5,
+                }}
+              >
+                <TimeIcon sx={{ fontSize: 14, color: "#f97316" }} />
+                <Typography
+                  sx={{ color: "#f97316", fontSize: 17, fontWeight: 700 }}
+                >
+                  {dateInfo.time}
+                </Typography>
+              </Box>
             </Box>
+
+            <TeamSummary
+              team={match?.awayTeam}
+              sideLabel="Away"
+              color="#ef4444"
+              align="right"
+            />
           </Box>
 
-          {/* Right Column - Available Referees */}
+          {/* Venue */}
+          <Box
+            sx={{
+              mt: 2,
+              pt: 2,
+              borderTop: "1px solid #1e1e22",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <LocationIcon sx={{ fontSize: 15, color: "#6b7280" }} />
+            <Typography sx={{ fontSize: 13, color: "#9ca3af" }}>
+              {match?.venue?.name || "TBA"}
+              {match?.venue?.city ? `, ${match.venue.city}` : ""}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* ── Crew + Candidates grid ──────────────────────────────────────── */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "1.4fr 1fr" },
+            gap: 3,
+            alignItems: "start",
+          }}
+        >
+          {/* Assigned Crew panel */}
           <Box
             sx={{
               bgcolor: "#121214",
               borderRadius: "16px",
               border: "1px solid #242428",
-              height: "fit-content",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                px: 3,
+                py: 2.5,
+                borderBottom: "1px solid #242428",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography
+                  sx={{ color: "#fff", fontSize: 18, fontWeight: 700 }}
+                >
+                  Assigned Crew
+                </Typography>
+                <Typography
+                  sx={{ color: "#6b7280", fontSize: 13, mt: 0.25 }}
+                >
+                  {assignedCount === 3
+                    ? "Full crew — ready to save."
+                    : "Select referees from the right panel."}
+                </Typography>
+              </Box>
+
+              {/* Progress pills */}
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 0.75,
+                  mt: 0.5,
+                  flexShrink: 0,
+                }}
+              >
+                {SLOT_CONFIG.map((cfg) => (
+                  <Box
+                    key={cfg.slot}
+                    sx={{
+                      width: 28,
+                      height: 6,
+                      borderRadius: "9999px",
+                      bgcolor: assignedReferees[cfg.slot]
+                        ? cfg.accent
+                        : "#1e1e22",
+                      border: `1px solid ${
+                        assignedReferees[cfg.slot]
+                          ? cfg.accent + "55"
+                          : "#2e2e33"
+                      }`,
+                      transition: "all 0.3s ease",
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            <Box sx={{ p: 2.5, display: "grid", gap: 1.5 }}>
+              {SLOT_CONFIG.map((config) => (
+                <AssignmentSlot
+                  key={config.slot}
+                  config={config}
+                  referee={assignedReferees[config.slot]}
+                  onRemove={() => handleRemove(config.slot)}
+                />
+              ))}
+            </Box>
+          </Box>
+
+          {/* Available Referees panel */}
+          <Box
+            sx={{
+              bgcolor: "#121214",
+              borderRadius: "16px",
+              border: "1px solid #242428",
+              overflow: "hidden",
+              minHeight: 400,
             }}
           >
             <Box sx={{ p: 2, borderBottom: "1px solid #242428" }}>
               <TextField
-                placeholder='Pretraži sudije...'
+                placeholder="Search referees..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => setSearch(event.target.value)}
                 fullWidth
-                size='small'
+                size="small"
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position='start'>
+                    <InputAdornment position="start">
                       <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
                     </InputAdornment>
                   ),
                 }}
-                sx={inputStyles}
-              />
-            </Box>
-
-            <Box sx={{ p: 1, maxHeight: 600, overflowY: "auto" }}>
-              <Typography
                 sx={{
-                  px: 1.5,
-                  py: 1,
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#6b7280",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "#1a1a1d",
+                    borderRadius: "10px",
+                    "& fieldset": { borderColor: "#242428" },
+                    "&:hover fieldset": { borderColor: "#3f3f46" },
+                    "&.Mui-focused fieldset": { borderColor: "#f97316" },
+                  },
+                  "& .MuiInputBase-input": {
+                    color: "#fff",
+                    fontSize: "14px",
+                  },
+                }}
+              />
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mt: 1.25,
                 }}
               >
-                Dostupni sudije
-              </Typography>
+                <Typography
+                  sx={{
+                    color: "#6b7280",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    fontWeight: 600,
+                  }}
+                >
+                  Available · {availableWithoutSearch.length}
+                </Typography>
+                {search.trim() !== "" && (
+                  <Typography sx={{ color: "#4b5563", fontSize: 11 }}>
+                    {availableReferees.length} result
+                    {availableReferees.length !== 1 ? "s" : ""}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
 
-              {available.map((referee, index) => (
-                <RefereeCard
+            <Box
+              sx={{
+                p: 1.5,
+                maxHeight: 560,
+                overflowY: "auto",
+                display: "grid",
+                gap: 1,
+              }}
+            >
+              {availableReferees.map((referee) => (
+                <CandidateRow
                   key={referee.id}
                   referee={referee}
-                  color={getAvatarColor(index)}
-                  available
-                  onAssign={(slot) => handleAssign(referee, slot)}
-                  slots={assignedReferees}
+                  assignedReferees={assignedReferees}
+                  onAssign={handleAssign}
                 />
               ))}
 
-              {unavailable.length > 0 && (
-                <>
-                  <Typography
+              {availableReferees.length === 0 && (
+                <Box
+                  sx={{
+                    py: 5,
+                    px: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1.5,
+                    textAlign: "center",
+                  }}
+                >
+                  <Box
                     sx={{
-                      px: 1.5,
-                      py: 1,
-                      mt: 2,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: "#6b7280",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      width: 44,
+                      height: 44,
+                      borderRadius: "12px",
+                      bgcolor: "rgba(107,114,128,0.07)",
+                      border: "1px solid rgba(107,114,128,0.14)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    Nedostupni
+                    <PersonIcon sx={{ fontSize: 22, color: "#6b7280" }} />
+                  </Box>
+                  <Typography
+                    sx={{ fontSize: 13, color: "#6b7280", maxWidth: 210 }}
+                  >
+                    {emptyCandidatesMessage}
                   </Typography>
-
-                  {unavailable.map((referee) => (
-                    <RefereeCard
-                      key={referee.id}
-                      referee={referee}
-                      color='linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
-                      available={false}
-                    />
-                  ))}
-                </>
+                </Box>
               )}
             </Box>
           </Box>
@@ -525,69 +941,94 @@ const DelegationPage = () => {
   );
 };
 
-// Referee Slot Component
-const RefereeSlot = ({ number, label, referee, onRemove, isMain }) => {
-  if (referee) {
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
+  const initials =
+    team?.shortName || team?.name?.substring(0, 3).toUpperCase() || "TBA";
+  const isRight = align === "right";
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        flexDirection: isRight ? "row-reverse" : "row",
+      }}
+    >
+      <Box
+        sx={{
+          width: 52,
+          height: 52,
+          borderRadius: "14px",
+          bgcolor: `${color}14`,
+          border: `1px solid ${color}30`,
+          color: color,
+          fontWeight: 800,
+          fontSize: 15,
+          letterSpacing: "0.04em",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {initials}
+      </Box>
+      <Box sx={{ textAlign: isRight ? "right" : "left" }}>
+        <Typography
+          sx={{ color: "#fff", fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}
+        >
+          {team?.name || "TBA"}
+        </Typography>
+        <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
+          {sideLabel}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+const AssignmentSlot = ({ config, referee, onRemove }) => {
+  if (!referee) {
     return (
       <Box
         sx={{
-          border: "2px solid rgba(34, 197, 94, 0.3)",
-          bgcolor: "rgba(34, 197, 94, 0.05)",
           borderRadius: "12px",
           p: 2,
+          bgcolor: "#0d0d0f",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+          border: "1px solid #1a1a1d",
+          borderLeft: `3px solid ${config.accent}33`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar
-            sx={{
-              width: 56,
-              height: 56,
-              background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-              fontSize: "16px",
-              fontWeight: 700,
-            }}
+        <Box>
+          <Typography
+            sx={{ color: "#6b7280", fontSize: 14, fontWeight: 600 }}
           >
-            {referee.user?.firstName?.[0]}
-            {referee.user?.lastName?.[0]}
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Box
-              sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}
-            >
-              <Box
-                sx={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#9ca3af",
-                  bgcolor: "#242428",
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: "4px",
-                }}
-              >
-                {label}
-              </Box>
-              <Typography sx={{ fontSize: "12px", color: "#22c55e" }}>
-                ✓ Dodijeljen
-              </Typography>
-            </Box>
-            <Typography sx={{ fontWeight: 500, color: "#fff" }}>
-              {referee.user?.firstName} {referee.user?.lastName}
-            </Typography>
-            <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              Kategorija {referee.licenseCategory || "N/A"} •{" "}
-              {referee.city || "N/A"}
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={onRemove}
-            sx={{
-              color: "#6b7280",
-              "&:hover": { bgcolor: "#242428", color: "#ef4444" },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
+            {config.label}
+          </Typography>
+          <Typography sx={{ color: "#3f3f46", fontSize: 12, mt: 0.25 }}>
+            {config.hint}
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            fontSize: "11px",
+            fontWeight: 600,
+            color: "#3f3f46",
+            border: "1px dashed #2a2a2e",
+            px: 1.25,
+            py: 0.5,
+            borderRadius: "6px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Unassigned
         </Box>
       </Box>
     );
@@ -596,191 +1037,170 @@ const RefereeSlot = ({ number, label, referee, onRemove, isMain }) => {
   return (
     <Box
       sx={{
-        border: "2px dashed #2e2e33",
         borderRadius: "12px",
         p: 2,
-        transition: "all 0.2s",
-        "&:hover": { borderColor: "rgba(249, 115, 22, 0.5)" },
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+        bgcolor: `${config.accent}0c`,
+        border: `1px solid ${config.accent}28`,
+        borderLeft: `3px solid ${config.accent}`,
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Box
-          sx={{
-            width: 56,
-            height: 56,
-            borderRadius: "12px",
-            bgcolor: isMain ? "rgba(249, 115, 22, 0.1)" : "#242428",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "18px",
-              color: isMain ? "#f97316" : "#6b7280",
-            }}
-          >
-            {number}
-          </Typography>
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <Box
-            sx={{
-              display: "inline-block",
-              fontSize: "12px",
-              fontWeight: 600,
-              color: isMain ? "#f97316" : "#9ca3af",
-              bgcolor: isMain ? "rgba(249, 115, 22, 0.1)" : "#242428",
-              px: 1,
-              py: 0.25,
-              borderRadius: "4px",
-              mb: 0.5,
-            }}
-          >
-            {label}
-          </Box>
-          <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-            Prevucite sudiju ovdje ili kliknite za odabir
-          </Typography>
-        </Box>
-        <Button
-          size='small'
-          sx={{
-            px: 2,
-            py: 1,
-            borderRadius: "8px",
-            bgcolor: "#242428",
-            color: "#fff",
-            fontSize: "14px",
-            fontWeight: 500,
-            textTransform: "none",
-            "&:hover": { bgcolor: "#2e2e33" },
-          }}
-        >
-          Odaberi
-        </Button>
-      </Box>
-    </Box>
-  );
-};
-
-// Referee Card Component
-const RefereeCard = ({ referee, color, available, onAssign, slots }) => {
-  const [showSlotPicker, setShowSlotPicker] = useState(false);
-
-  const handleClick = () => {
-    if (available && onAssign) {
-      setShowSlotPicker(true);
-    }
-  };
-
-  const handleAssignToSlot = (slot) => {
-    onAssign(slot);
-    setShowSlotPicker(false);
-  };
-
-  return (
-    <Box sx={{ position: "relative" }}>
       <Box
-        onClick={handleClick}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          p: 1.5,
-          borderRadius: "12px",
-          cursor: available ? "pointer" : "not-allowed",
-          opacity: available ? 1 : 0.5,
-          transition: "all 0.2s",
-          "&:hover": available
-            ? { bgcolor: "#1a1a1d", transform: "translateX(4px)" }
-            : {},
-        }}
+        sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}
       >
         <Avatar
           sx={{
             width: 40,
             height: 40,
-            background: color,
-            fontSize: "14px",
-            fontWeight: 600,
+            fontWeight: 700,
+            fontSize: 14,
+            bgcolor: `${config.accent}1e`,
+            color: config.accent,
+            border: `1px solid ${config.accent}44`,
           }}
         >
           {referee.user?.firstName?.[0]}
           {referee.user?.lastName?.[0]}
         </Avatar>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
+
+        <Box sx={{ minWidth: 0 }}>
+          <Box
             sx={{
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#fff",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
             }}
           >
-            {referee.user?.firstName} {referee.user?.lastName}
-          </Typography>
-          <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-            {available
-              ? `Kategorija ${referee.licenseCategory || "N/A"} • ${
-                  referee.city || "N/A"
-                }`
-              : "Nedostupan"}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            bgcolor: available ? "#22c55e" : "#ef4444",
-          }}
-        />
-      </Box>
-
-      {/* Slot Picker Dropdown */}
-      {showSlotPicker && (
-        <Box
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: "100%",
-            mt: 0.5,
-            bgcolor: "#1a1a1d",
-            border: "1px solid #242428",
-            borderRadius: "8px",
-            overflow: "hidden",
-            zIndex: 10,
-            boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-          }}
-        >
-          {[
-            { slot: "main", label: "Glavni sudija" },
-            { slot: "second", label: "2. Sudija" },
-            { slot: "third", label: "3. Sudija" },
-          ].map(({ slot, label }) => (
+            <Typography sx={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>
+              {referee.user?.firstName} {referee.user?.lastName}
+            </Typography>
             <Box
-              key={slot}
-              onClick={() => handleAssignToSlot(slot)}
               sx={{
-                px: 2,
-                py: 1.5,
-                fontSize: "14px",
-                color: slots?.[slot] ? "#6b7280" : "#fff",
-                cursor: slots?.[slot] ? "not-allowed" : "pointer",
-                transition: "background 0.15s",
-                "&:hover": slots?.[slot] ? {} : { bgcolor: "#242428" },
+                fontSize: "11px",
+                fontWeight: 600,
+                color: config.accent,
+                bgcolor: `${config.accent}15`,
+                border: `1px solid ${config.accent}30`,
+                px: 1,
+                py: "2px",
+                borderRadius: "4px",
+                lineHeight: 1.6,
               }}
             >
-              {label} {slots?.[slot] && "(zauzeto)"}
+              {config.label}
             </Box>
-          ))}
+          </Box>
+          <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
+            Category {referee.licenseCategory || "N/A"} ·{" "}
+            {referee.city || "N/A"}
+          </Typography>
         </Box>
-      )}
+      </Box>
+
+      <IconButton
+        onClick={onRemove}
+        size="small"
+        sx={{
+          color: "#4b5563",
+          flexShrink: 0,
+          "&:hover": { bgcolor: "rgba(239,68,68,0.1)", color: "#ef4444" },
+        }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
+};
+
+const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
+  return (
+    <Box
+      sx={{
+        border: "1px solid #1e1e22",
+        borderRadius: "10px",
+        p: 1.5,
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        transition: "all 0.15s ease",
+        "&:hover": {
+          borderColor: "#2e2e33",
+          bgcolor: "rgba(255,255,255,0.02)",
+        },
+      }}
+    >
+      <Avatar
+        sx={{
+          width: 36,
+          height: 36,
+          background: "linear-gradient(135deg, #374151 0%, #1f2937 100%)",
+          fontSize: 13,
+          fontWeight: 700,
+          flexShrink: 0,
+        }}
+      >
+        {referee.user?.firstName?.[0]}
+        {referee.user?.lastName?.[0]}
+      </Avatar>
+
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          sx={{
+            color: "#e5e7eb",
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {referee.user?.firstName} {referee.user?.lastName}
+        </Typography>
+        <Typography sx={{ color: "#6b7280", fontSize: 11 }}>
+          Cat. {referee.licenseCategory || "–"} · {referee.city || "–"}
+        </Typography>
+      </Box>
+
+      {/* Role assign buttons */}
+      <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+        {SLOT_CONFIG.map((slotCfg) => {
+          const occupied = Boolean(assignedReferees[slotCfg.slot]);
+          return (
+            <Box
+              key={slotCfg.slot}
+              onClick={occupied ? undefined : () => onAssign(referee, slotCfg.slot)}
+              title={occupied ? `${slotCfg.label} slot is taken` : `Assign as ${slotCfg.label}`}
+              sx={{
+                px: 1.25,
+                py: "5px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: 600,
+                lineHeight: 1.4,
+                cursor: occupied ? "not-allowed" : "pointer",
+                border: "1px solid",
+                borderColor: occupied ? "#1e1e22" : `${slotCfg.accent}44`,
+                color: occupied ? "#2a2a2e" : slotCfg.accent,
+                bgcolor: occupied ? "transparent" : `${slotCfg.accent}10`,
+                userSelect: "none",
+                transition: "all 0.15s",
+                ...(!occupied && {
+                  "&:hover": {
+                    bgcolor: `${slotCfg.accent}22`,
+                    borderColor: `${slotCfg.accent}77`,
+                  },
+                }),
+              }}
+            >
+              {occupied ? "—" : slotCfg.buttonLabel}
+            </Box>
+          );
+        })}
+      </Box>
     </Box>
   );
 };

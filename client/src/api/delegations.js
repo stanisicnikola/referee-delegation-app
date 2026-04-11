@@ -11,6 +11,11 @@ export const delegationsApi = {
     return response.data;
   },
 
+  getDelegateDashboard: async () => {
+    const response = await api.get("/delegations/delegate/dashboard");
+    return response.data;
+  },
+
   getMatchDelegation: async (matchId) => {
     const response = await api.get(`/delegations/matches/${matchId}`);
     return response.data;
