@@ -58,7 +58,6 @@ const TeamDetailsDialog = ({
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: "#0f0f12",
           border: "1px solid #242428",
           borderRadius: "16px",
           color: "#fff",
@@ -72,8 +71,7 @@ const TeamDetailsDialog = ({
           px: 3,
           py: 3,
           borderBottom: "1px solid #242428",
-          background:
-            "linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%)",
+          bgcolor: "#121214",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
@@ -90,13 +88,15 @@ const TeamDetailsDialog = ({
               color: "#f97316",
             }}
           >
-            {!team?.logoUrl && (
-              team?.shortName?.slice(0, 2).toUpperCase() ||
-              <GroupsIcon sx={{ fontSize: 28, color: "#f97316" }} />
-            )}
+            {!team?.logoUrl &&
+              (team?.shortName?.slice(0, 2).toUpperCase() || (
+                <GroupsIcon sx={{ fontSize: 28, color: "#f97316" }} />
+              ))}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+            <Typography
+              sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}
+            >
               {team?.name || "Team"}
             </Typography>
             {team?.status && (
@@ -120,7 +120,7 @@ const TeamDetailsDialog = ({
       </Box>
 
       {/* Body */}
-      <DialogContent sx={{ p: 3 }}>
+      <DialogContent sx={{ p: 3, bgcolor: "#121214" }}>
         {sections.length === 0 ? (
           <Typography
             sx={{
@@ -163,7 +163,7 @@ const TeamDetailsDialog = ({
                     sx={{
                       p: 1.5,
                       borderRadius: "10px",
-                      bgcolor: "#121214",
+                      bgcolor: "#1a1a1d",
                       border: "1px solid #242428",
                     }}
                   >
@@ -191,13 +191,19 @@ const TeamDetailsDialog = ({
       </DialogContent>
 
       <DialogActions
-        sx={{ px: 3, py: 2, borderTop: "1px solid #242428" }}
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: "1px solid #242428",
+          bgcolor: "#121214",
+        }}
       >
         <Button
           onClick={onClose}
           sx={{
             color: "#f97316",
             textTransform: "none",
+            border: "1px solid #242428",
             fontWeight: 600,
             "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
           }}

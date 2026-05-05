@@ -121,7 +121,8 @@ const TeamsPage = () => {
         return new Date(a.scheduledAt) - new Date(b.scheduledAt);
       })
     : [];
-  const getTeamMatchesCount = (teamId) => (matchesByTeamId[teamId] || []).length;
+  const getTeamMatchesCount = (teamId) =>
+    (matchesByTeamId[teamId] || []).length;
 
   return (
     <Box>
@@ -370,7 +371,9 @@ const TeamsPage = () => {
                         sx={{ ...tableCellStyles, textAlign: "center" }}
                       >
                         <Typography sx={{ fontWeight: 500, color: "#fff" }}>
-                          {isMatchesLoading ? "..." : getTeamMatchesCount(team.id)}
+                          {isMatchesLoading
+                            ? "..."
+                            : getTeamMatchesCount(team.id)}
                         </Typography>
                       </TableCell>
                       <TableCell sx={tableCellStyles}>

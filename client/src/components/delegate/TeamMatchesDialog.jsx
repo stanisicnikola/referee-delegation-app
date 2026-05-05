@@ -18,8 +18,16 @@ import {
 const DELEGATION_STATUS = {
   pending: { label: "Pending", color: "#eab308", bg: "rgba(234,179,8,0.12)" },
   partial: { label: "Partial", color: "#f97316", bg: "rgba(249,115,22,0.12)" },
-  complete: { label: "Crew assigned", color: "#38bdf8", bg: "rgba(56,189,248,0.12)" },
-  confirmed: { label: "Confirmed", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+  complete: {
+    label: "Crew assigned",
+    color: "#38bdf8",
+    bg: "rgba(56,189,248,0.12)",
+  },
+  confirmed: {
+    label: "Confirmed",
+    color: "#22c55e",
+    bg: "rgba(34,197,94,0.12)",
+  },
 };
 
 const formatMatchDate = (value) => {
@@ -35,7 +43,13 @@ const formatMatchDate = (value) => {
   });
 };
 
-const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => {
+const TeamMatchesDialog = ({
+  open,
+  onClose,
+  team,
+  matches = [],
+  isLoading,
+}) => {
   return (
     <Dialog
       open={open}
@@ -58,8 +72,7 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
           px: 3,
           py: 3,
           borderBottom: "1px solid #242428",
-          background:
-            "linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%)",
+          bgcolor: "#121214",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
@@ -76,13 +89,15 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
               color: "#f97316",
             }}
           >
-            {!team?.logoUrl && (
-              team?.shortName?.slice(0, 2).toUpperCase() ||
-              <GroupsIcon sx={{ fontSize: 24, color: "#f97316" }} />
-            )}
+            {!team?.logoUrl &&
+              (team?.shortName?.slice(0, 2).toUpperCase() || (
+                <GroupsIcon sx={{ fontSize: 24, color: "#f97316" }} />
+              ))}
           </Avatar>
           <Box>
-            <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+            <Typography
+              sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}
+            >
               {team?.name || "Team"}
             </Typography>
             <Typography sx={{ fontSize: "13px", color: "#6b7280", mt: 0.25 }}>
@@ -95,7 +110,7 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
       </Box>
 
       {/* Body */}
-      <DialogContent sx={{ p: 3 }}>
+      <DialogContent sx={{ p: 3, bgcolor: "#121214" }}>
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
             <CircularProgress sx={{ color: "#f97316" }} />
@@ -116,7 +131,13 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.25,
+            }}
+          >
             {matches.map((match) => {
               const ds = DELEGATION_STATUS[match.delegationStatus];
               const statusChip = ds || {
@@ -132,7 +153,7 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
                   sx={{
                     p: 2,
                     borderRadius: "12px",
-                    bgcolor: "#121214",
+                    bgcolor: "#1a1a1d",
                     border: "1px solid #242428",
                     display: "flex",
                     alignItems: "center",
@@ -152,7 +173,10 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
                       }}
                     >
                       {match.homeTeam?.name || "Home"}{" "}
-                      <Box component='span' sx={{ color: "#6b7280", fontWeight: 400 }}>
+                      <Box
+                        component='span'
+                        sx={{ color: "#6b7280", fontWeight: 400 }}
+                      >
                         vs
                       </Box>{" "}
                       {match.awayTeam?.name || "Away"}
@@ -216,13 +240,21 @@ const TeamMatchesDialog = ({ open, onClose, team, matches = [], isLoading }) => 
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #242428" }}>
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: "1px solid #242428",
+          bgcolor: "#121214",
+        }}
+      >
         <Button
           onClick={onClose}
           sx={{
             color: "#f97316",
             textTransform: "none",
             fontWeight: 600,
+            border: "1px solid #242428",
             "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
           }}
         >

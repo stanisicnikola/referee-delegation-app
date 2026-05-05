@@ -30,15 +30,18 @@ const RefereesPage = () => {
 
   const todayDate = new Date().toLocaleDateString("en-CA");
   const { data: refereesData, isLoading } = useReferees({ limit: 100 });
-  const { data: availableRefereesData } = useAvailableRefereesForDate(todayDate);
+  const { data: availableRefereesData } =
+    useAvailableRefereesForDate(todayDate);
   const { data: unavailableRefereesData } =
     useUnavailableRefereesForDate(todayDate);
   const referees = refereesData?.data || [];
   const availableRefereeIds = new Set(
-    (availableRefereesData?.data || []).map((referee) => referee.id)
+    (availableRefereesData?.data || []).map((referee) => referee.id),
   );
   const unavailableRefereeIds = new Set(
-    (unavailableRefereesData?.data || []).map((availability) => availability.refereeId)
+    (unavailableRefereesData?.data || []).map(
+      (availability) => availability.refereeId,
+    ),
   );
 
   // Filter referees
@@ -117,16 +120,19 @@ const RefereesPage = () => {
   // Stats
   const totalReferees = referees.length;
   const availableCount = referees.filter(
-    (referee) => getAvailability(referee.id) === "available"
+    (referee) => getAvailability(referee.id) === "available",
   ).length;
   const unavailableCount = referees.filter(
-    (referee) => getAvailability(referee.id) === "unavailable"
+    (referee) => getAvailability(referee.id) === "unavailable",
   ).length;
   const detailsAvailabilityStyle = detailsReferee
     ? getAvailabilityStyle(getAvailability(detailsReferee.id))
     : getAvailabilityStyle("unknown");
   const detailsIndex = detailsReferee
-    ? Math.max(0, referees.findIndex((r) => r.id === detailsReferee.id))
+    ? Math.max(
+        0,
+        referees.findIndex((r) => r.id === detailsReferee.id),
+      )
     : 0;
 
   return (
@@ -342,9 +348,7 @@ const RefereesPage = () => {
                           icon={
                             <StarIcon sx={{ fontSize: "14px !important" }} />
                           }
-                          label={`Category ${
-                            referee.licenseCategory || "N/A"
-                          }`}
+                          label={`Category ${referee.licenseCategory || "N/A"}`}
                           size='small'
                           sx={{
                             bgcolor: "rgba(249, 115, 22, 0.1)",

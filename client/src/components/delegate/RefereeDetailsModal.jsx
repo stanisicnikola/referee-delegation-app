@@ -17,7 +17,13 @@ const formatDate = (value) => {
   return date.toLocaleDateString("en-GB");
 };
 
-const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availabilityStyle }) => {
+const RefereeDetailsModal = ({
+  open,
+  referee,
+  onClose,
+  avatarColor,
+  availabilityStyle,
+}) => {
   return (
     <Dialog
       open={open}
@@ -26,7 +32,6 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: "#0f0f12",
           border: "1px solid #242428",
           borderRadius: "16px",
           color: "#fff",
@@ -40,8 +45,7 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
           px: 3,
           py: 3,
           borderBottom: "1px solid #242428",
-          background:
-            "linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%)",
+          bgcolor: "#121214",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
@@ -59,7 +63,9 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
             {referee?.user?.lastName?.[0]}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+            <Typography
+              sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}
+            >
               {referee?.user?.firstName} {referee?.user?.lastName}
             </Typography>
             <Box sx={{ display: "flex", gap: 1, mt: 0.75, flexWrap: "wrap" }}>
@@ -114,7 +120,7 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
       </Box>
 
       {/* Body */}
-      <DialogContent sx={{ p: 3 }}>
+      <DialogContent sx={{ p: 3, bgcolor: "#121214" }}>
         {(() => {
           const contactFields = [
             { label: "Email", value: referee?.user?.email },
@@ -199,7 +205,7 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
                     sx={{
                       p: 1.5,
                       borderRadius: "10px",
-                      bgcolor: "#121214",
+                      bgcolor: "#1a1a1d",
                       border: "1px solid #242428",
                       ...(field.fullWidth
                         ? { gridColumn: { sm: "span 2" } }
@@ -234,6 +240,7 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
         sx={{
           px: 3,
           py: 2,
+          bgcolor: "#121214",
           borderTop: "1px solid #242428",
         }}
       >
@@ -243,6 +250,7 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor, availability
             color: "#f97316",
             textTransform: "none",
             fontWeight: 600,
+            border: "1px solid #242428",
             "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
           }}
         >

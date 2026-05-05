@@ -63,6 +63,7 @@ export const useUpdateUser = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
       toast.success(data?.message || "User updated successfully!", {
         toastId: "user-update",
       });
