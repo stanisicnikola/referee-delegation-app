@@ -19,7 +19,7 @@ import {
   RefereeNotificationsPage,
   RefereeHistoryPage,
   RefereeProfilePage,
-  AdminProfilePage,
+  ProfilePage,
 } from "../pages";
 import {
   DashboardPage as DelegateDashboard,
@@ -106,7 +106,7 @@ const AppRoutes = () => {
           <Route path='teams' element={<TeamsPage />} />
           <Route path='venues' element={<VenuesPage />} />
           <Route path='settings' element={<SettingsPage />} />
-          <Route path='profile' element={<AdminProfilePage />} />
+          <Route path='profile' element={<ProfilePage />} />
         </Route>
 
         {/* Delegate routes */}
@@ -129,7 +129,7 @@ const AppRoutes = () => {
           <Route path='competitions' element={<DelegateCompetitions />} />
           <Route path='teams' element={<DelegateTeams />} />
           <Route path='settings' element={<SettingsPage />} />
-          <Route path='profile' element={<AdminProfilePage />} />
+          <Route path='profile' element={<ProfilePage />} />
         </Route>
 
         {/* Referee routes */}

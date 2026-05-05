@@ -14,12 +14,12 @@ import {
   Phone as PhoneIcon,
   Security as SecurityIcon,
 } from "@mui/icons-material";
-import { useAuth } from "../../context";
+import { useAuth } from "../context";
 import { useNavigate } from "react-router-dom";
-import StatusBadge from "../../components/user/StatusBadge";
-import { CustomButton, PageHeader } from "../../components/ui";
+import StatusBadge from "../components/user/StatusBadge";
+import { CustomButton, PageHeader } from "../components/ui";
 
-const AdminProfilePage = () => {
+const ProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const basePath = user?.role === "delegate" ? "/delegate" : "/admin";
@@ -241,4 +241,4 @@ const AdminProfilePage = () => {
   );
 };
 
-export default AdminProfilePage;
+export default ProfilePage;
