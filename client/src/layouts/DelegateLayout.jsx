@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
-  Avatar,
-  IconButton,
-  Tooltip,
+  Menu,
+  MenuItem,
+  Divider,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -13,19 +16,31 @@ import {
   EmojiEvents as CompetitionsIcon,
   Groups3 as TeamsIcon,
   Settings as SettingsIcon,
-  Logout as LogoutIcon,
   Public as LogoIcon,
+  Person as PersonIcon,
+  Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context";
+import SidebarUserMenu from "../components/ui/SidebarUserMenu";
 
 const DelegateLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleLogout = () => {
+    handleMenuClose();
     logout();
     navigate("/login");
+  };
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   const navItems = [
@@ -176,74 +191,33 @@ const DelegateLayout = () => {
 
         {/* User Section */}
         <Box sx={{ p: 2, borderTop: "1px solid #242428" }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              p: 1.5,
+          <SidebarUserMenu
+            user={user}
+            roleLabel={user?.role}
+            onMenuOpen={handleMenuOpen}
+            onLogout={handleLogout}
+            rowSx={{
               borderRadius: "8px",
-              cursor: "pointer",
               transition: "all 0.2s",
               "&:hover": { bgcolor: "#1a1a1d" },
             }}
-          >
-            <Avatar
-              sx={{
-                width: 40,
-                height: 40,
-                background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-            >
-              {user?.firstName?.[0]}
-              {user?.lastName?.[0]}
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#fff",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {user?.firstName} {user?.lastName}
-              </Typography>
-              <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                Delegate
-              </Typography>
-            </Box>
-            <Tooltip title='Settings'>
-              <IconButton size='small' sx={{ color: "#6b7280" }}>
-                <SettingsIcon fontSize='small' />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <Box
-            onClick={handleLogout}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              px: 2,
-              py: 1.5,
-              mt: 1,
-              borderRadius: "8px",
-              color: "#9ca3af",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              "&:hover": { bgcolor: "#1a1a1d", color: "#ef4444" },
+            avatarSx={{
+              width: 40,
+              height: 40,
+              background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+              fontSize: "14px",
             }}
-          >
-            <LogoutIcon sx={{ fontSize: 20 }} />
-            <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
-              Logout
-            </Typography>
-          </Box>
+            nameTextSx={{
+              fontSize: "14px",
+              fontWeight: 500,
+              color: "#fff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+            roleTextSx={{ fontSize: "12px", color: "#6b7280" }}
+            logoutButtonSx={{ color: "#6b7280" }}
+          />
         </Box>
       </Box>
 
@@ -258,6 +232,53 @@ const DelegateLayout = () => {
       >
         <Outlet />
       </Box>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: "left", vertical: "bottom" }}
+        anchorOrigin={{ horizontal: "left", vertical: "top" }}
+        PaperProps={{
+          sx: {
+            mt: -1,
+            minWidth: 200,
+            bgcolor: "#1a1a1d",
+            border: "1px solid",
+            borderColor: "#242428",
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            navigate("/delegate/profile");
+          }}
+        >
+          <ListItemIcon>
+            <PersonIcon fontSize='small' sx={{ color: "text.secondary" }} />
+          </ListItemIcon>
+          <ListItemText primary='Profile' />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            navigate("/delegate/settings");
+          }}
+        >
+          <ListItemIcon>
+            <SettingsIcon fontSize='small' sx={{ color: "text.secondary" }} />
+          </ListItemIcon>
+          <ListItemText primary='Settings' />
+        </MenuItem>
+        <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.05)" }} />
+        <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+          <ListItemIcon>
+            <LogoutIcon fontSize='small' sx={{ color: "error.main" }} />
+          </ListItemIcon>
+          <ListItemText primary='Logout' />
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

@@ -1,10 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Skeleton,
-} from "@mui/material";
+import { Box, Typography, CircularProgress, Skeleton } from "@mui/material";
 import {
   AccessTime as PendingIcon,
   CalendarMonth as MatchesIcon,
@@ -400,7 +395,9 @@ const DashboardPage = () => {
                 >
                   Upcoming matches
                 </Typography>
-                <Typography sx={{ fontSize: "12px", color: "#4b5563", mt: 0.25 }}>
+                <Typography
+                  sx={{ fontSize: "12px", color: "#4b5563", mt: 0.25 }}
+                >
                   Next scheduled fixtures
                 </Typography>
               </Box>
@@ -443,24 +440,52 @@ const DashboardPage = () => {
                     }}
                   >
                     <Skeleton
-                      variant="rounded"
+                      variant='rounded'
                       width={56}
                       height={64}
-                      sx={{ bgcolor: "#1e1e22", borderRadius: "12px", flexShrink: 0 }}
+                      sx={{
+                        bgcolor: "#1e1e22",
+                        borderRadius: "12px",
+                        flexShrink: 0,
+                      }}
                     />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
-                        <Skeleton variant="rounded" width={88} height={20} sx={{ bgcolor: "#1e1e22" }} />
-                        <Skeleton variant="rounded" width={52} height={20} sx={{ bgcolor: "#1e1e22" }} />
+                        <Skeleton
+                          variant='rounded'
+                          width={88}
+                          height={20}
+                          sx={{ bgcolor: "#1e1e22" }}
+                        />
+                        <Skeleton
+                          variant='rounded'
+                          width={52}
+                          height={20}
+                          sx={{ bgcolor: "#1e1e22" }}
+                        />
                       </Box>
-                      <Skeleton variant="text" width="65%" height={22} sx={{ bgcolor: "#1e1e22" }} />
-                      <Skeleton variant="text" width="40%" height={18} sx={{ bgcolor: "#1e1e22", mt: 0.25 }} />
+                      <Skeleton
+                        variant='text'
+                        width='65%'
+                        height={22}
+                        sx={{ bgcolor: "#1e1e22" }}
+                      />
+                      <Skeleton
+                        variant='text'
+                        width='40%'
+                        height={18}
+                        sx={{ bgcolor: "#1e1e22", mt: 0.25 }}
+                      />
                     </Box>
                     <Skeleton
-                      variant="rounded"
+                      variant='rounded'
                       width={112}
                       height={28}
-                      sx={{ bgcolor: "#1e1e22", borderRadius: "9999px", flexShrink: 0 }}
+                      sx={{
+                        bgcolor: "#1e1e22",
+                        borderRadius: "9999px",
+                        flexShrink: 0,
+                      }}
                     />
                   </Box>
                 ))}
@@ -490,12 +515,18 @@ const DashboardPage = () => {
                     mb: 0.5,
                   }}
                 >
-                  <MatchesIcon sx={{ fontSize: 26, color: "#f97316", opacity: 0.55 }} />
+                  <MatchesIcon
+                    sx={{ fontSize: 26, color: "#f97316", opacity: 0.55 }}
+                  />
                 </Box>
-                <Typography sx={{ fontSize: "15px", fontWeight: 600, color: "#9ca3af" }}>
+                <Typography
+                  sx={{ fontSize: "15px", fontWeight: 600, color: "#9ca3af" }}
+                >
                   No upcoming matches
                 </Typography>
-                <Typography sx={{ fontSize: "13px", color: "#4b5563", maxWidth: 240 }}>
+                <Typography
+                  sx={{ fontSize: "13px", color: "#4b5563", maxWidth: 240 }}
+                >
                   No fixtures scheduled for the next period
                 </Typography>
               </Box>
@@ -507,7 +538,9 @@ const DashboardPage = () => {
                   return (
                     <Box
                       key={match.id}
-                      onClick={() => navigate(`/delegate/delegation/${match.id}`)}
+                      onClick={() =>
+                        navigate(`/delegate/delegation/${match.id}`)
+                      }
                       sx={{
                         px: 2.5,
                         py: 2,
@@ -637,7 +670,7 @@ const DashboardPage = () => {
                         >
                           {match.homeTeam?.name || "TBA"}
                           <Box
-                            component="span"
+                            component='span'
                             sx={{ color: "#4b5563", fontWeight: 400, mx: 0.75 }}
                           >
                             vs
@@ -657,7 +690,10 @@ const DashboardPage = () => {
                           }}
                         >
                           {match.venue?.name || "Venue TBA"}
-                          <Box component="span" sx={{ mx: 0.75, color: "#333338" }}>
+                          <Box
+                            component='span'
+                            sx={{ mx: 0.75, color: "#333338" }}
+                          >
                             ·
                           </Box>
                           {dateInfo.time}
@@ -665,9 +701,7 @@ const DashboardPage = () => {
                       </Box>
 
                       {/* Status chip */}
-                      <Box sx={{ flexShrink: 0 }}>
-                        {getStatusBadge(match)}
-                      </Box>
+                      <Box sx={{ flexShrink: 0 }}>{getStatusBadge(match)}</Box>
                     </Box>
                   );
                 })}

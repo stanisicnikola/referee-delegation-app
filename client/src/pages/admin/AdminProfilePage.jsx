@@ -22,6 +22,7 @@ import { CustomButton, PageHeader } from "../../components/ui";
 const AdminProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const basePath = user?.role === "delegate" ? "/delegate" : "/admin";
 
   return (
     <Box
@@ -227,7 +228,7 @@ const AdminProfilePage = () => {
                 <CustomButton
                   variant='admin-outline'
                   size='small'
-                  onClick={() => navigate("/admin/settings")}
+                  onClick={() => navigate(`${basePath}/settings`)}
                 >
                   Go to Settings
                 </CustomButton>

@@ -12,7 +12,6 @@ import {
   ListItemText,
   Typography,
   IconButton,
-  Avatar,
   Menu,
   MenuItem,
   Divider,
@@ -50,6 +49,7 @@ import {
 import { useAuth } from "../context";
 import { adminTheme } from "../theme";
 import { useUsers, useReferees } from "../hooks";
+import SidebarUserMenu from "../components/ui/SidebarUserMenu";
 
 const DRAWER_WIDTH = 240;
 
@@ -335,62 +335,19 @@ const AdminLayout = () => {
           borderColor: "divider",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            p: 1.5,
-            borderRadius: 1,
-            cursor: "pointer",
+        <SidebarUserMenu
+          user={user}
+          roleLabel={user?.role}
+          onMenuOpen={handleMenuOpen}
+          onLogout={handleLogout}
+          logoutButtonSx={{
             "&:hover": {
-              bgcolor: "rgba(255, 255, 255, 0.05)",
+              color: (theme) => theme.palette.error.main,
+              border: "1px solid",
+              borderColor: "#1a1a1d",
             },
           }}
-          onClick={handleMenuOpen}
-        >
-          <Avatar
-            sx={{
-              width: 38,
-              height: 38,
-              background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-              fontSize: "0.85rem",
-              fontWeight: 600,
-            }}
-          >
-            {user?.firstName?.[0]}
-            {user?.lastName?.[0]}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant='body2'
-              sx={{ fontWeight: 600, lineHeight: 1.2 }}
-              noWrap
-            >
-              {user?.firstName} {user?.lastName}
-            </Typography>
-            <Typography
-              variant='caption'
-              sx={{ color: "text.secondary", textTransform: "capitalize" }}
-            >
-              {user?.role}
-            </Typography>
-          </Box>
-          <IconButton
-            size='small'
-            sx={(theme) => ({
-              color: theme.palette.grey[400],
-              "&:hover": {
-                color: theme.palette.error.main,
-                border: "1px solid",
-                borderColor: "#1a1a1d",
-              },
-            })}
-            onClick={handleLogout}
-          >
-            <LogoutIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Box>
+        />
       </Box>
     </Box>
   );

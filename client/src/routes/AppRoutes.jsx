@@ -128,6 +128,8 @@ const AppRoutes = () => {
           <Route path='referees' element={<DelegateReferees />} />
           <Route path='competitions' element={<DelegateCompetitions />} />
           <Route path='teams' element={<DelegateTeams />} />
+          <Route path='settings' element={<SettingsPage />} />
+          <Route path='profile' element={<AdminProfilePage />} />
         </Route>
 
         {/* Referee routes */}
