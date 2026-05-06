@@ -107,26 +107,20 @@ const DashboardPage = () => {
       {/* Header */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #242428",
-          zIndex: 40,
+          mb: 3,
         }}
       >
         <Box
           sx={{
-            px: 4,
-            py: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 2,
           }}
         >
           <Box>
             <Typography
-              sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
             >
               Dashboard
             </Typography>
@@ -134,23 +128,10 @@ const DashboardPage = () => {
               Delegation overview
             </Typography>
           </Box>
-          <Typography
-            sx={{
-              fontSize: "14px",
-              color: "#9ca3af",
-              fontFamily: "monospace",
-            }}
-          >
-            {new Date().toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ p: 4 }}>
+      <Box>
         {/* Stats Cards */}
         <Box
           sx={{

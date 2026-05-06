@@ -3,7 +3,7 @@ import { Button, CircularProgress } from "@mui/material";
 /**
  * Reusable Button component that fits the project's design system.
  *
- * @param {string} variant - primary | secondary | danger | outline
+ * @param {string} variant - admin-primary | delegate-primary | admin-outline | delegate-outline | primary | secondary | danger | outline
  * @param {boolean} loading - Shows a spinner if true
  * @param {boolean} disabled - Disables the button
  * @param {ReactNode} children - Button text or content
@@ -45,6 +45,21 @@ const CustomButton = ({
           },
           "&.Mui-disabled": {
             bgcolor: "#8b5cf650",
+            color: "#ffffff60",
+          },
+        };
+      case "delegate-primary":
+        return {
+          ...baseStyles,
+          bgcolor: "#f97316",
+          color: "#fff",
+          "&:hover": {
+            bgcolor: "#ea580c",
+            transform: "translateY(-1px)",
+            boxShadow: "0 4px 12px rgba(249, 115, 22, 0.25)",
+          },
+          "&.Mui-disabled": {
+            bgcolor: "#f9731650",
             color: "#ffffff60",
           },
         };
@@ -95,6 +110,17 @@ const CustomButton = ({
           "&:hover": {
             bgcolor: "rgba(139, 92, 246, 0.05)",
             borderColor: "#8b5cf6",
+          },
+        };
+      case "delegate-outline":
+        return {
+          ...baseStyles,
+          border: "1px solid",
+          borderColor: "rgb(244, 105, 6)",
+          color: "#ee681a",
+          "&:hover": {
+            bgcolor: "rgba(244, 148, 79, 0.09)",
+            borderColor: "#f66905",
           },
         };
       case "outline":

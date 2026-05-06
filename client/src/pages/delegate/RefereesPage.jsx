@@ -22,6 +22,7 @@ import {
   useAvailableRefereesForDate,
   useUnavailableRefereesForDate,
 } from "../../hooks";
+import { FilterSearch } from "../../components/ui";
 
 const RefereesPage = () => {
   const [search, setSearch] = useState("");
@@ -105,7 +106,6 @@ const RefereesPage = () => {
   const handleCloseDetails = () => {
     setDetailsReferee(null);
   };
-
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#121214",
@@ -140,26 +140,21 @@ const RefereesPage = () => {
       {/* Header */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #242428",
-          zIndex: 40,
+          mb: 3,
         }}
       >
         <Box
           sx={{
-            px: 4,
-            py: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
           <Box>
             <Typography
-              sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
             >
               Referees
             </Typography>
@@ -218,22 +213,14 @@ const RefereesPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ p: 4 }}>
+      <Box>
         {/* Filters */}
         <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
-          <TextField
+          <FilterSearch
             placeholder='Search by name...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            size='small'
-            sx={{ ...inputStyles, width: 300 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
-                </InputAdornment>
-              ),
-            }}
+            sx={inputStyles}
           />
           <Box sx={{ display: "flex", gap: 1 }}>
             {[

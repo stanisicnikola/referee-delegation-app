@@ -97,7 +97,7 @@ const MatchesPage = () => {
     try {
       await deleteMatch.mutateAsync(matchToDelete.id);
     } catch (error) {
-      // Error toast handled by hook
+      console.error("Error deleting match:", error);
     } finally {
       handleCloseDialog();
     }
@@ -121,10 +121,6 @@ const MatchesPage = () => {
       }),
     };
   };
-
-  const assignedMatches = matches.filter(
-    (m) => m.referees && m.referees.length > 0,
-  ).length;
 
   return (
     <Box sx={{ p: 3 }}>

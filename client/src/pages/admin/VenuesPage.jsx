@@ -90,7 +90,7 @@ const VenuesPage = () => {
     try {
       await deleteVenue.mutateAsync(venueToDelete.id);
     } catch (error) {
-      // Error toast handled by hook
+      console.error("Error deleting venue:", error);
     } finally {
       handleCloseDialog();
     }

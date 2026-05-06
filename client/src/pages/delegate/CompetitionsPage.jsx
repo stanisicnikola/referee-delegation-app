@@ -17,6 +17,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useCompetitions, useCompetitionSummary } from "../../hooks";
+import { FilterSearch } from "../../components/ui";
 
 const CompetitionsPage = () => {
   const navigate = useNavigate();
@@ -32,7 +33,8 @@ const CompetitionsPage = () => {
   const filteredCompetitions = competitions.filter((comp) => {
     const matchesSearch =
       search === "" || comp.name?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || comp.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || comp.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -104,7 +106,10 @@ const CompetitionsPage = () => {
     if (totalDuration <= 0) return 0;
 
     const elapsed = now.getTime() - startDate.getTime();
-    return Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+    return Math.min(
+      100,
+      Math.max(0, Math.round((elapsed / totalDuration) * 100)),
+    );
   };
 
   const formatDateRange = (competition) => {
@@ -119,7 +124,7 @@ const CompetitionsPage = () => {
     }
 
     return `${startDate.toLocaleDateString("en-GB")} - ${endDate.toLocaleDateString(
-      "en-GB"
+      "en-GB",
     )}`;
   };
 
@@ -163,26 +168,21 @@ const CompetitionsPage = () => {
       {/* Header */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #242428",
-          zIndex: 40,
+          mb: 3,
         }}
       >
         <Box
           sx={{
-            px: 4,
-            py: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
           <Box>
             <Typography
-              sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
             >
               Competitions
             </Typography>
@@ -217,55 +217,50 @@ const CompetitionsPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ p: 4 }}>
+      <Box>
         {/* Filters */}
         <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
-          <TextField
+          <FilterSearch
             placeholder='Search competitions...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            size='small'
-            sx={{ ...inputStyles, width: 300 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
-                </InputAdornment>
-              ),
-            }}
+            sx={inputStyles}
           />
           <Box sx={{ display: "flex", gap: 1 }}>
-            {["all", "active", "upcoming", "completed", "suspended"].map((status) => (
-              <Button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                sx={{
-                  px: 2.5,
-                  py: 1,
-                  borderRadius: "10px",
-                  bgcolor: statusFilter === status ? "#f97316" : "#121214",
-                  border: "1px solid",
-                  borderColor: statusFilter === status ? "#f97316" : "#242428",
-                  color: statusFilter === status ? "#fff" : "#9ca3af",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  textTransform: "none",
-                  "&:hover": {
-                    bgcolor: statusFilter === status ? "#ea580c" : "#1a1a1d",
-                  },
-                }}
-              >
-                {status === "all"
-                  ? "All"
-                  : status === "active"
-                  ? "Active"
-                  : status === "upcoming"
-                  ? "Upcoming"
-                  : status === "completed"
-                  ? "Completed"
-                  : "Suspended"}
-              </Button>
-            ))}
+            {["all", "active", "upcoming", "completed", "suspended"].map(
+              (status) => (
+                <Button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  sx={{
+                    px: 2.5,
+                    py: 1,
+                    borderRadius: "10px",
+                    bgcolor: statusFilter === status ? "#f97316" : "#121214",
+                    border: "1px solid",
+                    borderColor:
+                      statusFilter === status ? "#f97316" : "#242428",
+                    color: statusFilter === status ? "#fff" : "#9ca3af",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    textTransform: "none",
+                    "&:hover": {
+                      bgcolor: statusFilter === status ? "#ea580c" : "#1a1a1d",
+                    },
+                  }}
+                >
+                  {status === "all"
+                    ? "All"
+                    : status === "active"
+                      ? "Active"
+                      : status === "upcoming"
+                        ? "Upcoming"
+                        : status === "completed"
+                          ? "Completed"
+                          : "Suspended"}
+                </Button>
+              ),
+            )}
           </Box>
         </Box>
 
@@ -455,7 +450,9 @@ const CompetitionsPage = () => {
                           {progress}%
                         </Typography>
                       </Box>
-                      <Typography sx={{ fontSize: "12px", color: "#6b7280", mb: 1 }}>
+                      <Typography
+                        sx={{ fontSize: "12px", color: "#6b7280", mb: 1 }}
+                      >
                         {formatDateRange(competition)}
                       </Typography>
                       <Box
@@ -483,7 +480,7 @@ const CompetitionsPage = () => {
                       endIcon={<ArrowIcon />}
                       onClick={() =>
                         navigate(
-                          `/delegate/matches?competition=${competition.id}`
+                          `/delegate/matches?competition=${competition.id}`,
                         )
                       }
                       sx={{

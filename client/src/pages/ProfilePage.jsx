@@ -5,8 +5,6 @@ import {
   Avatar,
   Grid,
   Divider,
-  Chip,
-  Button,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -22,7 +20,14 @@ import { CustomButton, PageHeader } from "../components/ui";
 const ProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isDelegate = user?.role === "delegate";
   const basePath = user?.role === "delegate" ? "/delegate" : "/admin";
+  const roleOutlineVariant = isDelegate ? "delegate-outline" : "admin-outline";
+  const roleAccent = isDelegate ? "#f97316" : "#8b5cf6";
+  const roleAccentDark = isDelegate ? "#ea580c" : "#7c3aed";
+  const roleAccentSoft = isDelegate
+    ? "rgba(249, 115, 22, 0.1)"
+    : "rgba(139, 92, 246, 0.1)";
 
   return (
     <Box
@@ -55,7 +60,7 @@ const ProfilePage = () => {
                 height: 100,
                 mx: "auto",
                 mb: 2,
-                background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                background: `linear-gradient(135deg, ${roleAccent}, ${roleAccentDark})`,
                 fontSize: "2.5rem",
                 fontWeight: 700,
               }}
@@ -102,7 +107,7 @@ const ProfilePage = () => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6" }}
+                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
                 >
                   <PersonIcon />
                 </Avatar>
@@ -126,7 +131,7 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6" }}
+                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
                 >
                   <PersonIcon />
                 </Avatar>
@@ -150,7 +155,7 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6" }}
+                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
                 >
                   <EmailIcon />
                 </Avatar>
@@ -174,7 +179,7 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6" }}
+                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
                 >
                   <PhoneIcon />
                 </Avatar>
@@ -220,13 +225,13 @@ const ProfilePage = () => {
                     gap: 1.5,
                   }}
                 >
-                  <SecurityIcon sx={{ color: "#8b5cf6" }} />
+                  <SecurityIcon sx={{ color: roleAccent }} />
                   <Typography variant='body2' sx={{ color: "text.secondary" }}>
                     Manage your account and preferences
                   </Typography>
                 </Box>
                 <CustomButton
-                  variant='admin-outline'
+                  variant={roleOutlineVariant}
                   size='small'
                   onClick={() => navigate(`${basePath}/settings`)}
                 >

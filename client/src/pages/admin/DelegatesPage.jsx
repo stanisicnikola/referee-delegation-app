@@ -97,7 +97,7 @@ const DelegatesPage = () => {
       if (!delegateToDelete) return;
       await deleteUser.mutateAsync(delegateToDelete.id);
     } catch (error) {
-      // Error toast handled by hook
+      console.error("Error deleting delegate:", error);
     } finally {
       handleCloseConfirmDialog();
     }

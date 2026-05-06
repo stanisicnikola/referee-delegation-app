@@ -99,8 +99,8 @@ const CompetitionsPage = () => {
   const handleDelete = async () => {
     try {
       await deleteCompetition.mutateAsync(competitionToDelete.id);
-    } catch (error) {
-      // Error toast handled by hook
+    } catch {
+      console.error("Error deleting competition");
     } finally {
       handleCloseDialog();
     }

@@ -98,7 +98,7 @@ const RefereesPage = () => {
     try {
       await deleteUser.mutateAsync(refereeToDelete.userId);
     } catch (error) {
-      // Error toast handled by hook
+      console.error("Error deleting referee:", error);
     } finally {
       handleCloseDialog();
     }

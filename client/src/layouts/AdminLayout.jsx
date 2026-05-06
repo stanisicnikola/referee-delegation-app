@@ -246,7 +246,7 @@ const AdminLayout = () => {
       </Box>
 
       {/* Navigation */}
-      <Box sx={{ flex: 1, overflow: "auto", py: 2 }}>
+      <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
         {menuSections.map((section) => (
           <Box key={section.title} sx={{ mb: 1 }}>
             <Typography
@@ -340,13 +340,27 @@ const AdminLayout = () => {
           roleLabel={user?.role}
           onMenuOpen={handleMenuOpen}
           onLogout={handleLogout}
-          logoutButtonSx={{
-            "&:hover": {
-              color: (theme) => theme.palette.error.main,
-              border: "1px solid",
-              borderColor: "#1a1a1d",
-            },
+          rowSx={{
+            borderRadius: "8px",
+            transition: "all 0.2s",
+            "&:hover": { bgcolor: "#1a1a1d" },
           }}
+          avatarSx={{
+            width: 40,
+            height: 40,
+            background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+            fontSize: "14px",
+          }}
+          nameTextSx={{
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#fff",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          roleTextSx={{ fontSize: "12px", color: "#6b7280" }}
+          logoutButtonSx={{ color: "#6b7280" }}
         />
       </Box>
     </Box>
@@ -354,7 +368,14 @@ const AdminLayout = () => {
 
   return (
     <ThemeProvider theme={adminTheme}>
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0a0a0b" }}>
+      <Box
+        sx={{
+          display: "flex",
+          height: "100vh",
+          overflow: "hidden",
+          bgcolor: "#0a0a0b",
+        }}
+      >
         {/* Sidebar */}
         <Box
           component='nav'
@@ -403,7 +424,8 @@ const AdminLayout = () => {
           sx={{
             flexGrow: 1,
             width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-            minHeight: "100vh",
+            height: "100vh",
+            minHeight: 0,
             display: "flex",
             flexDirection: "column",
           }}
@@ -568,7 +590,16 @@ const AdminLayout = () => {
           </Popover>
 
           {/* Page content */}
-          <Box sx={{ p: { xs: 2, md: 4 }, flex: 1 }}>
+          <Box
+            sx={{
+              p: { xs: 2, md: 4 },
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              overflowX: "hidden",
+              scrollbarGutter: "stable",
+            }}
+          >
             <Outlet />
           </Box>
         </Box>

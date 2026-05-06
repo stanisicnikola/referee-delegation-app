@@ -51,7 +51,11 @@ const SidebarUserMenu = ({
         </Typography>
         <Typography
           variant='caption'
-          sx={{ color: "text.secondary", textTransform: "capitalize", ...roleTextSx }}
+          sx={{
+            color: "text.secondary",
+            textTransform: "capitalize",
+            ...roleTextSx,
+          }}
         >
           {roleLabel || user?.role}
         </Typography>
@@ -59,7 +63,7 @@ const SidebarUserMenu = ({
       <IconButton
         size='small'
         sx={{
-          color: (theme) => theme.palette.grey[400],
+          color: (theme) => theme.palette.grey[200],
           "&:hover": {
             color: (theme) => theme.palette.error.main,
           },

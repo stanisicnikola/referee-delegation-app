@@ -95,7 +95,7 @@ const TeamsPage = () => {
     try {
       await deleteTeam.mutateAsync(teamToDelete.id);
     } catch (error) {
-      // Error toast handled by hook
+      console.error("Error deleting team:", error);
     } finally {
       handleCloseDialog();
     }

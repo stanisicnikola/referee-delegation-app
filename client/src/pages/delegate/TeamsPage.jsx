@@ -25,6 +25,7 @@ import {
 import { useMatches, useTeams } from "../../hooks";
 import TeamDetailsDialog from "../../components/delegate/TeamDetailsDialog";
 import TeamMatchesDialog from "../../components/delegate/TeamMatchesDialog";
+import { FilterSearch } from "../../components/ui";
 
 const TeamsPage = () => {
   const [search, setSearch] = useState("");
@@ -129,26 +130,21 @@ const TeamsPage = () => {
       {/* Header */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #242428",
-          zIndex: 40,
+          mb: 3,
         }}
       >
         <Box
           sx={{
-            px: 4,
-            py: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
           <Box>
             <Typography
-              sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
             >
               Teams
             </Typography>
@@ -183,22 +179,14 @@ const TeamsPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ p: 4 }}>
+      <Box>
         {/* Search */}
         <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
-          <TextField
-            placeholder='Search teams...'
+          <FilterSearch
+            placeholder='Search competitions...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            size='small'
-            sx={{ ...inputStyles, width: 300 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
-                </InputAdornment>
-              ),
-            }}
+            sx={inputStyles}
           />
         </Box>
 

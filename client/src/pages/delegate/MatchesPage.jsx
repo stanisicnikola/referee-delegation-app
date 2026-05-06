@@ -178,7 +178,7 @@ const MatchesPage = () => {
 
     return (
       <Button
-        size="small"
+        size='small'
         onClick={(e) => {
           e.stopPropagation();
           navigate(`/delegate/delegation/${match.id}`);
@@ -258,26 +258,21 @@ const MatchesPage = () => {
       {/* Header */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #242428",
-          zIndex: 40,
+          mb: 3,
         }}
       >
         <Box
           sx={{
-            px: 4,
-            py: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
           <Box>
             <Typography
-              sx={{ fontSize: "24px", fontWeight: 700, color: "#fff" }}
+              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
             >
               Matches
             </Typography>
@@ -303,13 +298,11 @@ const MatchesPage = () => {
             >
               New match
             </Button>
-          ) : (
-            null
-          )}
+          ) : null}
         </Box>
       </Box>
 
-      <Box sx={{ p: 4 }}>
+      <Box>
         {/* Filters */}
         <Box
           sx={{
@@ -321,12 +314,12 @@ const MatchesPage = () => {
           }}
         >
           <TextField
-            placeholder="Search matches..."
+            placeholder='Search matches...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
               startAdornment: (
-                <InputAdornment position="start">
+                <InputAdornment position='start'>
                   <SearchIcon sx={{ color: "#6b7280" }} />
                 </InputAdornment>
               ),
@@ -345,7 +338,7 @@ const MatchesPage = () => {
                 },
               }}
             >
-              <MenuItem value="all">All competitions</MenuItem>
+              <MenuItem value='all'>All competitions</MenuItem>
               {competitions.map((comp) => (
                 <MenuItem key={comp.id} value={comp.id}>
                   {comp.name}
@@ -365,11 +358,11 @@ const MatchesPage = () => {
                 },
               }}
             >
-              <MenuItem value="all">All statuses</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="partial">Partial</MenuItem>
-              <MenuItem value="complete">Crew assigned</MenuItem>
-              <MenuItem value="confirmed">Confirmed</MenuItem>
+              <MenuItem value='all'>All statuses</MenuItem>
+              <MenuItem value='pending'>Pending</MenuItem>
+              <MenuItem value='partial'>Partial</MenuItem>
+              <MenuItem value='complete'>Crew assigned</MenuItem>
+              <MenuItem value='confirmed'>Confirmed</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -408,7 +401,7 @@ const MatchesPage = () => {
                     >
                       {label}
                     </Typography>
-                  )
+                  ),
                 )}
               </Box>
               {[0, 1, 2, 3, 4].map((i) => (
@@ -424,62 +417,121 @@ const MatchesPage = () => {
                   }}
                 >
                   <Box sx={{ width: 90, flexShrink: 0 }}>
-                    <Skeleton variant="text" width={72} height={18} sx={{ bgcolor: "#1e1e22" }} />
-                    <Skeleton variant="text" width={44} height={15} sx={{ bgcolor: "#1e1e22" }} />
+                    <Skeleton
+                      variant='text'
+                      width={72}
+                      height={18}
+                      sx={{ bgcolor: "#1e1e22" }}
+                    />
+                    <Skeleton
+                      variant='text'
+                      width={44}
+                      height={15}
+                      sx={{ bgcolor: "#1e1e22" }}
+                    />
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Skeleton variant="text" width="55%" height={18} sx={{ bgcolor: "#1e1e22" }} />
-                    <Skeleton variant="text" width="30%" height={15} sx={{ bgcolor: "#1e1e22" }} />
+                    <Skeleton
+                      variant='text'
+                      width='55%'
+                      height={18}
+                      sx={{ bgcolor: "#1e1e22" }}
+                    />
+                    <Skeleton
+                      variant='text'
+                      width='30%'
+                      height={15}
+                      sx={{ bgcolor: "#1e1e22" }}
+                    />
                   </Box>
-                  <Skeleton variant="rounded" width={80} height={22} sx={{ bgcolor: "#1e1e22", flexShrink: 0 }} />
+                  <Skeleton
+                    variant='rounded'
+                    width={80}
+                    height={22}
+                    sx={{ bgcolor: "#1e1e22", flexShrink: 0 }}
+                  />
                   <Box sx={{ width: 130, flexShrink: 0 }}>
-                    <Skeleton variant="text" width={100} height={18} sx={{ bgcolor: "#1e1e22" }} />
-                    <Skeleton variant="text" width={60} height={15} sx={{ bgcolor: "#1e1e22" }} />
+                    <Skeleton
+                      variant='text'
+                      width={100}
+                      height={18}
+                      sx={{ bgcolor: "#1e1e22" }}
+                    />
+                    <Skeleton
+                      variant='text'
+                      width={60}
+                      height={15}
+                      sx={{ bgcolor: "#1e1e22" }}
+                    />
                   </Box>
-                  <Skeleton variant="rounded" width={96} height={26} sx={{ bgcolor: "#1e1e22", borderRadius: "9999px", flexShrink: 0 }} />
-                  <Skeleton variant="rounded" width={76} height={30} sx={{ bgcolor: "#1e1e22", borderRadius: "8px", flexShrink: 0, ml: "auto" }} />
+                  <Skeleton
+                    variant='rounded'
+                    width={96}
+                    height={26}
+                    sx={{
+                      bgcolor: "#1e1e22",
+                      borderRadius: "9999px",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Skeleton
+                    variant='rounded'
+                    width={76}
+                    height={30}
+                    sx={{
+                      bgcolor: "#1e1e22",
+                      borderRadius: "8px",
+                      flexShrink: 0,
+                      ml: "auto",
+                    }}
+                  />
                 </Box>
               ))}
             </Box>
           ) : (
             <Box sx={{ overflowX: "auto" }}>
               <Box
-                component="table"
+                component='table'
                 sx={{ width: "100%", borderCollapse: "collapse" }}
               >
-                <Box component="thead">
+                <Box component='thead'>
                   <Box
-                    component="tr"
+                    component='tr'
                     sx={{ borderBottom: "1px solid #242428" }}
                   >
-                    {["Date", "Match", "Competition", "Venue", "Status", ""].map(
-                      (header, i) => (
-                        <Box
-                          key={header || `col-${i}`}
-                          component="th"
-                          sx={{
-                            textAlign: i === 5 ? "right" : "left",
-                            px: 3,
-                            py: 2,
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            color: "#6b7280",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {header}
-                        </Box>
-                      )
-                    )}
+                    {[
+                      "Date",
+                      "Match",
+                      "Competition",
+                      "Venue",
+                      "Status",
+                      "",
+                    ].map((header, i) => (
+                      <Box
+                        key={header || `col-${i}`}
+                        component='th'
+                        sx={{
+                          textAlign: i === 5 ? "right" : "left",
+                          px: 3,
+                          py: 2,
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "#6b7280",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {header}
+                      </Box>
+                    ))}
                   </Box>
                 </Box>
-                <Box component="tbody">
+                <Box component='tbody'>
                   {matches.length === 0 ? (
-                    <Box component="tr">
+                    <Box component='tr'>
                       <Box
-                        component="td"
+                        component='td'
                         colSpan={6}
                         sx={{ textAlign: "center", py: 7 }}
                       >
@@ -503,13 +555,23 @@ const MatchesPage = () => {
                               justifyContent: "center",
                             }}
                           >
-                            <MatchesIcon sx={{ fontSize: 24, color: "#6b7280" }} />
+                            <MatchesIcon
+                              sx={{ fontSize: 24, color: "#6b7280" }}
+                            />
                           </Box>
-                          <Typography sx={{ color: "#9ca3af", fontSize: 15, fontWeight: 600 }}>
+                          <Typography
+                            sx={{
+                              color: "#9ca3af",
+                              fontSize: 15,
+                              fontWeight: 600,
+                            }}
+                          >
                             No matches found
                           </Typography>
                           <Typography sx={{ color: "#4b5563", fontSize: 13 }}>
-                            {search || competitionFilter !== "all" || statusFilter !== "all"
+                            {search ||
+                            competitionFilter !== "all" ||
+                            statusFilter !== "all"
                               ? "Try adjusting your filters"
                               : "No matches available at this time"}
                           </Typography>
@@ -522,8 +584,10 @@ const MatchesPage = () => {
                       return (
                         <Box
                           key={match.id}
-                          component="tr"
-                          onClick={() => navigate(`/delegate/delegation/${match.id}`)}
+                          component='tr'
+                          onClick={() =>
+                            navigate(`/delegate/delegation/${match.id}`)
+                          }
                           sx={{
                             borderBottom: "1px solid #1a1a1d",
                             borderLeft: "2px solid transparent",
@@ -537,7 +601,7 @@ const MatchesPage = () => {
                           }}
                         >
                           <Box
-                            component="td"
+                            component='td'
                             sx={{ px: 3, py: 2, whiteSpace: "nowrap" }}
                           >
                             <Typography
@@ -549,12 +613,14 @@ const MatchesPage = () => {
                             >
                               {dateInfo.date}
                             </Typography>
-                            <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                            <Typography
+                              sx={{ fontSize: "12px", color: "#6b7280" }}
+                            >
                               {dateInfo.time}
                             </Typography>
                           </Box>
 
-                          <Box component="td" sx={{ px: 3, py: 2 }}>
+                          <Box component='td' sx={{ px: 3, py: 2 }}>
                             <Typography
                               sx={{
                                 fontSize: "14px",
@@ -564,38 +630,50 @@ const MatchesPage = () => {
                             >
                               {match.homeTeam?.name || "TBA"}{" "}
                               <Box
-                                component="span"
+                                padding='0 4px'
+                                component='span'
                                 sx={{ color: "#4b5563", fontWeight: 400 }}
                               >
                                 vs
                               </Box>{" "}
                               {match.awayTeam?.name || "TBA"}
                             </Typography>
-                            <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                            <Typography
+                              sx={{ fontSize: "12px", color: "#6b7280" }}
+                            >
                               Round {match.round || "–"}
                             </Typography>
                           </Box>
 
-                          <Box component="td" sx={{ px: 3, py: 2 }}>
+                          <Box component='td' sx={{ px: 3, py: 2 }}>
                             {getCompetitionBadge(match.competition)}
                           </Box>
 
-                          <Box component="td" sx={{ px: 3, py: 2 }}>
-                            <Typography sx={{ fontSize: "13px", color: "#e5e7eb" }}>
+                          <Box component='td' sx={{ px: 3, py: 2 }}>
+                            <Typography
+                              sx={{ fontSize: "13px", color: "#e5e7eb" }}
+                            >
                               {match.venue?.name || "TBA"}
                             </Typography>
-                            <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                            <Typography
+                              sx={{ fontSize: "12px", color: "#6b7280" }}
+                            >
                               {match.venue?.city || ""}
                             </Typography>
                           </Box>
 
-                          <Box component="td" sx={{ px: 3, py: 2 }}>
+                          <Box component='td' sx={{ px: 3, py: 2 }}>
                             {getStatusBadge(match)}
                           </Box>
 
                           <Box
-                            component="td"
-                            sx={{ px: 3, py: 2, textAlign: "right", whiteSpace: "nowrap" }}
+                            component='td'
+                            sx={{
+                              px: 3,
+                              py: 2,
+                              textAlign: "right",
+                              whiteSpace: "nowrap",
+                            }}
                           >
                             {getActionButton(match)}
                           </Box>

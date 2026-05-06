@@ -19,13 +19,13 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { CustomButton, PageHeader } from "../../components/ui";
-import { useAuth } from "../../context";
+import { CustomButton, PageHeader } from "../components/ui";
+import { useAuth } from "../context";
 import {
   useVerifyPassword,
   useChangePassword,
   useDeleteMe,
-} from "../../hooks/useAuthHooks";
+} from "../hooks/useAuthHooks";
 import { useNavigate } from "react-router-dom";
 
 const SettingsPage = () => {
@@ -50,6 +50,9 @@ const SettingsPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isAdmin = user?.role === "admin";
+  const isDelegate = user?.role === "delegate";
+  const rolePrimaryVariant = isDelegate ? "delegate-primary" : "admin-primary";
+  const roleOutlineVariant = isDelegate ? "delegate-outline" : "admin-outline";
   const loading =
     verifyPasswordMutation.isPending || changePasswordMutation.isPending;
   const deleteLoading = deleteMeMutation.isPending;
@@ -271,7 +274,7 @@ const SettingsPage = () => {
                 </Typography>
               </Box>
               <CustomButton
-                variant='admin-outline'
+                variant={roleOutlineVariant}
                 onClick={handleOpenPasswordModal}
               >
                 Change Password
@@ -401,7 +404,7 @@ const SettingsPage = () => {
           </CustomButton>
           {activeStep === 0 ? (
             <CustomButton
-              variant='admin-primary'
+              variant={rolePrimaryVariant}
               onClick={handleVerifyPassword}
               disabled={loading || !currentPassword}
             >
@@ -409,7 +412,7 @@ const SettingsPage = () => {
             </CustomButton>
           ) : (
             <CustomButton
-              variant='admin-primary'
+              variant={rolePrimaryVariant}
               onClick={handleChangePassword}
               disabled={loading || !newPassword || !confirmPassword}
             >

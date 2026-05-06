@@ -110,7 +110,7 @@ const DelegationPage = () => {
         const matchesSearch =
           search.trim() === "" || fullName.includes(search.toLowerCase());
         const notAssigned = !Object.values(assignedReferees).some(
-          (assigned) => assigned?.id === referee.id
+          (assigned) => assigned?.id === referee.id,
         );
         return matchesSearch && notAssigned;
       })
@@ -125,8 +125,8 @@ const DelegationPage = () => {
     return allAvailableReferees.filter(
       (referee) =>
         !Object.values(assignedReferees).some(
-          (assigned) => assigned?.id === referee.id
-        )
+          (assigned) => assigned?.id === referee.id,
+        ),
     );
   }, [allAvailableReferees, assignedReferees]);
 
@@ -214,40 +214,34 @@ const DelegationPage = () => {
       <Box>
         <Box
           sx={{
-            position: "sticky",
-            top: 0,
-            bgcolor: "rgba(10, 10, 11, 0.86)",
-            backdropFilter: "blur(12px)",
-            borderBottom: "1px solid #242428",
-            zIndex: 40,
+            mb: 3,
           }}
         >
           <Box
             sx={{
-              px: 4,
-              py: 2,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               gap: 2,
+              flexWrap: "wrap",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Skeleton
-                variant="circular"
+                variant='circular'
                 width={40}
                 height={40}
                 sx={{ bgcolor: "#1e1e22", flexShrink: 0 }}
               />
               <Box>
                 <Skeleton
-                  variant="text"
+                  variant='text'
                   width={180}
                   height={28}
                   sx={{ bgcolor: "#1e1e22" }}
                 />
                 <Skeleton
-                  variant="text"
+                  variant='text'
                   width={140}
                   height={20}
                   sx={{ bgcolor: "#1e1e22" }}
@@ -255,7 +249,7 @@ const DelegationPage = () => {
               </Box>
             </Box>
             <Skeleton
-              variant="rounded"
+              variant='rounded'
               width={160}
               height={42}
               sx={{ bgcolor: "#1e1e22", borderRadius: "12px" }}
@@ -263,9 +257,9 @@ const DelegationPage = () => {
           </Box>
         </Box>
 
-        <Box sx={{ p: 4, display: "grid", gap: 3 }}>
+        <Box sx={{ display: "grid", gap: 3 }}>
           <Skeleton
-            variant="rounded"
+            variant='rounded'
             height={156}
             sx={{ bgcolor: "#1a1a1d", borderRadius: "16px" }}
           />
@@ -286,13 +280,13 @@ const DelegationPage = () => {
             >
               <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid #242428" }}>
                 <Skeleton
-                  variant="text"
+                  variant='text'
                   width={140}
                   height={28}
                   sx={{ bgcolor: "#1e1e22" }}
                 />
                 <Skeleton
-                  variant="text"
+                  variant='text'
                   width={220}
                   height={20}
                   sx={{ bgcolor: "#1e1e22" }}
@@ -302,7 +296,7 @@ const DelegationPage = () => {
                 {[0, 1, 2].map((i) => (
                   <Skeleton
                     key={i}
-                    variant="rounded"
+                    variant='rounded'
                     height={72}
                     sx={{ bgcolor: "#1e1e22", borderRadius: "12px" }}
                   />
@@ -320,12 +314,12 @@ const DelegationPage = () => {
             >
               <Box sx={{ p: 2, borderBottom: "1px solid #242428" }}>
                 <Skeleton
-                  variant="rounded"
+                  variant='rounded'
                   height={40}
                   sx={{ bgcolor: "#1e1e22", borderRadius: "10px" }}
                 />
                 <Skeleton
-                  variant="text"
+                  variant='text'
                   width={130}
                   height={18}
                   sx={{ bgcolor: "#1e1e22", mt: 1 }}
@@ -335,7 +329,7 @@ const DelegationPage = () => {
                 {[0, 1, 2, 3, 4].map((i) => (
                   <Skeleton
                     key={i}
-                    variant="rounded"
+                    variant='rounded'
                     height={60}
                     sx={{ bgcolor: "#1e1e22", borderRadius: "10px" }}
                   />
@@ -353,7 +347,7 @@ const DelegationPage = () => {
     return (
       <Box
         sx={{
-          p: 4,
+          p: 0,
           pt: 8,
           display: "flex",
           flexDirection: "column",
@@ -379,9 +373,7 @@ const DelegationPage = () => {
         <Typography sx={{ color: "#fff", fontSize: 18, fontWeight: 600 }}>
           Match not found
         </Typography>
-        <Typography
-          sx={{ color: "#6b7280", fontSize: 14, maxWidth: 280 }}
-        >
+        <Typography sx={{ color: "#6b7280", fontSize: 14, maxWidth: 280 }}>
           This match doesn't exist or you don't have access to it.
         </Typography>
         <Button
@@ -412,26 +404,19 @@ const DelegationPage = () => {
     allAvailableReferees.length === 0
       ? "No eligible referees for this date. Everyone is unavailable or already assigned elsewhere."
       : availableWithoutSearch.length === 0
-      ? "All eligible referees are already assigned to this match. Remove a slot to swap."
-      : "No referees match your search.";
+        ? "All eligible referees are already assigned to this match. Remove a slot to swap."
+        : "No referees match your search.";
 
   return (
     <Box>
       {/* ── Sticky header ───────────────────────────────────────────────── */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          bgcolor: "rgba(10, 10, 11, 0.86)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #242428",
-          zIndex: 40,
+          mb: 3,
         }}
       >
         <Box
           sx={{
-            px: 4,
-            py: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -474,15 +459,15 @@ const DelegationPage = () => {
                   assignedCount === 3
                     ? "rgba(34,197,94,0.09)"
                     : assignedCount > 0
-                    ? "rgba(249,115,22,0.09)"
-                    : "rgba(107,114,128,0.09)",
+                      ? "rgba(249,115,22,0.09)"
+                      : "rgba(107,114,128,0.09)",
                 border: "1px solid",
                 borderColor:
                   assignedCount === 3
                     ? "rgba(34,197,94,0.25)"
                     : assignedCount > 0
-                    ? "rgba(249,115,22,0.25)"
-                    : "rgba(107,114,128,0.22)",
+                      ? "rgba(249,115,22,0.25)"
+                      : "rgba(107,114,128,0.22)",
               }}
             >
               <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -512,8 +497,8 @@ const DelegationPage = () => {
                     assignedCount === 3
                       ? "#22c55e"
                       : assignedCount > 0
-                      ? "#f97316"
-                      : "#9ca3af",
+                        ? "#f97316"
+                        : "#9ca3af",
                 }}
               >
                 {assignedCount}/3 assigned
@@ -549,7 +534,7 @@ const DelegationPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ p: 4, display: "grid", gap: 3 }}>
+      <Box sx={{ display: "grid", gap: 3 }}>
         {/* ── Match summary card ──────────────────────────────────────────── */}
         <Box
           sx={{
@@ -647,8 +632,8 @@ const DelegationPage = () => {
           >
             <TeamSummary
               team={match?.homeTeam}
-              sideLabel="Home"
-              color="#3b82f6"
+              sideLabel='Home'
+              color='#3b82f6'
             />
 
             <Box
@@ -703,9 +688,9 @@ const DelegationPage = () => {
 
             <TeamSummary
               team={match?.awayTeam}
-              sideLabel="Away"
-              color="#ef4444"
-              align="right"
+              sideLabel='Away'
+              color='#ef4444'
+              align='right'
             />
           </Box>
 
@@ -763,9 +748,7 @@ const DelegationPage = () => {
                 >
                   Assigned Crew
                 </Typography>
-                <Typography
-                  sx={{ color: "#6b7280", fontSize: 13, mt: 0.25 }}
-                >
+                <Typography sx={{ color: "#6b7280", fontSize: 13, mt: 0.25 }}>
                   {assignedCount === 3
                     ? "Full crew — ready to save."
                     : "Select referees from the right panel."}
@@ -827,14 +810,14 @@ const DelegationPage = () => {
           >
             <Box sx={{ p: 2, borderBottom: "1px solid #242428" }}>
               <TextField
-                placeholder="Search referees..."
+                placeholder='Search referees...'
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 fullWidth
-                size="small"
+                size='small'
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">
+                    <InputAdornment position='start'>
                       <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
                     </InputAdornment>
                   ),
@@ -1007,9 +990,7 @@ const AssignmentSlot = ({ config, referee, onRemove }) => {
         }}
       >
         <Box>
-          <Typography
-            sx={{ color: "#6b7280", fontSize: 14, fontWeight: 600 }}
-          >
+          <Typography sx={{ color: "#6b7280", fontSize: 14, fontWeight: 600 }}>
             {config.label}
           </Typography>
           <Typography sx={{ color: "#3f3f46", fontSize: 12, mt: 0.25 }}>
@@ -1103,14 +1084,14 @@ const AssignmentSlot = ({ config, referee, onRemove }) => {
 
       <IconButton
         onClick={onRemove}
-        size="small"
+        size='small'
         sx={{
           color: "#4b5563",
           flexShrink: 0,
           "&:hover": { bgcolor: "rgba(239,68,68,0.1)", color: "#ef4444" },
         }}
       >
-        <CloseIcon fontSize="small" />
+        <CloseIcon fontSize='small' />
       </IconButton>
     </Box>
   );
@@ -1172,8 +1153,14 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
           return (
             <Box
               key={slotCfg.slot}
-              onClick={occupied ? undefined : () => onAssign(referee, slotCfg.slot)}
-              title={occupied ? `${slotCfg.label} slot is taken` : `Assign as ${slotCfg.label}`}
+              onClick={
+                occupied ? undefined : () => onAssign(referee, slotCfg.slot)
+              }
+              title={
+                occupied
+                  ? `${slotCfg.label} slot is taken`
+                  : `Assign as ${slotCfg.label}`
+              }
               sx={{
                 px: 1.25,
                 py: "5px",
