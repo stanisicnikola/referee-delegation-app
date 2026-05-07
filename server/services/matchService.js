@@ -89,6 +89,7 @@ class MatchService {
         {
           model: MatchReferee,
           as: "refereeAssignments",
+          separate: true,
           include: [
             {
               model: Referee,
@@ -102,7 +103,6 @@ class MatchService {
       offset,
       order: [["scheduledAt", "ASC"]],
       distinct: true,
-      subQuery: false,
     });
 
     return {
