@@ -9,7 +9,6 @@ import {
   MenuItem,
   FormControl,
   Button,
-  Chip,
   Skeleton,
 } from "@mui/material";
 import {
@@ -254,7 +253,7 @@ const MatchesPage = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -272,7 +271,12 @@ const MatchesPage = () => {
         >
           <Box>
             <Typography
-              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
+              sx={{
+                fontSize: { xs: "34px", sm: "40px", md: "48px" },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.05,
+              }}
             >
               Matches
             </Typography>
@@ -285,6 +289,7 @@ const MatchesPage = () => {
               startIcon={<AddIcon />}
               onClick={() => setModalOpen(true)}
               sx={{
+                width: { xs: "100%", sm: "auto" },
                 px: 2.5,
                 py: 1.25,
                 borderRadius: "12px",
@@ -310,7 +315,8 @@ const MatchesPage = () => {
             alignItems: "center",
             gap: 2,
             mb: 3,
-            flexWrap: "wrap",
+            flexDirection: { xs: "column", md: "row" },
+            flexWrap: { md: "wrap" },
           }}
         >
           <TextField
@@ -324,10 +330,21 @@ const MatchesPage = () => {
                 </InputAdornment>
               ),
             }}
-            sx={{ ...inputStyles, flex: 1, minWidth: 180 }}
+            sx={{
+              ...inputStyles,
+              flex: 1,
+              width: "100%",
+              minWidth: { xs: "100%", md: 260 },
+            }}
           />
 
-          <FormControl sx={{ minWidth: 180, ...inputStyles }}>
+          <FormControl
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              minWidth: { xs: "100%", md: 180 },
+              ...inputStyles,
+            }}
+          >
             <Select
               value={competitionFilter}
               onChange={(e) => setCompetitionFilter(e.target.value)}
@@ -347,7 +364,13 @@ const MatchesPage = () => {
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 180, ...inputStyles }}>
+          <FormControl
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              minWidth: { xs: "100%", md: 180 },
+              ...inputStyles,
+            }}
+          >
             <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -367,13 +390,181 @@ const MatchesPage = () => {
           </FormControl>
         </Box>
 
-        {/* Table */}
+        {/* Mobile cards */}
+        <Box
+          sx={{
+            display: { xs: "grid", md: "none" },
+            gap: 1.5,
+          }}
+        >
+          {isLoading ? (
+            [0, 1, 2].map((i) => (
+              <Box
+                key={i}
+                sx={{
+                  bgcolor: "#121214",
+                  borderRadius: "14px",
+                  border: "1px solid #242428",
+                  p: 2,
+                }}
+              >
+                <Skeleton
+                  variant='rounded'
+                  height={18}
+                  width='55%'
+                  sx={{ bgcolor: "#1e1e22", mb: 1.5 }}
+                />
+                <Skeleton
+                  variant='text'
+                  height={28}
+                  width='80%'
+                  sx={{ bgcolor: "#1e1e22" }}
+                />
+                <Skeleton
+                  variant='text'
+                  height={18}
+                  width='45%'
+                  sx={{ bgcolor: "#1e1e22" }}
+                />
+              </Box>
+            ))
+          ) : matches.length === 0 ? (
+            <Box
+              sx={{
+                bgcolor: "#121214",
+                borderRadius: "14px",
+                border: "1px solid #242428",
+                py: 5,
+                px: 2,
+                textAlign: "center",
+              }}
+            >
+              <MatchesIcon sx={{ fontSize: 28, color: "#6b7280", mb: 1 }} />
+              <Typography sx={{ color: "#9ca3af", fontWeight: 600 }}>
+                No matches found
+              </Typography>
+              <Typography sx={{ color: "#4b5563", fontSize: 13, mt: 0.5 }}>
+                Try adjusting your filters
+              </Typography>
+            </Box>
+          ) : (
+            matches.map((match) => {
+              const dateInfo = formatDate(match.scheduledAt);
+              return (
+                <Box
+                  key={match.id}
+                  onClick={() => navigate(`/delegate/delegation/${match.id}`)}
+                  sx={{
+                    bgcolor: "#121214",
+                    borderRadius: "14px",
+                    border: "1px solid #242428",
+                    p: 2,
+                    display: "grid",
+                    gap: 1.5,
+                    cursor: "pointer",
+                    transition: "border-color 0.15s, background 0.15s",
+                    "&:hover": {
+                      borderColor: "rgba(249,115,22,0.35)",
+                      bgcolor: "rgba(249,115,22,0.03)",
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontSize: "13px",
+                          fontFamily: "monospace",
+                          color: "#e5e7eb",
+                        }}
+                      >
+                        {dateInfo.date}
+                      </Typography>
+                      <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                        {dateInfo.time}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ flexShrink: 0 }}>
+                      {getCompetitionBadge(match.competition)}
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontSize: "16px",
+                        fontWeight: 700,
+                        color: "#f3f4f6",
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {match.homeTeam?.name || "TBA"}
+                      <Box
+                        component='span'
+                        sx={{ color: "#4b5563", fontWeight: 500, mx: 0.75 }}
+                      >
+                        vs
+                      </Box>
+                      {match.awayTeam?.name || "TBA"}
+                    </Typography>
+                    <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                      Round {match.round || "–"}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontSize: "13px",
+                        color: "#e5e7eb",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {match.venue?.name || "TBA"}
+                    </Typography>
+                    <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+                      {match.venue?.city || ""}
+                    </Typography>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 1,
+                      flexWrap: "wrap",
+                      pt: 1,
+                      borderTop: "1px solid #1a1a1d",
+                    }}
+                  >
+                    {getStatusBadge(match)}
+                    {getActionButton(match)}
+                  </Box>
+                </Box>
+              );
+            })
+          )}
+        </Box>
+
+        {/* Desktop table */}
         <Box
           sx={{
             bgcolor: "#121214",
             borderRadius: "16px",
             border: "1px solid #242428",
             overflow: "hidden",
+            maxWidth: "100%",
+            display: { xs: "none", md: "block" },
           }}
         >
           {isLoading ? (
@@ -489,10 +680,24 @@ const MatchesPage = () => {
               ))}
             </Box>
           ) : (
-            <Box sx={{ overflowX: "auto" }}>
+            <Box
+              sx={{
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+                "&::-webkit-scrollbar": { height: 8 },
+                "&::-webkit-scrollbar-thumb": {
+                  bgcolor: "#2e2e33",
+                  borderRadius: "9999px",
+                },
+              }}
+            >
               <Box
                 component='table'
-                sx={{ width: "100%", borderCollapse: "collapse" }}
+                sx={{
+                  width: "100%",
+                  minWidth: 880,
+                  borderCollapse: "collapse",
+                }}
               >
                 <Box component='thead'>
                   <Box

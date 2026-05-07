@@ -2,8 +2,6 @@ import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
-  TextField,
-  InputAdornment,
   Avatar,
   CircularProgress,
   Table,
@@ -17,7 +15,6 @@ import {
   MenuItem,
 } from "@mui/material";
 import {
-  Search as SearchIcon,
   LocationOn as LocationIcon,
   MoreVert as MoreIcon,
   Groups as GroupsIcon,
@@ -40,7 +37,7 @@ const TeamsPage = () => {
     limit: 500,
   });
   const teams = teamsData?.data || [];
-  const matches = matchesData?.data || [];
+  const matches = useMemo(() => matchesData?.data || [], [matchesData?.data]);
 
   // Filter teams
   const filteredTeams = teams.filter((team) => {
@@ -126,7 +123,7 @@ const TeamsPage = () => {
     (matchesByTeamId[teamId] || []).length;
 
   return (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -144,7 +141,12 @@ const TeamsPage = () => {
         >
           <Box>
             <Typography
-              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
+              sx={{
+                fontSize: { xs: "34px", sm: "40px", md: "48px" },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.05,
+              }}
             >
               Teams
             </Typography>
@@ -152,7 +154,14 @@ const TeamsPage = () => {
               Overview of all teams in competitions
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              width: { xs: "100%", md: "auto" },
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -163,6 +172,8 @@ const TeamsPage = () => {
                 bgcolor: "#121214",
                 borderRadius: "12px",
                 border: "1px solid #242428",
+                width: { xs: "100%", md: "auto" },
+                justifyContent: { xs: "center", md: "flex-start" },
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -181,22 +192,30 @@ const TeamsPage = () => {
 
       <Box>
         {/* Search */}
-        <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            mb: { xs: 3, md: 4 },
+          }}
+        >
           <FilterSearch
-            placeholder='Search competitions...'
+            placeholder='Search teams...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={inputStyles}
+            sx={{
+              ...inputStyles,
+              width: "100%",
+              maxWidth: { xs: "100%", md: 400 },
+            }}
           />
         </Box>
 
-        {/* Teams Table */}
+        {/* Mobile team cards */}
         <Box
           sx={{
-            bgcolor: "#121214",
-            borderRadius: "16px",
-            border: "1px solid #242428",
-            overflow: "hidden",
+            display: { xs: "grid", md: "none" },
+            gap: 1.5,
           }}
         >
           {isLoading ? (
@@ -204,8 +223,179 @@ const TeamsPage = () => {
               <CircularProgress sx={{ color: "#f97316" }} />
             </Box>
           ) : (
-            <TableContainer>
-              <Table>
+            filteredTeams.map((team, index) => (
+              <Box
+                key={team.id}
+                sx={{
+                  bgcolor: "#121214",
+                  borderRadius: "14px",
+                  border: "1px solid #242428",
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  sx={{
+                    p: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    minWidth: 0,
+                  }}
+                >
+                  {team.logoUrl ? (
+                    <Avatar
+                      src={team.logoUrl}
+                      sx={{ width: 48, height: 48, borderRadius: "12px" }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: "12px",
+                        background: getTeamColor(index),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#fff",
+                        fontWeight: 700,
+                        fontSize: "14px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {team.shortName ||
+                        team.name?.substring(0, 3).toUpperCase()}
+                    </Box>
+                  )}
+
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        color: "#fff",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {team.name}
+                    </Typography>
+                    <Typography sx={{ color: "#6b7280", fontSize: "13px" }}>
+                      {team.shortName ||
+                        team.name?.substring(0, 3).toUpperCase()}
+                    </Typography>
+                  </Box>
+
+                  <IconButton
+                    size='small'
+                    onClick={(e) => handleMenuOpen(e, team)}
+                    sx={{
+                      color: "#6b7280",
+                      flexShrink: 0,
+                      "&:hover": { bgcolor: "#242428" },
+                    }}
+                  >
+                    <MoreIcon />
+                  </IconButton>
+                </Box>
+
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    borderTop: "1px solid #242428",
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    gap: 1.5,
+                    alignItems: "center",
+                  }}
+                >
+                  <Box sx={{ minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        color: "#9ca3af",
+                        mb: 0.75,
+                        minWidth: 0,
+                      }}
+                    >
+                      <LocationIcon sx={{ fontSize: 16, flexShrink: 0 }} />
+                      <Typography
+                        sx={{
+                          fontSize: "14px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {team.city || "N/A"}
+                      </Typography>
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: "13px",
+                        color: "#6b7280",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {team.primaryVenue?.name || "N/A"}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      px: 1.5,
+                      py: 0.75,
+                      borderRadius: "10px",
+                      bgcolor: "#0a0a0b",
+                      border: "1px solid #1a1a1d",
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700, color: "#fff" }}>
+                      {isMatchesLoading ? "..." : getTeamMatchesCount(team.id)}
+                    </Typography>
+                    <Typography sx={{ fontSize: "11px", color: "#6b7280" }}>
+                      matches
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))
+          )}
+        </Box>
+
+        {/* Desktop teams table */}
+        <Box
+          sx={{
+            bgcolor: "#121214",
+            borderRadius: "16px",
+            border: "1px solid #242428",
+            overflow: "hidden",
+            maxWidth: "100%",
+            display: { xs: "none", md: "block" },
+          }}
+        >
+          {isLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <CircularProgress sx={{ color: "#f97316" }} />
+            </Box>
+          ) : (
+            <TableContainer
+              sx={{
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+                "&::-webkit-scrollbar": { height: 8 },
+                "&::-webkit-scrollbar-thumb": {
+                  bgcolor: "#2e2e33",
+                  borderRadius: "9999px",
+                },
+              }}
+            >
+              <Table sx={{ minWidth: 820 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#0a0a0b" }}>
                     <TableCell
@@ -216,6 +406,7 @@ const TeamsPage = () => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
+                        minWidth: 260,
                       }}
                     >
                       Team
@@ -228,6 +419,7 @@ const TeamsPage = () => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
+                        minWidth: 96,
                       }}
                     >
                       Short
@@ -240,6 +432,7 @@ const TeamsPage = () => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
+                        minWidth: 150,
                       }}
                     >
                       City
@@ -252,6 +445,7 @@ const TeamsPage = () => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
+                        minWidth: 180,
                       }}
                     >
                       Venue

@@ -84,7 +84,10 @@ const DelegationPage = () => {
   const delegateReferees = useDelegateReferees();
 
   const match = matchData?.data || matchData;
-  const allAvailableReferees = availableRefereesData?.data || [];
+  const allAvailableReferees = useMemo(
+    () => availableRefereesData?.data || [],
+    [availableRefereesData?.data],
+  );
 
   useEffect(() => {
     if (!match?.refereeAssignments) return;
@@ -408,7 +411,7 @@ const DelegationPage = () => {
         : "No referees match your search.";
 
   return (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       {/* ── Sticky header ───────────────────────────────────────────────── */}
       <Box
         sx={{
@@ -424,7 +427,14 @@ const DelegationPage = () => {
             flexWrap: "wrap",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: { xs: 1.25, sm: 2 },
+              minWidth: 0,
+            }}
+          >
             <IconButton
               onClick={() => navigate("/delegate/matches")}
               sx={{ color: "#9ca3af", "&:hover": { bgcolor: "#242428" } }}
@@ -432,20 +442,41 @@ const DelegationPage = () => {
               <BackIcon />
             </IconButton>
 
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography
-                sx={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}
+                sx={{
+                  fontSize: { xs: "19px", sm: "22px" },
+                  fontWeight: 700,
+                  color: "#fff",
+                }}
               >
                 Referee Assignment
               </Typography>
-              <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  color: "#6b7280",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {match?.homeTeam?.name || "TBA"} vs{" "}
                 {match?.awayTeam?.name || "TBA"}
               </Typography>
             </Box>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexWrap: "wrap",
+              width: { xs: "100%", sm: "auto" },
+              justifyContent: { xs: "space-between", sm: "flex-end" },
+            }}
+          >
             {/* Progress indicator */}
             <Box
               sx={{
@@ -468,6 +499,7 @@ const DelegationPage = () => {
                     : assignedCount > 0
                       ? "rgba(249,115,22,0.25)"
                       : "rgba(107,114,128,0.22)",
+                flex: { xs: "1 1 145px", sm: "0 0 auto" },
               }}
             >
               <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -516,6 +548,7 @@ const DelegationPage = () => {
               onClick={handleConfirmDelegation}
               disabled={assignedCount === 0 || delegateReferees.isPending}
               sx={{
+                flex: { xs: "1 1 180px", sm: "0 0 auto" },
                 px: 3,
                 py: 1.25,
                 borderRadius: "12px",
@@ -541,7 +574,7 @@ const DelegationPage = () => {
             bgcolor: "#121214",
             borderRadius: "16px",
             border: "1px solid #242428",
-            p: 3,
+            p: { xs: 2, sm: 3 },
           }}
         >
           {/* Top row: badges + status */}
@@ -554,7 +587,14 @@ const DelegationPage = () => {
               mb: 2.5,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                flexWrap: "wrap",
+              }}
+            >
               <Box
                 sx={{
                   fontSize: "12px",
@@ -740,6 +780,7 @@ const DelegationPage = () => {
                 alignItems: "flex-start",
                 justifyContent: "space-between",
                 gap: 2,
+                flexWrap: { xs: "wrap", sm: "nowrap" },
               }}
             >
               <Box>
@@ -786,7 +827,7 @@ const DelegationPage = () => {
               </Box>
             </Box>
 
-            <Box sx={{ p: 2.5, display: "grid", gap: 1.5 }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2.5 }, display: "grid", gap: 1.5 }}>
               {SLOT_CONFIG.map((config) => (
                 <AssignmentSlot
                   key={config.slot}
@@ -937,7 +978,11 @@ const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
         display: "flex",
         alignItems: "center",
         gap: 1.5,
-        flexDirection: isRight ? "row-reverse" : "row",
+        flexDirection: {
+          xs: "row",
+          md: isRight ? "row-reverse" : "row",
+        },
+        minWidth: 0,
       }}
     >
       <Box
@@ -959,9 +1004,21 @@ const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
       >
         {initials}
       </Box>
-      <Box sx={{ textAlign: isRight ? "right" : "left" }}>
+      <Box
+        sx={{
+          textAlign: { xs: "left", md: isRight ? "right" : "left" },
+          minWidth: 0,
+        }}
+      >
         <Typography
-          sx={{ color: "#fff", fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}
+          sx={{
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 16,
+            lineHeight: 1.2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
         >
           {team?.name || "TBA"}
         </Typography>
@@ -985,6 +1042,7 @@ const AssignmentSlot = ({ config, referee, onRemove }) => {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 2,
+          flexWrap: "wrap",
           border: "1px solid #1a1a1d",
           borderLeft: `3px solid ${config.accent}33`,
         }}
@@ -1024,6 +1082,7 @@ const AssignmentSlot = ({ config, referee, onRemove }) => {
         alignItems: "center",
         justifyContent: "space-between",
         gap: 2,
+        flexWrap: "wrap",
         bgcolor: `${config.accent}0c`,
         border: `1px solid ${config.accent}28`,
         borderLeft: `3px solid ${config.accent}`,
@@ -1107,6 +1166,7 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
         display: "flex",
         alignItems: "center",
         gap: 1.5,
+        flexWrap: "wrap",
         transition: "all 0.15s ease",
         "&:hover": {
           borderColor: "#2e2e33",
@@ -1147,7 +1207,15 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
       </Box>
 
       {/* Role assign buttons */}
-      <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+      <Box
+        sx={{
+          display: { xs: "grid", sm: "flex" },
+          gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))" },
+          gap: 0.5,
+          flexShrink: 0,
+          width: { xs: "100%", sm: "auto" },
+        }}
+      >
         {SLOT_CONFIG.map((slotCfg) => {
           const occupied = Boolean(assignedReferees[slotCfg.slot]);
           return (
@@ -1175,6 +1243,7 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
                 bgcolor: occupied ? "transparent" : `${slotCfg.accent}10`,
                 userSelect: "none",
                 transition: "all 0.15s",
+                textAlign: "center",
                 ...(!occupied && {
                   "&:hover": {
                     bgcolor: `${slotCfg.accent}22`,

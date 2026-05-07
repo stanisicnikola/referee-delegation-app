@@ -34,6 +34,7 @@ const ProfilePage = () => {
       sx={{
         maxWidth: 700,
         mx: "auto",
+        width: "100%",
       }}
     >
       <PageHeader
@@ -46,7 +47,7 @@ const ProfilePage = () => {
         <Box>
           <Paper
             sx={{
-              p: 4,
+              p: { xs: 3, sm: 4 },
               borderRadius: 2,
               bgcolor: "#111114",
               border: "1px solid",
@@ -90,7 +91,7 @@ const ProfilePage = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 4,
+              p: { xs: 2.25, sm: 4 },
               borderRadius: 2,
               bgcolor: "#111114",
               border: "1px solid",
@@ -111,7 +112,7 @@ const ProfilePage = () => {
                 >
                   <PersonIcon />
                 </Avatar>
-                <Box>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography
                     variant='caption'
                     sx={{ color: "text.secondary" }}
@@ -135,7 +136,7 @@ const ProfilePage = () => {
                 >
                   <PersonIcon />
                 </Avatar>
-                <Box>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography
                     variant='caption'
                     sx={{ color: "text.secondary" }}
@@ -159,7 +160,7 @@ const ProfilePage = () => {
                 >
                   <EmailIcon />
                 </Avatar>
-                <Box>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography
                     variant='caption'
                     sx={{ color: "text.secondary" }}
@@ -168,7 +169,11 @@ const ProfilePage = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: "white", fontWeight: 500 }}
+                    sx={{
+                      color: "white",
+                      fontWeight: 500,
+                      overflowWrap: "anywhere",
+                    }}
                   >
                     {user?.email}
                   </Typography>
@@ -183,7 +188,7 @@ const ProfilePage = () => {
                 >
                   <PhoneIcon />
                 </Avatar>
-                <Box>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography
                     variant='caption'
                     sx={{ color: "text.secondary" }}
@@ -213,8 +218,8 @@ const ProfilePage = () => {
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: { xs: "flex-start", md: "center" },
-                  flexDirection: { xs: "column", md: "row" },
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  flexDirection: { xs: "column", sm: "row" },
                   gap: 2,
                 }}
               >
@@ -234,6 +239,11 @@ const ProfilePage = () => {
                   variant={roleOutlineVariant}
                   size='small'
                   onClick={() => navigate(`${basePath}/settings`)}
+                  sx={{
+                    width: { xs: "100%", sm: "auto" },
+                    justifyContent: "center",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   Go to Settings
                 </CustomButton>

@@ -2,8 +2,6 @@ import { useState } from "react";
 import {
   Box,
   Typography,
-  TextField,
-  InputAdornment,
   Button,
   Avatar,
   Chip,
@@ -11,7 +9,6 @@ import {
 } from "@mui/material";
 import RefereeDetailsModal from "../../components/delegate/RefereeDetailsModal";
 import {
-  Search as SearchIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
   LocationOn as LocationIcon,
@@ -136,7 +133,7 @@ const RefereesPage = () => {
     : 0;
 
   return (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -154,7 +151,12 @@ const RefereesPage = () => {
         >
           <Box>
             <Typography
-              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
+              sx={{
+                fontSize: { xs: "34px", sm: "40px", md: "48px" },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.05,
+              }}
             >
               Referees
             </Typography>
@@ -162,7 +164,14 @@ const RefereesPage = () => {
               View and manage referee availability
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              width: { xs: "100%", lg: "auto" },
+            }}
+          >
             {/* Stats */}
             <Box
               sx={{
@@ -174,6 +183,8 @@ const RefereesPage = () => {
                 bgcolor: "#121214",
                 borderRadius: "12px",
                 border: "1px solid #242428",
+                width: { xs: "100%", sm: "auto" },
+                justifyContent: { xs: "space-around", sm: "flex-start" },
               }}
             >
               <Box sx={{ textAlign: "center" }}>
@@ -186,7 +197,14 @@ const RefereesPage = () => {
                   Total
                 </Typography>
               </Box>
-              <Box sx={{ width: 1, height: 32, bgcolor: "#242428" }} />
+              <Box
+                sx={{
+                  width: "1px",
+                  height: 32,
+                  bgcolor: "#242428",
+                  flexShrink: 0,
+                }}
+              />
               <Box sx={{ textAlign: "center" }}>
                 <Typography
                   sx={{ fontSize: "20px", fontWeight: 700, color: "#22c55e" }}
@@ -197,7 +215,14 @@ const RefereesPage = () => {
                   Available
                 </Typography>
               </Box>
-              <Box sx={{ width: 1, height: 32, bgcolor: "#242428" }} />
+              <Box
+                sx={{
+                  width: "1px",
+                  height: 32,
+                  bgcolor: "#242428",
+                  flexShrink: 0,
+                }}
+              />
               <Box sx={{ textAlign: "center" }}>
                 <Typography
                   sx={{ fontSize: "20px", fontWeight: 700, color: "#ef4444" }}
@@ -215,14 +240,40 @@ const RefereesPage = () => {
 
       <Box>
         {/* Filters */}
-        <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            mb: { xs: 3, md: 4 },
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { md: "center" },
+          }}
+        >
           <FilterSearch
             placeholder='Search by name...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={inputStyles}
+            sx={{
+              ...inputStyles,
+              width: "100%",
+              maxWidth: { xs: "100%", md: 400 },
+            }}
           />
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              overflowX: "auto",
+              pb: 0.5,
+              width: "100%",
+              WebkitOverflowScrolling: "touch",
+              "&::-webkit-scrollbar": { height: 6 },
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "#2e2e33",
+                borderRadius: "9999px",
+              },
+            }}
+          >
             {[
               { value: "all", label: "All categories" },
               { value: "international", label: "International" },
@@ -247,6 +298,8 @@ const RefereesPage = () => {
                   fontSize: "14px",
                   fontWeight: 500,
                   textTransform: "none",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                   "&:hover": {
                     bgcolor:
                       categoryFilter === category.value ? "#ea580c" : "#1a1a1d",
@@ -268,8 +321,11 @@ const RefereesPage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
-              gap: 3,
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(auto-fill, minmax(300px, 1fr))",
+              },
+              gap: { xs: 2, md: 3 },
             }}
           >
             {filteredReferees.map((referee, index) => {
@@ -283,6 +339,7 @@ const RefereesPage = () => {
                     borderRadius: "16px",
                     border: "1px solid #242428",
                     overflow: "hidden",
+                    minWidth: 0,
                     transition: "all 0.2s",
                     "&:hover": {
                       transform: "translateY(-2px)",
@@ -293,17 +350,18 @@ const RefereesPage = () => {
                   {/* Card Header */}
                   <Box
                     sx={{
-                      p: 2.5,
+                      p: { xs: 2, sm: 2.5 },
                       borderBottom: "1px solid #242428",
                       display: "flex",
                       alignItems: "flex-start",
                       gap: 2,
+                      minWidth: 0,
                     }}
                   >
                     <Avatar
                       sx={{
-                        width: 56,
-                        height: 56,
+                        width: { xs: 48, sm: 56 },
+                        height: { xs: 48, sm: 56 },
                         background: getAvatarColor(index),
                         fontSize: "18px",
                         fontWeight: 700,
@@ -312,14 +370,23 @@ const RefereesPage = () => {
                       {referee.user?.firstName?.[0]}
                       {referee.user?.lastName?.[0]}
                     </Avatar>
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Box
                         sx={{
                           display: "flex",
                           alignItems: "center",
+                          minWidth: 0,
                         }}
                       >
-                        <Typography sx={{ fontWeight: 600, color: "#fff" }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            color: "#fff",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {referee.user?.firstName} {referee.user?.lastName}
                         </Typography>
                       </Box>
@@ -329,6 +396,7 @@ const RefereesPage = () => {
                           alignItems: "center",
                           gap: 1,
                           mt: 0.5,
+                          flexWrap: "wrap",
                         }}
                       >
                         <Chip
@@ -381,7 +449,7 @@ const RefereesPage = () => {
                   </Box>
 
                   {/* Card Body */}
-                  <Box sx={{ p: 2.5 }}>
+                  <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
                     <Box
                       sx={{
                         display: "flex",
@@ -421,6 +489,7 @@ const RefereesPage = () => {
                           alignItems: "center",
                           gap: 1.5,
                           color: "#9ca3af",
+                          minWidth: 0,
                         }}
                       >
                         <EmailIcon sx={{ fontSize: 16 }} />

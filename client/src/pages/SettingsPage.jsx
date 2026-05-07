@@ -122,6 +122,7 @@ const SettingsPage = () => {
       sx={{
         maxWidth: 700,
         mx: "auto",
+        width: "100%",
       }}
     >
       <PageHeader
@@ -136,7 +137,7 @@ const SettingsPage = () => {
             <Paper
               elevation={0}
               sx={{
-                p: 3,
+                p: { xs: 2.25, sm: 3 },
                 borderRadius: 2,
                 border: "1px solid",
                 borderColor: "divider",
@@ -151,10 +152,12 @@ const SettingsPage = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 1.5, sm: 2 },
                   }}
                 >
-                  <Box>
+                  <Box sx={{ minWidth: 0 }}>
                     <Typography variant='body1' sx={{ fontWeight: 500 }}>
                       Email Notifications
                     </Typography>
@@ -162,7 +165,7 @@ const SettingsPage = () => {
                       Receive email notifications for new delegations
                     </Typography>
                   </Box>
-                  <Switch defaultChecked />
+                  <Switch defaultChecked sx={{ ml: { xs: -1, sm: 0 } }} />
                 </Box>
 
                 <Divider />
@@ -171,10 +174,12 @@ const SettingsPage = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 1.5, sm: 2 },
                   }}
                 >
-                  <Box>
+                  <Box sx={{ minWidth: 0 }}>
                     <Typography variant='body1' sx={{ fontWeight: 500 }}>
                       Reminder Notifications
                     </Typography>
@@ -182,7 +187,7 @@ const SettingsPage = () => {
                       Send reminders 24h before matches
                     </Typography>
                   </Box>
-                  <Switch defaultChecked />
+                  <Switch defaultChecked sx={{ ml: { xs: -1, sm: 0 } }} />
                 </Box>
               </Box>
             </Paper>
@@ -194,7 +199,7 @@ const SettingsPage = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 3,
+              p: { xs: 2.25, sm: 3 },
               borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
@@ -221,7 +226,13 @@ const SettingsPage = () => {
                 <Typography variant='body2' color='text.secondary'>
                   Email
                 </Typography>
-                <Typography variant='body1' sx={{ fontWeight: 500 }}>
+                <Typography
+                  variant='body1'
+                  sx={{
+                    fontWeight: 500,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   {user?.email}
                 </Typography>
               </Box>
@@ -248,7 +259,7 @@ const SettingsPage = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 3,
+              p: { xs: 2.25, sm: 3 },
               borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
@@ -262,10 +273,12 @@ const SettingsPage = () => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: { xs: "stretch", sm: "center" },
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 2, sm: 3 },
               }}
             >
-              <Box>
+              <Box sx={{ minWidth: 0 }}>
                 <Typography variant='body1' sx={{ fontWeight: 500 }}>
                   Change Password
                 </Typography>
@@ -276,6 +289,11 @@ const SettingsPage = () => {
               <CustomButton
                 variant={roleOutlineVariant}
                 onClick={handleOpenPasswordModal}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  justifyContent: "center",
+                  whiteSpace: "nowrap",
+                }}
               >
                 Change Password
               </CustomButton>
@@ -288,7 +306,7 @@ const SettingsPage = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 3,
+              p: { xs: 2.25, sm: 3 },
               borderRadius: 2,
               border: "1px solid",
               borderColor: "error.main",
@@ -306,10 +324,12 @@ const SettingsPage = () => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: { xs: "stretch", sm: "center" },
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 2, sm: 3 },
               }}
             >
-              <Box>
+              <Box sx={{ minWidth: 0 }}>
                 <Typography variant='body1' sx={{ fontWeight: 500 }}>
                   Delete Account
                 </Typography>
@@ -320,6 +340,11 @@ const SettingsPage = () => {
               <CustomButton
                 variant='danger'
                 onClick={() => setDeleteDialogOpen(true)}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  justifyContent: "center",
+                  whiteSpace: "nowrap",
+                }}
               >
                 Delete Account
               </CustomButton>

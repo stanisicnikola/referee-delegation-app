@@ -103,7 +103,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -120,7 +120,12 @@ const DashboardPage = () => {
         >
           <Box>
             <Typography
-              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
+              sx={{
+                fontSize: { xs: "34px", sm: "40px", md: "48px" },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.05,
+              }}
             >
               Dashboard
             </Typography>
@@ -136,9 +141,13 @@ const DashboardPage = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 3,
-            mb: 4,
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              xl: "repeat(4, minmax(0, 1fr))",
+            },
+            gap: { xs: 2, md: 3 },
+            mb: { xs: 3, md: 4 },
           }}
         >
           {/* Pending Delegations */}
@@ -146,7 +155,7 @@ const DashboardPage = () => {
             sx={{
               bgcolor: "#121214",
               borderRadius: "16px",
-              p: 3,
+              p: { xs: 2.25, sm: 2.5, md: 3 },
               border: "1px solid #242428",
               transition: "all 0.2s",
               "&:hover": { borderColor: "rgba(249, 115, 22, 0.3)" },
@@ -206,7 +215,7 @@ const DashboardPage = () => {
             sx={{
               bgcolor: "#121214",
               borderRadius: "16px",
-              p: 3,
+              p: { xs: 2.25, sm: 2.5, md: 3 },
               border: "1px solid #242428",
               transition: "all 0.2s",
               "&:hover": { borderColor: "rgba(59, 130, 246, 0.3)" },
@@ -253,7 +262,7 @@ const DashboardPage = () => {
             sx={{
               bgcolor: "#121214",
               borderRadius: "16px",
-              p: 3,
+              p: { xs: 2.25, sm: 2.5, md: 3 },
               border: "1px solid #242428",
               transition: "all 0.2s",
               "&:hover": { borderColor: "rgba(34, 197, 94, 0.3)" },
@@ -300,7 +309,7 @@ const DashboardPage = () => {
             sx={{
               bgcolor: "#121214",
               borderRadius: "16px",
-              p: 3,
+              p: { xs: 2.25, sm: 2.5, md: 3 },
               border: "1px solid #242428",
               transition: "all 0.2s",
               "&:hover": { borderColor: "rgba(139, 92, 246, 0.3)" },
@@ -348,7 +357,7 @@ const DashboardPage = () => {
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
-            gap: 3,
+            gap: { xs: 2, md: 3 },
           }}
         >
           {/* Upcoming Matches */}
@@ -362,7 +371,7 @@ const DashboardPage = () => {
           >
             <Box
               sx={{
-                px: 3,
+                px: { xs: 2, sm: 3 },
                 py: 2.5,
                 borderBottom: "1px solid #242428",
                 display: "flex",
@@ -528,7 +537,8 @@ const DashboardPage = () => {
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        gap: 2.5,
+                        gap: { xs: 1.5, sm: 2.5 },
+                        flexWrap: { xs: "wrap", sm: "nowrap" },
                         borderBottom:
                           idx < upcomingMatches.length - 1
                             ? "1px solid #1a1a1d"
@@ -544,8 +554,8 @@ const DashboardPage = () => {
                       {/* Date block */}
                       <Box
                         sx={{
-                          width: 56,
-                          height: 64,
+                          width: { xs: 50, sm: 56 },
+                          height: { xs: 58, sm: 64 },
                           borderRadius: "12px",
                           bgcolor: "rgba(255, 255, 255, 0.03)",
                           border: "1px solid #242428",
@@ -682,7 +692,15 @@ const DashboardPage = () => {
                       </Box>
 
                       {/* Status chip */}
-                      <Box sx={{ flexShrink: 0 }}>{getStatusBadge(match)}</Box>
+                      <Box
+                        sx={{
+                          flexShrink: 0,
+                          ml: { xs: "66px", sm: 0 },
+                          width: { xs: "calc(100% - 66px)", sm: "auto" },
+                        }}
+                      >
+                        {getStatusBadge(match)}
+                      </Box>
                     </Box>
                   );
                 })}
@@ -699,7 +717,12 @@ const DashboardPage = () => {
               overflow: "hidden",
             }}
           >
-            <Box sx={{ p: 3, borderBottom: "1px solid #242428" }}>
+            <Box
+              sx={{
+                p: { xs: 2, sm: 3 },
+                borderBottom: "1px solid #242428",
+              }}
+            >
               <Typography
                 sx={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}
               >

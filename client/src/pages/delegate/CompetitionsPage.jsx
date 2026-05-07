@@ -2,14 +2,11 @@ import { useState } from "react";
 import {
   Box,
   Typography,
-  TextField,
-  InputAdornment,
   Button,
   Chip,
   CircularProgress,
 } from "@mui/material";
 import {
-  Search as SearchIcon,
   CalendarMonth as CalendarIcon,
   Groups as GroupsIcon,
   EmojiEvents as TrophyIcon,
@@ -164,7 +161,7 @@ const CompetitionsPage = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -182,7 +179,12 @@ const CompetitionsPage = () => {
         >
           <Box>
             <Typography
-              sx={{ fontSize: "48px", fontWeight: 700, color: "#fff" }}
+              sx={{
+                fontSize: { xs: "34px", sm: "40px", md: "48px" },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.05,
+              }}
             >
               Competitions
             </Typography>
@@ -190,7 +192,14 @@ const CompetitionsPage = () => {
               Overview of active competitions and leagues
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -201,6 +210,8 @@ const CompetitionsPage = () => {
                 bgcolor: "#121214",
                 borderRadius: "12px",
                 border: "1px solid #242428",
+                width: { xs: "100%", sm: "auto" },
+                justifyContent: { xs: "center", sm: "flex-start" },
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -219,21 +230,47 @@ const CompetitionsPage = () => {
 
       <Box>
         {/* Filters */}
-        <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            mb: { xs: 3, md: 4 },
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { md: "center" },
+          }}
+        >
           <FilterSearch
             placeholder='Search competitions...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={inputStyles}
+            sx={{
+              ...inputStyles,
+              width: "100%",
+              maxWidth: { xs: "100%", md: 400 },
+            }}
           />
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              overflowX: "auto",
+              pb: 0.5,
+              width: "100%",
+              WebkitOverflowScrolling: "touch",
+              "&::-webkit-scrollbar": { height: 6 },
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "#2e2e33",
+                borderRadius: "9999px",
+              },
+            }}
+          >
             {["all", "active", "upcoming", "completed", "suspended"].map(
               (status) => (
                 <Button
                   key={status}
                   onClick={() => setStatusFilter(status)}
                   sx={{
-                    px: 2.5,
+                    px: { xs: 2, sm: 2.5 },
                     py: 1,
                     borderRadius: "10px",
                     bgcolor: statusFilter === status ? "#f97316" : "#121214",
@@ -244,6 +281,8 @@ const CompetitionsPage = () => {
                     fontSize: "14px",
                     fontWeight: 500,
                     textTransform: "none",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
                     "&:hover": {
                       bgcolor: statusFilter === status ? "#ea580c" : "#1a1a1d",
                     },
@@ -273,8 +312,11 @@ const CompetitionsPage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
-              gap: 3,
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(auto-fill, minmax(320px, 1fr))",
+              },
+              gap: { xs: 2, md: 3 },
             }}
           >
             {filteredCompetitions.map((competition, index) => {
@@ -299,12 +341,15 @@ const CompetitionsPage = () => {
                   {/* Card Header with gradient */}
                   <Box
                     sx={{
-                      height: 80,
+                      minHeight: { xs: 104, sm: 92 },
                       background: getCompetitionGradient(index),
                       position: "relative",
                       display: "flex",
                       alignItems: "center",
-                      px: 3,
+                      gap: 2,
+                      px: { xs: 2, sm: 3 },
+                      py: 2,
+                      flexWrap: { xs: "wrap", sm: "nowrap" },
                     }}
                   >
                     <Box
@@ -321,13 +366,16 @@ const CompetitionsPage = () => {
                     >
                       <TrophyIcon sx={{ color: "#fff", fontSize: 24 }} />
                     </Box>
-                    <Box sx={{ ml: 2 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         sx={{
                           fontWeight: 600,
                           color: "#fff",
-                          fontSize: "18px",
+                          fontSize: { xs: "16px", sm: "18px" },
                           textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {competition.name}
@@ -345,42 +393,54 @@ const CompetitionsPage = () => {
                       label={statusStyle.label}
                       size='small'
                       sx={{
-                        position: "absolute",
-                        top: 16,
-                        right: 16,
+                        ml: { xs: 8, sm: "auto" },
                         bgcolor: "rgba(255,255,255,0.2)",
                         backdropFilter: "blur(8px)",
                         color: "#fff",
                         fontWeight: 500,
                         fontSize: "12px",
                         height: 24,
+                        maxWidth: "calc(100% - 64px)",
                       }}
                     />
                   </Box>
 
                   {/* Card Body */}
-                  <Box sx={{ p: 3 }}>
+                  <Box sx={{ p: { xs: 2, sm: 3 } }}>
                     {/* Stats */}
                     <Box
                       sx={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(3, 1fr)",
-                        gap: 2,
+                        gridTemplateColumns: {
+                          xs: "repeat(3, minmax(0, 1fr))",
+                          sm: "repeat(3, 1fr)",
+                        },
+                        gap: { xs: 1, sm: 2 },
                         mb: 3,
                       }}
                     >
                       <Box
                         sx={{
                           textAlign: "center",
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           bgcolor: "#0a0a0b",
                           borderRadius: "10px",
+                          minWidth: 0,
                         }}
                       >
                         <GroupsIcon
                           sx={{ color: "#6b7280", fontSize: 20, mb: 0.5 }}
                         />
-                        <Typography sx={{ fontWeight: 600, color: "#fff" }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            color: "#fff",
+                            fontSize: { xs: "13px", sm: "14px" },
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {formatCategory(competition.category)}
                         </Typography>
                         <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
@@ -390,15 +450,25 @@ const CompetitionsPage = () => {
                       <Box
                         sx={{
                           textAlign: "center",
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           bgcolor: "#0a0a0b",
                           borderRadius: "10px",
+                          minWidth: 0,
                         }}
                       >
                         <CalendarIcon
                           sx={{ color: "#6b7280", fontSize: 20, mb: 0.5 }}
                         />
-                        <Typography sx={{ fontWeight: 600, color: "#fff" }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            color: "#fff",
+                            fontSize: { xs: "13px", sm: "14px" },
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {formatGender(competition.gender)}
                         </Typography>
                         <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
@@ -408,16 +478,20 @@ const CompetitionsPage = () => {
                       <Box
                         sx={{
                           textAlign: "center",
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           bgcolor: "#0a0a0b",
                           borderRadius: "10px",
+                          minWidth: 0,
                         }}
                       >
                         <Typography
                           sx={{
                             fontWeight: 600,
                             color: "#f97316",
-                            fontSize: "20px",
+                            fontSize: { xs: "14px", sm: "20px" },
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
                           {statusStyle.label}

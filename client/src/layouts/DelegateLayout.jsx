@@ -292,9 +292,10 @@ const DelegateLayout = () => {
           component='main'
           sx={{
             flexGrow: 1,
-            width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+            width: { xs: "100%", md: `calc(100% - ${DRAWER_WIDTH}px)` },
             height: "100vh",
             minHeight: 0,
+            minWidth: 0,
             display: "flex",
             flexDirection: "column",
           }}
@@ -344,6 +345,8 @@ const DelegateLayout = () => {
               p: { xs: 2, md: 4 },
               flex: 1,
               minHeight: 0,
+              minWidth: 0,
+              width: "100%",
               overflowY: "auto",
               overflowX: "hidden",
               scrollbarGutter: "stable",
@@ -372,6 +375,7 @@ const DelegateLayout = () => {
           <MenuItem
             onClick={() => {
               handleMenuClose();
+              setMobileOpen(false);
               navigate("/delegate/profile");
             }}
           >
@@ -383,6 +387,7 @@ const DelegateLayout = () => {
           <MenuItem
             onClick={() => {
               handleMenuClose();
+              setMobileOpen(false);
               navigate("/delegate/settings");
             }}
           >
