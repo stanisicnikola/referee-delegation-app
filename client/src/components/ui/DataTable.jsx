@@ -23,6 +23,14 @@ const DataTable = ({
   emptyMessage = "No data available",
   rowKey = "id",
 }) => {
+  const tableMinWidth = Math.max(
+    720,
+    columns.reduce((total, column) => {
+      const width = Number.parseInt(column.minWidth || column.width || 140, 10);
+      return total + (Number.isNaN(width) ? 140 : width);
+    }, 0),
+  );
+
   const renderEmptyState = () => (
     <TableRow>
       <TableCell
@@ -45,14 +53,27 @@ const DataTable = ({
         border: "1px solid #242428",
         borderRadius: "16px",
         overflow: "hidden",
+        maxWidth: "100%",
+        minWidth: 0,
       }}
     >
       {loading ? (
         <LoadingSpinner />
       ) : (
         <>
-          <TableContainer>
-            <Table>
+          <TableContainer
+            sx={{
+              maxWidth: "100%",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              "&::-webkit-scrollbar": { height: 8 },
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "#2e2e33",
+                borderRadius: "9999px",
+              },
+            }}
+          >
+            <Table sx={{ minWidth: tableMinWidth }}>
               <TableHead>
                 <TableRow sx={{ bgcolor: "#0a0a0b" }}>
                   {columns.map((column) => (

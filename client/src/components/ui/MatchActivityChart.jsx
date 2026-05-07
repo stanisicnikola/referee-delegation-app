@@ -50,7 +50,7 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
   // Responsive: compact when many bars
   const isCompact = data.length > 16;
 
-  // Only show every Nth label when very compact to avoid label crowding
+  // Only show every Nth label when very compact to avoid label crowding.
   const showEveryNthLabel = data.length > 20 ? Math.ceil(data.length / 14) : 1;
 
   const now = new Date();
@@ -249,6 +249,8 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
                     fontSize: isCompact ? "8px" : "11px",
                     color: isToday ? "#fff" : "#6b7280",
                     fontWeight: isToday ? 600 : 400,
+                    visibility:
+                      index % showEveryNthLabel === 0 ? "visible" : "hidden",
                   }}
                 >
                   {item.day}
@@ -264,7 +266,8 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 4,
+          gap: { xs: 1.5, sm: 4 },
+          flexWrap: "wrap",
           mt: 3,
           pt: 3,
           borderTop: "1px solid #242428",

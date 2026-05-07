@@ -44,7 +44,8 @@ const FilterSearch = ({
       }}
       sx={{
         flex: 1,
-        minWidth: 200,
+        width: { xs: "100%", sm: "auto" },
+        minWidth: { xs: "100%", sm: 200 },
         maxWidth: { xs: "none", sm: 400 },
         ...inputStyles,
       }}

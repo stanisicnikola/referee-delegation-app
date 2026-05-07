@@ -123,7 +123,7 @@ const MatchesPage = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 0, md: 3 }, width: "100%", minWidth: 0 }}>
       {/* Header */}
       <PageHeader
         title='Matches'
@@ -189,7 +189,8 @@ const MatchesPage = () => {
           border: "1px solid #242428",
           borderRadius: "16px",
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: { xs: "column", sm: "row" },
+          flexWrap: { sm: "wrap" },
           alignItems: "center",
           gap: 2,
         }}

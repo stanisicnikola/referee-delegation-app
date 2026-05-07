@@ -111,13 +111,11 @@ const UserModal = ({
   const onSubmit = (data) => {
     // If not referee, strip referee fields before sending
     if (data.role !== "referee") {
-      const {
-        licenseNumber,
-        licenseCategory,
-        city,
-        experienceYears,
-        ...cleanData
-      } = data;
+      const cleanData = { ...data };
+      delete cleanData.licenseNumber;
+      delete cleanData.licenseCategory;
+      delete cleanData.city;
+      delete cleanData.experienceYears;
       onConfirm(cleanData);
     } else {
       onConfirm(data);
@@ -138,8 +136,9 @@ const UserModal = ({
         inset: 0,
         zIndex: 1300,
         display: "flex",
-        alignItems: "center",
+        alignItems: { xs: "flex-end", sm: "center" },
         justifyContent: "center",
+        p: { xs: 1, sm: 2 },
       }}
     >
       {/* Backdrop */}
@@ -165,8 +164,7 @@ const UserModal = ({
           border: "1px solid #242428",
           width: "100%",
           maxWidth: 640,
-          mx: 2,
-          maxHeight: "90vh",
+          maxHeight: { xs: "calc(100dvh - 16px)", sm: "90vh" },
           overflow: "auto",
           animation: "slideIn 0.3s ease-out",
           "@keyframes slideIn": {
@@ -181,7 +179,7 @@ const UserModal = ({
             position: "sticky",
             top: 0,
             bgcolor: "#121214",
-            px: 3,
+            px: { xs: 2, sm: 3 },
             py: 2,
             borderBottom: "1px solid #242428",
             display: "flex",
@@ -190,7 +188,13 @@ const UserModal = ({
             zIndex: 10,
           }}
         >
-          <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+          <Typography
+            sx={{
+              fontSize: { xs: "18px", sm: "20px" },
+              fontWeight: 700,
+              color: "#fff",
+            }}
+          >
             {editUser ? "Edit User" : "New User"}
           </Typography>
           <IconButton
@@ -202,7 +206,14 @@ const UserModal = ({
         </Box>
 
         {/* Content */}
-        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box
+          sx={{
+            p: { xs: 2, sm: 3 },
+            display: "flex",
+            flexDirection: "column",
+            gap: { xs: 2, sm: 3 },
+          }}
+        >
           {/* Role Selection */}
           <RoleSelection
             watchedRole={watchedRole}
@@ -233,12 +244,13 @@ const UserModal = ({
             position: "sticky",
             bottom: 0,
             bgcolor: "#121214",
-            px: 3,
+            px: { xs: 2, sm: 3 },
             py: 2,
             borderTop: "1px solid #242428",
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
+            flexDirection: { xs: "column-reverse", sm: "row" },
             gap: 1.5,
           }}
         >
@@ -252,6 +264,7 @@ const UserModal = ({
               fontSize: "14px",
               fontWeight: 500,
               color: "#fff",
+              width: { xs: "100%", sm: "auto" },
               "&:hover": { bgcolor: "#242428" },
             }}
           >
@@ -268,6 +281,7 @@ const UserModal = ({
               fontWeight: 500,
               color: "#fff",
               bgcolor: "#8b5cf6",
+              width: { xs: "100%", sm: "auto" },
               "&:hover": { bgcolor: "#7c3aed" },
               "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
             }}

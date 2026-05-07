@@ -17,18 +17,18 @@ const DelegateCard = ({ delegate, onEdit, onDelete }) => {
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 4,
-        p: 2.5,
+        gap: { xs: 2.5, sm: 4 },
+        p: { xs: 2, sm: 2.5 },
         bgcolor: "rgb(18, 18, 20)",
         borderRadius: "16px",
         border: "1px solid #242428",
       }}
     >
-      <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+      <Box sx={{ display: "flex", gap: 2, alignItems: "center", minWidth: 0 }}>
         <Avatar
           sx={{
-            width: 56,
-            height: 56,
+            width: { xs: 48, sm: 56 },
+            height: { xs: 48, sm: 56 },
             borderRadius: "12px",
             bgcolor: "#8b5cf6",
             fontWeight: 700,
@@ -37,8 +37,17 @@ const DelegateCard = ({ delegate, onEdit, onDelete }) => {
         >
           {initials}
         </Avatar>
-        <Box>
-          <Typography sx={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: { xs: "16px", sm: "18px" },
+              fontWeight: 600,
+              color: "#fff",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {delegate?.firstName} {delegate?.lastName}
           </Typography>
           <Typography sx={{ fontSize: "13px", color: "#6b7280" }}>
@@ -50,7 +59,15 @@ const DelegateCard = ({ delegate, onEdit, onDelete }) => {
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <EmailIcon sx={{ fontSize: 16, color: "#6b7280" }} />
-          <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+          <Typography
+            sx={{
+              fontSize: "14px",
+              color: "#9ca3af",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {delegate?.email}
           </Typography>
         </Box>
@@ -65,7 +82,7 @@ const DelegateCard = ({ delegate, onEdit, onDelete }) => {
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", gap: 1.5, mt: 8 }}>
+      <Box sx={{ display: "flex", gap: 1.5, mt: { xs: 1, sm: 8 } }}>
         <Button
           fullWidth
           startIcon={<EditIcon />}

@@ -11,22 +11,23 @@ const StatCard = ({
     return (
       <Box
         sx={{
-          p: 2.5,
+          p: { xs: 2, sm: 2.5 },
           bgcolor: "#121214",
           border: "1px solid #242428",
           borderRadius: "16px",
           display: "flex",
           alignItems: "center",
-          gap: 2,
+          gap: { xs: 1.5, sm: 2 },
+          minWidth: 0,
         }}
       >
         <Skeleton
           variant='rectangular'
-          width={48}
-          height={48}
+          width={44}
+          height={44}
           sx={{ borderRadius: "12px" }}
         />
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Skeleton variant='text' width='60%' height={32} />
           <Skeleton variant='text' width='40%' height={20} />
         </Box>
@@ -37,13 +38,14 @@ const StatCard = ({
   return (
     <Box
       sx={{
-        p: 2.5,
+        p: { xs: 2, sm: 2.5 },
         bgcolor: "#121214",
         border: "1px solid #242428",
         borderRadius: "16px",
         display: "flex",
         alignItems: "center",
-        gap: 2,
+        gap: { xs: 1.5, sm: 2 },
+        minWidth: 0,
         transition: "all 0.2s ease",
         "&:hover": {
           transform: "translateY(-2px)",
@@ -56,8 +58,8 @@ const StatCard = ({
       {Icon && (
         <Box
           sx={{
-            width: 48,
-            height: 48,
+            width: { xs: 44, sm: 48 },
+            height: { xs: 44, sm: 48 },
             borderRadius: "12px",
             bgcolor: `${color}15`,
             display: "flex",
@@ -72,7 +74,7 @@ const StatCard = ({
       <Box sx={{ minWidth: 0 }}>
         <Typography
           sx={{
-            fontSize: "24px",
+            fontSize: { xs: "22px", sm: "24px" },
             fontWeight: 700,
             color: "#fff",
             lineHeight: 1.2,

@@ -91,7 +91,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <Box sx={{ color: "#fff" }}>
+    <Box sx={{ color: "#fff", width: "100%", minWidth: 0 }}>
       {/* Stats Grid */}
       <StatsGrid stats={statCards} loading={isLoading} columns={4} />
 
@@ -100,8 +100,8 @@ const DashboardPage = () => {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
-          gap: 3,
-          mb: 4,
+          gap: { xs: 2, md: 3 },
+          mb: { xs: 2.5, md: 4 },
         }}
       >
         {/* Activity Chart */}
@@ -110,21 +110,27 @@ const DashboardPage = () => {
             bgcolor: "#121214",
             borderRadius: "16px",
             border: "1px solid #242428",
-            p: 3,
+            p: { xs: 2, sm: 3 },
+            minWidth: 0,
           }}
         >
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
               justifyContent: "space-between",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "stretch", sm: "center" },
+              gap: 1.5,
               mb: 3,
             }}
           >
             <Typography sx={{ fontSize: "18px", fontWeight: 600 }}>
               Match activity
             </Typography>
-            <FormControl size='small'>
+            <FormControl
+              size='small'
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               <Select
                 value={activityPeriod}
                 onChange={(e) => setActivityPeriod(e.target.value)}
@@ -155,7 +161,8 @@ const DashboardPage = () => {
             bgcolor: "#121214",
             borderRadius: "16px",
             border: "1px solid #242428",
-            p: 3,
+            p: { xs: 2, sm: 3 },
+            minWidth: 0,
           }}
         >
           <Typography sx={{ fontSize: "18px", fontWeight: 600, mb: 3 }}>
@@ -199,7 +206,7 @@ const DashboardPage = () => {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
-          gap: 3,
+          gap: { xs: 2, md: 3 },
         }}
       >
         {/* Recent Activities */}
@@ -213,7 +220,7 @@ const DashboardPage = () => {
         >
           <Box
             sx={{
-              p: 3,
+              p: { xs: 2, sm: 3 },
               borderBottom: "1px solid #242428",
               display: "flex",
               alignItems: "center",
@@ -225,7 +232,7 @@ const DashboardPage = () => {
             </Typography>
           </Box>
           {isLoading ? (
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton
                   key={i}
@@ -247,7 +254,7 @@ const DashboardPage = () => {
               bgcolor: "#121214",
               borderRadius: "16px",
               border: "1px solid #242428",
-              p: 3,
+              p: { xs: 2, sm: 3 },
             }}
           >
             <Typography sx={{ fontSize: "18px", fontWeight: 600, mb: 2 }}>
@@ -329,7 +336,7 @@ const DashboardPage = () => {
               bgcolor: "#121214",
               borderRadius: "16px",
               border: "1px solid #242428",
-              p: 3,
+              p: { xs: 2, sm: 3 },
             }}
           >
             <Box
@@ -376,6 +383,7 @@ const DashboardPage = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: 2,
+                        minWidth: 0,
                         p: 1.5,
                         bgcolor: "#1a1a1d",
                         borderRadius: "10px",

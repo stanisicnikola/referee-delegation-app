@@ -104,7 +104,7 @@ const DelegatesPage = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 0, md: 3 }, width: "100%", minWidth: 0 }}>
       {/* Header */}
       <PageHeader
         title='Delegates'
@@ -151,7 +151,8 @@ const DelegatesPage = () => {
           border: "1px solid #242428",
           borderRadius: "16px",
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: { xs: "column", sm: "row" },
+          flexWrap: { sm: "wrap" },
           alignItems: "center",
           gap: 2,
         }}
@@ -178,7 +179,7 @@ const DelegatesPage = () => {
           display: "grid",
           gridTemplateColumns: {
             xs: "1fr",
-            md: "repeat(2, 1fr)",
+            md: "repeat(2, minmax(0, 1fr))",
             lg: "repeat(3, 1fr)",
           },
           gap: 2,

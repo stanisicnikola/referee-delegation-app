@@ -23,8 +23,8 @@ const RoleSelection = ({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 1.5,
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+          gap: { xs: 1, sm: 1.5 },
         }}
       >
         {[
@@ -59,12 +59,17 @@ const RoleSelection = ({
                 !isDisabled && onChange?.(role.value);
               }}
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 bgcolor: "#1a1a1d",
                 border: "2px solid",
                 borderColor: isSelected ? "#8b5cf6" : "#242428",
                 borderRadius: "12px",
-                textAlign: "center",
+                textAlign: { xs: "left", sm: "center" },
+                display: "flex",
+                alignItems: "center",
+                justifyContent: { xs: "flex-start", sm: "center" },
+                flexDirection: { xs: "row", sm: "column" },
+                gap: { xs: 1.5, sm: 0 },
                 cursor: isDisabled ? "not-allowed" : "pointer",
                 transition: "all 0.2s",
                 opacity: isDisabled ? 0.4 : 1,
@@ -84,7 +89,7 @@ const RoleSelection = ({
                 sx={{
                   fontSize: 32,
                   color: isDisabled ? "#4b5563" : role.color,
-                  mb: 1,
+                  mb: { xs: 0, sm: 1 },
                 }}
               />
               <Typography

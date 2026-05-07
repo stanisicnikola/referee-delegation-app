@@ -56,11 +56,11 @@ const ActivityFeed = ({ items = [] }) => {
           <Box
             key={activity.id}
             sx={{
-              p: 2,
-              px: 3,
+              p: { xs: 1.75, sm: 2 },
+              px: { xs: 2, sm: 3 },
               display: "flex",
               alignItems: "center",
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
               borderBottom:
                 index < items.length - 1 ? "1px solid #242428" : "none",
               borderLeft: "3px solid " + config.color,
@@ -96,6 +96,7 @@ const ActivityFeed = ({ items = [] }) => {
                 color: "#6b7280",
                 fontFamily: "monospace",
                 flexShrink: 0,
+                display: { xs: "none", sm: "block" },
               }}
             >
               {activity.time}

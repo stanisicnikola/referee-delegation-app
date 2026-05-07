@@ -1,10 +1,4 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  Typography,
-} from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import { useEffect } from "react";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
@@ -90,8 +84,9 @@ export const CompetitionModal = ({
         inset: 0,
         zIndex: 1300,
         display: "flex",
-        alignItems: "center",
+        alignItems: { xs: "flex-end", sm: "center" },
         justifyContent: "center",
+        p: { xs: 1, sm: 2 },
       }}
     >
       <Box
@@ -111,17 +106,22 @@ export const CompetitionModal = ({
           border: "1px solid #242428",
           width: "100%",
           maxWidth: 500,
-          mx: 2,
+          maxHeight: { xs: "calc(100dvh - 16px)", sm: "90vh" },
+          overflow: "auto",
         }}
       >
         <Box
           sx={{
-            px: 3,
+            position: "sticky",
+            top: 0,
+            bgcolor: "#121214",
+            px: { xs: 2, sm: 3 },
             py: 2,
             borderBottom: "1px solid #242428",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            zIndex: 10,
           }}
         >
           <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
@@ -131,7 +131,14 @@ export const CompetitionModal = ({
             <CloseIcon />
           </IconButton>
         </Box>
-        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <Box
+          sx={{
+            p: { xs: 2, sm: 3 },
+            display: "flex",
+            flexDirection: "column",
+            gap: { xs: 2, sm: 2.5 },
+          }}
+        >
           <Controller
             name='name'
             control={control}
@@ -144,7 +151,13 @@ export const CompetitionModal = ({
               />
             )}
           />
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
             <Controller
               name='season'
               control={control}
@@ -214,7 +227,13 @@ export const CompetitionModal = ({
             </Box>
           )}
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
             <Controller
               name='startDate'
               control={control}
@@ -253,20 +272,30 @@ export const CompetitionModal = ({
         </Box>
         <Box
           sx={{
-            px: 3,
+            position: "sticky",
+            bottom: 0,
+            bgcolor: "#121214",
+            px: { xs: 2, sm: 3 },
             py: 2,
             borderTop: "1px solid #242428",
             display: "flex",
             justifyContent: "flex-end",
+            flexDirection: { xs: "column-reverse", sm: "row" },
             gap: 1.5,
+            zIndex: 10,
           }}
         >
-          <CustomButton variant='outline' onClick={onClose}>
+          <CustomButton
+            variant='outline'
+            onClick={onClose}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             Cancel
           </CustomButton>
           <CustomButton
             onClick={handleSubmit(onFormSubmit)}
             loading={isLoading}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {editCompetition ? "Update Competition" : "Create Competition"}
           </CustomButton>

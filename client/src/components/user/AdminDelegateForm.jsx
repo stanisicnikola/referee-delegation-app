@@ -8,7 +8,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
       {/* General Information */}
       <Box
         sx={{
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           bgcolor: "rgba(26, 26, 29, 0.5)",
           borderRadius: "12px",
           display: "flex",
@@ -22,7 +22,13 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
           General Information
         </Typography>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
           <Box>
             <Controller
               name='firstName'
@@ -53,7 +59,13 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
           <Box>
             <Controller
               name='email'
@@ -108,7 +120,13 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
 
       {/* Password Section (Only on create) */}
       {!editUser && (
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
           <Box>
             <Controller
               name='password'
@@ -144,7 +162,14 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
 
       {/* Options */}
       {!editUser && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: { xs: "flex-start", sm: "center" },
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1, sm: 4 },
+          }}
+        >
           <Controller
             name='sendWelcomeEmail'
             control={control}

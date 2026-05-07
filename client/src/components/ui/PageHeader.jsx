@@ -10,7 +10,7 @@ const PageHeader = ({
   addLabel = "New",
 }) => {
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: { xs: 3, md: 4 } }}>
       <Box
         sx={{
           display: "flex",
@@ -20,7 +20,7 @@ const PageHeader = ({
           gap: 2,
         }}
       >
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
           <Typography
             variant='h3'
             sx={{
@@ -39,7 +39,15 @@ const PageHeader = ({
             </Typography>
           )}
         </Box>
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            alignItems: "center",
+            width: { xs: "100%", sm: "auto" },
+            justifyContent: { xs: "stretch", sm: "flex-end" },
+          }}
+        >
           {onRefresh && (
             <Tooltip title='Refresh'>
               <IconButton
@@ -57,7 +65,14 @@ const PageHeader = ({
             </Tooltip>
           )}
           {onAdd && (
-            <CustomButton startIcon={<AddIcon />} onClick={onAdd}>
+            <CustomButton
+              startIcon={<AddIcon />}
+              onClick={onAdd}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                justifyContent: "center",
+              }}
+            >
               {addLabel}
             </CustomButton>
           )}
