@@ -53,7 +53,17 @@ class UserService {
     return user;
   }
 
-  async create(userData) {
+  assertDelegateCanManageReferee(actor, targetRole) {
+    if (actor?.role !== "delegate") return;
+
+    if (targetRole !== "referee") {
+      throw new AppError("Delegates can only manage referee users.", 403);
+    }
+  }
+
+  async create(userData, actor = null) {
+    this.assertDelegateCanManageReferee(actor, userData.role);
+
     const existingUser = await User.findOne({
       where: { email: userData.email },
     });
@@ -117,7 +127,7 @@ class UserService {
     }
   }
 
-  async update(id, userData) {
+  async update(id, userData, actor = null) {
     const user = await User.findByPk(id, {
       include: [{ model: Referee, as: "referee" }],
     });
@@ -125,6 +135,9 @@ class UserService {
     if (!user) {
       throw new AppError("User not found.", 404);
     }
+
+    this.assertDelegateCanManageReferee(actor, user.role);
+    this.assertDelegateCanManageReferee(actor, userData.role || user.role);
 
     if (userData.email && userData.email !== user.email) {
       const existingUser = await User.findOne({
@@ -214,7 +227,7 @@ class UserService {
     }
   }
 
-  async delete(id) {
+  async delete(id, actor = null) {
     const user = await User.findByPk(id, {
       include: [{ model: Referee, as: "referee" }],
     });
@@ -222,6 +235,8 @@ class UserService {
     if (!user) {
       throw new AppError("User not found.", 404);
     }
+
+    this.assertDelegateCanManageReferee(actor, user.role);
 
     const transaction = await sequelize.transaction();
 

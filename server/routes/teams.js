@@ -25,20 +25,20 @@ router.get(
 // Admin only
 router.post(
   "/",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(teamSchemas.create),
   teamController.createTeam,
 );
 router.put(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(teamSchemas.params, "params"),
   validate(teamSchemas.update),
   teamController.updateTeam,
 );
 router.delete(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(teamSchemas.params, "params"),
   teamController.deleteTeam,
 );
@@ -46,7 +46,7 @@ router.delete(
 // Upload logo
 router.put(
   "/:id/logo",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(teamSchemas.params, "params"),
   uploadTeamLogo,
   teamController.uploadLogo,

@@ -12,7 +12,17 @@ const {
 const { AppError } = require("../middlewares");
 
 class MatchService {
-  async findAll(query = {}) {
+  getDelegateScope(actor) {
+    return actor?.role === "delegate" ? { delegatedBy: actor.id } : {};
+  }
+
+  assertDelegateCanAccessMatch(match, actor) {
+    if (actor?.role === "delegate" && match.delegatedBy !== actor.id) {
+      throw new AppError("Match not found.", 404);
+    }
+  }
+
+  async findAll(query = {}, actor = null) {
     const {
       page = 1,
       limit = 10,
@@ -30,7 +40,7 @@ class MatchService {
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
 
-    const where = {};
+    const where = { ...this.getDelegateScope(actor) };
 
     if (competitionId) where.competitionId = competitionId;
     if (venueId) where.venueId = venueId;
@@ -85,7 +95,11 @@ class MatchService {
         { model: Team, as: "homeTeam" },
         { model: Team, as: "awayTeam" },
         { model: Venue, as: "venue" },
-        { model: User, as: "delegate" },
+        {
+          model: User,
+          as: "delegate",
+          attributes: { exclude: ["passwordHash"] },
+        },
         {
           model: MatchReferee,
           as: "refereeAssignments",
@@ -94,7 +108,13 @@ class MatchService {
             {
               model: Referee,
               as: "referee",
-              include: [{ model: User, as: "user" }],
+              include: [
+                {
+                  model: User,
+                  as: "user",
+                  attributes: { exclude: ["passwordHash"] },
+                },
+              ],
             },
           ],
         },
@@ -116,14 +136,18 @@ class MatchService {
     };
   }
 
-  async findById(id) {
+  async findById(id, actor = null) {
     const match = await Match.findByPk(id, {
       include: [
         { model: Competition, as: "competition" },
         { model: Team, as: "homeTeam" },
         { model: Team, as: "awayTeam" },
         { model: Venue, as: "venue" },
-        { model: User, as: "delegate" },
+        {
+          model: User,
+          as: "delegate",
+          attributes: { exclude: ["passwordHash"] },
+        },
         {
           model: MatchReferee,
           as: "refereeAssignments",
@@ -131,7 +155,13 @@ class MatchService {
             {
               model: Referee,
               as: "referee",
-              include: [{ model: User, as: "user" }],
+              include: [
+                {
+                  model: User,
+                  as: "user",
+                  attributes: { exclude: ["passwordHash"] },
+                },
+              ],
             },
           ],
         },
@@ -142,10 +172,29 @@ class MatchService {
       throw new AppError("Match not found.", 404);
     }
 
+    this.assertDelegateCanAccessMatch(match, actor);
+
     return match;
   }
 
-  async create(matchData) {
+  async create(matchData, actor = null) {
+    const { delegateId, ...data } = matchData;
+
+    if (actor?.role === "delegate") {
+      data.delegatedBy = actor.id;
+    } else if (actor?.role === "admin") {
+      if (!delegateId) {
+        throw new AppError("Delegate is required.", 400);
+      }
+
+      const delegate = await User.findOne({
+        where: { id: delegateId, role: "delegate", status: "active" },
+      });
+      if (!delegate) throw new AppError("Delegate not found.", 400);
+
+      data.delegatedBy = delegateId;
+    }
+
     // Check if teams exist
     const homeTeam = await Team.findByPk(matchData.homeTeamId);
     if (!homeTeam) throw new AppError("Home team not found.", 400);
@@ -157,28 +206,33 @@ class MatchService {
     const competition = await Competition.findByPk(matchData.competitionId);
     if (!competition) throw new AppError("Competition not found.", 400);
 
-    // Map delegateId to delegatedBy
-    const { delegateId, ...data } = matchData;
-    if (delegateId) data.delegatedBy = delegateId;
-
     const match = await Match.create(data);
-    return this.findById(match.id);
+    return this.findById(match.id, actor);
   }
 
-  async update(id, matchData) {
+  async update(id, matchData, actor = null) {
     const match = await Match.findByPk(id);
 
     if (!match) {
       throw new AppError("Match not found.", 404);
     }
 
+    this.assertDelegateCanAccessMatch(match, actor);
+
     // Map delegateId to delegatedBy
     const { delegateId, ...data } = matchData;
-    if (delegateId) data.delegatedBy = delegateId;
+    if (actor?.role === "admin" && delegateId) {
+      const delegate = await User.findOne({
+        where: { id: delegateId, role: "delegate", status: "active" },
+      });
+      if (!delegate) throw new AppError("Delegate not found.", 400);
+
+      data.delegatedBy = delegateId;
+    }
 
     await match.update(data);
 
-    return this.findById(id);
+    return this.findById(id, actor);
   }
 
   async updateResult(id, resultData) {
@@ -197,21 +251,24 @@ class MatchService {
     return this.findById(id);
   }
 
-  async delete(id) {
+  async delete(id, actor = null) {
     const match = await Match.findByPk(id);
 
     if (!match) {
       throw new AppError("Match not found.", 404);
     }
 
+    this.assertDelegateCanAccessMatch(match, actor);
+
     await match.destroy();
 
     return { message: "Match deleted successfully." };
   }
 
-  async getUpcoming(limit = 5) {
+  async getUpcoming(limit = 5, actor = null) {
     const matches = await Match.findAll({
       where: {
+        ...this.getDelegateScope(actor),
         scheduledAt: { [Op.gte]: new Date() },
         status: "scheduled",
       },
@@ -228,12 +285,13 @@ class MatchService {
     return matches;
   }
 
-  async getPendingDelegation(query = {}) {
+  async getPendingDelegation(query = {}, actor = null) {
     const { page = 1, limit = 10 } = query;
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Match.findAndCountAll({
       where: {
+        ...this.getDelegateScope(actor),
         delegationStatus: { [Op.in]: ["pending", "partial"] },
         scheduledAt: { [Op.gte]: new Date() },
       },

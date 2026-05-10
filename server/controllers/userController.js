@@ -35,7 +35,7 @@ const getUser = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const createUser = asyncHandler(async (req, res) => {
-  const user = await userService.create(req.body);
+  const user = await userService.create(req.body, req.user);
 
   res.status(201).json({
     success: true,
@@ -49,7 +49,7 @@ const createUser = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const updateUser = asyncHandler(async (req, res) => {
-  const user = await userService.update(req.params.id, req.body);
+  const user = await userService.update(req.params.id, req.body, req.user);
 
   res.json({
     success: true,
@@ -63,7 +63,7 @@ const updateUser = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const deleteUser = asyncHandler(async (req, res) => {
-  await userService.delete(req.params.id);
+  await userService.delete(req.params.id, req.user);
 
   res.json({
     success: true,

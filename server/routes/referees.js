@@ -49,20 +49,20 @@ router.get(
 // Admin only
 router.post(
   "/",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(refereeSchemas.create),
   refereeController.createReferee,
 );
 router.put(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(refereeSchemas.params, "params"),
   validate(refereeSchemas.update),
   refereeController.updateReferee,
 );
 router.delete(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(refereeSchemas.params, "params"),
   refereeController.deleteReferee,
 );

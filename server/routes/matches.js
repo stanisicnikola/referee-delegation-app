@@ -35,20 +35,20 @@ router.get(
 // Admin only
 router.post(
   "/",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(matchSchemas.create),
   matchController.createMatch
 );
 router.put(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(matchSchemas.params, "params"),
   validate(matchSchemas.update),
   matchController.updateMatch
 );
 router.delete(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(matchSchemas.params, "params"),
   matchController.deleteMatch
 );

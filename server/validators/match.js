@@ -13,6 +13,7 @@ const create = z.object({
   round: z.string().optional().nullable(),
   matchNumber: z.number().int().optional().nullable(),
   notes: z.string().optional().nullable(),
+  delegateId: z.string().uuid().optional(),
 });
 
 const update = z.object({
@@ -27,6 +28,7 @@ const update = z.object({
     .enum(["scheduled", "in_progress", "completed", "postponed", "cancelled"])
     .optional(),
   notes: z.string().optional().nullable(),
+  delegateId: z.string().uuid().optional(),
 });
 
 const updateResult = z.object({

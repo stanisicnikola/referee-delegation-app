@@ -28,20 +28,20 @@ router.get(
 // Admin only
 router.post(
   "/",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(competitionSchemas.create),
   competitionController.createCompetition,
 );
 router.put(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(competitionSchemas.params, "params"),
   validate(competitionSchemas.update),
   competitionController.updateCompetition,
 );
 router.delete(
   "/:id",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(competitionSchemas.params, "params"),
   competitionController.deleteCompetition,
 );

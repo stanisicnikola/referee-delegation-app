@@ -7,7 +7,7 @@ const { asyncHandler } = require("../middlewares");
  * @access  Private
  */
 const getMatches = asyncHandler(async (req, res) => {
-  const result = await matchService.findAll(req.query);
+  const result = await matchService.findAll(req.query, req.user);
 
   res.json({
     success: true,
@@ -21,7 +21,7 @@ const getMatches = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const getMatch = asyncHandler(async (req, res) => {
-  const match = await matchService.findById(req.params.id);
+  const match = await matchService.findById(req.params.id, req.user);
 
   res.json({
     success: true,
@@ -35,7 +35,7 @@ const getMatch = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const createMatch = asyncHandler(async (req, res) => {
-  const match = await matchService.create(req.body);
+  const match = await matchService.create(req.body, req.user);
 
   res.status(201).json({
     success: true,
@@ -49,7 +49,7 @@ const createMatch = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const updateMatch = asyncHandler(async (req, res) => {
-  const match = await matchService.update(req.params.id, req.body);
+  const match = await matchService.update(req.params.id, req.body, req.user);
 
   res.json({
     success: true,
@@ -63,7 +63,7 @@ const updateMatch = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const deleteMatch = asyncHandler(async (req, res) => {
-  await matchService.delete(req.params.id);
+  await matchService.delete(req.params.id, req.user);
 
   res.json({
     success: true,
@@ -92,7 +92,7 @@ const updateResult = asyncHandler(async (req, res) => {
  */
 const getUpcomingMatches = asyncHandler(async (req, res) => {
   const { limit = 5 } = req.query;
-  const matches = await matchService.getUpcoming(parseInt(limit));
+  const matches = await matchService.getUpcoming(parseInt(limit), req.user);
 
   res.json({
     success: true,
@@ -106,7 +106,7 @@ const getUpcomingMatches = asyncHandler(async (req, res) => {
  * @access  Private/Admin,Delegate
  */
 const getPendingDelegation = asyncHandler(async (req, res) => {
-  const result = await matchService.getPendingDelegation(req.query);
+  const result = await matchService.getPendingDelegation(req.query, req.user);
 
   res.json({
     success: true,

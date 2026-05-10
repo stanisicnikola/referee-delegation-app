@@ -4,29 +4,45 @@ const { userController } = require("../controllers");
 const { authenticate, authorize, validate } = require("../middlewares");
 const { userSchemas } = require("../validators");
 
-// All routes require authentication and admin role
+// Most user routes are admin-only. Delegates can manage referee users.
 router.use(authenticate);
-router.use(authorize("admin"));
 
 // Statistics (must be before /:id route)
-router.get("/statistics", userController.getUserStatistics);
+router.get(
+  "/statistics",
+  authorize("admin", "delegate"),
+  userController.getUserStatistics
+);
 
 // CRUD operacije
-router.get("/", validate(userSchemas.query, "query"), userController.getUsers);
+router.get(
+  "/",
+  authorize("admin"),
+  validate(userSchemas.query, "query"),
+  userController.getUsers
+);
 router.get(
   "/:id",
+  authorize("admin"),
   validate(userSchemas.params, "params"),
   userController.getUser
 );
-router.post("/", validate(userSchemas.create), userController.createUser);
+router.post(
+  "/",
+  authorize("admin", "delegate"),
+  validate(userSchemas.create),
+  userController.createUser
+);
 router.put(
   "/:id",
+  authorize("admin", "delegate"),
   validate(userSchemas.params, "params"),
   validate(userSchemas.update),
   userController.updateUser
 );
 router.delete(
   "/:id",
+  authorize("admin", "delegate"),
   validate(userSchemas.params, "params"),
   userController.deleteUser
 );
@@ -34,6 +50,7 @@ router.delete(
 // Reset lozinke
 router.put(
   "/:id/reset-password",
+  authorize("admin"),
   validate(userSchemas.params, "params"),
   validate(userSchemas.resetPassword),
   userController.resetPassword

@@ -13,6 +13,44 @@ const {
 const { AppError } = require("../middlewares");
 
 class DelegationService {
+  isMatchStarted(match) {
+    return match.scheduledAt && new Date(match.scheduledAt) <= new Date();
+  }
+
+  assertMatchCanBeChanged(match) {
+    if (["completed", "cancelled"].includes(match.status)) {
+      throw new AppError(
+        "Cannot change referee assignments for a completed or cancelled match.",
+        400
+      );
+    }
+
+    if (this.isMatchStarted(match)) {
+      throw new AppError(
+        "Cannot change referee assignments after the match has started.",
+        400
+      );
+    }
+
+    if (match.delegationStatus === "confirmed") {
+      throw new AppError(
+        "This match delegation is already confirmed by all referees.",
+        400
+      );
+    }
+  }
+
+  getDelegationStatus(assignments) {
+    const activeAssignments = assignments.filter((a) => a.status !== "declined");
+
+    if (activeAssignments.length === 0) return "pending";
+    if (activeAssignments.length < 3) return "partial";
+
+    return activeAssignments.every((a) => a.status === "accepted")
+      ? "confirmed"
+      : "complete";
+  }
+
   /**
    * Delegate referees to a match
    * @param {string} matchId - Match ID
@@ -20,30 +58,96 @@ class DelegationService {
    * @param {string} delegateId - ID of the delegate performing the delegation
    */
   async delegateReferees(matchId, delegationData, delegateId) {
-    const { refereeAssignments } = delegationData;
+    const { refereeAssignments = [] } = delegationData;
 
     const match = await Match.findByPk(matchId);
     if (!match) {
       throw new AppError("Match not found.", 404);
     }
 
-    if (match.status === "completed" || match.status === "cancelled") {
-      throw new AppError(
-        "Cannot delegate referees to a completed or cancelled match.",
-        400
-      );
+    this.assertMatchCanBeChanged(match);
+
+    if (!Array.isArray(refereeAssignments) || refereeAssignments.length > 3) {
+      throw new AppError("A match can have at most three referees.", 400);
+    }
+
+    const refereeIds = refereeAssignments.map((a) => a.refereeId);
+    const roles = refereeAssignments.map((a) => a.role);
+
+    if (new Set(refereeIds).size !== refereeIds.length) {
+      throw new AppError("The same referee cannot be assigned twice.", 400);
+    }
+
+    if (new Set(roles).size !== roles.length) {
+      throw new AppError("Each referee role can only be used once.", 400);
     }
 
     const transaction = await sequelize.transaction();
 
     try {
-      // Delete existing delegations for this match
-      await MatchReferee.destroy({ where: { matchId }, transaction });
+      const existingAssignments = await MatchReferee.findAll({
+        where: { matchId },
+        transaction,
+      });
+      const activeExistingAssignments = existingAssignments.filter(
+        (assignment) => assignment.status !== "declined"
+      );
 
-      // Create new delegations
-      const assignments = [];
+      if (activeExistingAssignments.length >= 3) {
+        const allAccepted = activeExistingAssignments.every(
+          (assignment) => assignment.status === "accepted"
+        );
+        throw new AppError(
+          allAccepted
+            ? "All referees have confirmed this match."
+            : "A full referee crew is already assigned. Wait for confirmations or a rejection before changing it.",
+          400
+        );
+      }
+
+      const requestedByRefereeId = new Map(
+        refereeAssignments.map((assignment) => [
+          assignment.refereeId,
+          assignment,
+        ])
+      );
+
+      for (const assignment of activeExistingAssignments) {
+        const requested = requestedByRefereeId.get(assignment.refereeId);
+        if (
+          assignment.status === "accepted" &&
+          (!requested || requested.role !== assignment.role)
+        ) {
+          throw new AppError(
+            "Accepted referee assignments cannot be removed or changed.",
+            400
+          );
+        }
+      }
+
+      await MatchReferee.destroy({
+        where: { matchId, status: "declined" },
+        transaction,
+      });
+
       for (const assignment of refereeAssignments) {
-        const referee = await Referee.findByPk(assignment.refereeId);
+        const existingAssignment = activeExistingAssignments.find(
+          (item) => item.refereeId === assignment.refereeId
+        );
+
+        if (existingAssignment) {
+          if (existingAssignment.role !== assignment.role) {
+            await existingAssignment.update(
+              { role: assignment.role },
+              { transaction }
+            );
+          }
+          continue;
+        }
+
+        const referee = await Referee.findByPk(assignment.refereeId, {
+          transaction,
+        });
         if (!referee) {
           throw new AppError(
             `Referee with ID ${assignment.refereeId} not found.`,
@@ -70,7 +174,7 @@ class DelegationService {
         }
 
         // Check if referee already has a match on that day
-        const existingAssignment = await MatchReferee.findOne({
+        const conflictingAssignment = await MatchReferee.findOne({
           include: [
             {
               model: Match,
@@ -90,24 +194,44 @@ class DelegationService {
           transaction,
         });
 
-        if (existingAssignment) {
+        if (conflictingAssignment) {
           throw new AppError(
             `Referee already has a match on ${matchDate}.`,
             400
           );
         }
 
-        assignments.push({
-          matchId,
-          refereeId: assignment.refereeId,
-          role: assignment.role,
+        await MatchReferee.create(
+          {
+            matchId,
+            refereeId: assignment.refereeId,
+            role: assignment.role,
+          },
+          { transaction }
+        );
+      }
+
+      const requestedRefereeIdSet = new Set(refereeIds);
+      const removableAssignments = activeExistingAssignments.filter(
+        (assignment) =>
+          assignment.status !== "accepted" &&
+          !requestedRefereeIdSet.has(assignment.refereeId)
+      );
+
+      if (removableAssignments.length > 0) {
+        await MatchReferee.destroy({
+          where: { id: removableAssignments.map((assignment) => assignment.id) },
+          transaction,
         });
       }
 
-      await MatchReferee.bulkCreate(assignments, { transaction });
+      const finalAssignments = await MatchReferee.findAll({
+        where: { matchId },
+        transaction,
+      });
 
       // Update delegation status and delegate on match
-      const delegationStatus = assignments.length >= 3 ? "complete" : "partial";
+      const delegationStatus = this.getDelegationStatus(finalAssignments);
       await match.update(
         { delegationStatus, delegatedBy: delegateId, delegatedAt: new Date() },
         { transaction }
@@ -133,7 +257,11 @@ class DelegationService {
         { model: Team, as: "homeTeam" },
         { model: Team, as: "awayTeam" },
         { model: Venue, as: "venue" },
-        { model: User, as: "delegate" },
+        {
+          model: User,
+          as: "delegate",
+          attributes: { exclude: ["passwordHash"] },
+        },
         {
           model: MatchReferee,
           as: "refereeAssignments",
@@ -141,7 +269,13 @@ class DelegationService {
             {
               model: Referee,
               as: "referee",
-              include: [{ model: User, as: "user" }],
+              include: [
+                {
+                  model: User,
+                  as: "user",
+                  attributes: { exclude: ["passwordHash"] },
+                },
+              ],
             },
           ],
         },
@@ -166,6 +300,8 @@ class DelegationService {
       throw new AppError("Match not found.", 404);
     }
 
+    this.assertMatchCanBeChanged(match);
+
     const assignment = await MatchReferee.findOne({
       where: { matchId, refereeId },
     });
@@ -174,18 +310,17 @@ class DelegationService {
       throw new AppError("Referee is not delegated to this match.", 404);
     }
 
+    if (assignment.status === "accepted") {
+      throw new AppError("Accepted referee assignments cannot be removed.", 400);
+    }
+
     await assignment.destroy();
 
     // Update delegation status
-    const remainingAssignments = await MatchReferee.count({
+    const remainingAssignments = await MatchReferee.findAll({
       where: { matchId },
     });
-    let delegationStatus = "pending";
-    if (remainingAssignments > 0 && remainingAssignments < 3) {
-      delegationStatus = "partial";
-    } else if (remainingAssignments >= 3) {
-      delegationStatus = "complete";
-    }
+    const delegationStatus = this.getDelegationStatus(remainingAssignments);
 
     await match.update({ delegationStatus });
 
@@ -260,12 +395,23 @@ class DelegationService {
    * @param {string} role - New role
    */
   async updateRefereeRole(matchId, refereeId, role) {
+    const match = await Match.findByPk(matchId);
+    if (!match) {
+      throw new AppError("Match not found.", 404);
+    }
+
+    this.assertMatchCanBeChanged(match);
+
     const assignment = await MatchReferee.findOne({
       where: { matchId, refereeId },
     });
 
     if (!assignment) {
       throw new AppError("Referee is not delegated to this match.", 404);
+    }
+
+    if (assignment.status === "accepted") {
+      throw new AppError("Accepted referee assignments cannot be changed.", 400);
     }
 
     await assignment.update({ role });
@@ -573,11 +719,8 @@ class DelegationService {
     // Check if all referees confirmed - update match status
     const match = await Match.findByPk(matchId);
     const allAssignments = await MatchReferee.findAll({ where: { matchId } });
-    const allAccepted = allAssignments.every((a) => a.status === "accepted");
-
-    if (allAccepted && match.delegationStatus === "complete") {
-      await match.update({ delegationStatus: "confirmed" });
-    }
+    const delegationStatus = this.getDelegationStatus(allAssignments);
+    await match.update({ delegationStatus });
 
     return this.getMatchDelegation(matchId);
   }
@@ -597,21 +740,27 @@ class DelegationService {
       throw new AppError("Delegation not found.", 404);
     }
 
-    await assignment.update({
-      status: "declined",
-      responseAt: new Date(),
-      declineReason: reason,
-    });
-
-    // Update delegation status to "partial"
     const match = await Match.findByPk(matchId);
-    if (
-      match &&
-      (match.delegationStatus === "complete" ||
-        match.delegationStatus === "confirmed")
-    ) {
-      await match.update({ delegationStatus: "partial" });
+    if (!match) {
+      throw new AppError("Match not found.", 404);
     }
+
+    if (match.delegationStatus === "confirmed") {
+      throw new AppError("This match delegation is already confirmed.", 400);
+    }
+
+    if (assignment.status === "accepted") {
+      throw new AppError("Accepted assignments cannot be rejected.", 400);
+    }
+
+    // A declined referee frees that crew slot for a replacement.
+    await assignment.destroy();
+
+    const remainingAssignments = await MatchReferee.findAll({
+      where: { matchId },
+    });
+    const delegationStatus = this.getDelegationStatus(remainingAssignments);
+    await match.update({ delegationStatus });
 
     return this.getMatchDelegation(matchId);
   }
