@@ -33,6 +33,12 @@ const EMPTY_ASSIGNMENTS = {
   third: null,
 };
 
+const EMPTY_ASSIGNMENT_META = {
+  main: null,
+  second: null,
+  third: null,
+};
+
 const ROLE_TO_SLOT = {
   first_referee: "main",
   second_referee: "second",
@@ -77,6 +83,7 @@ const DelegationPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [assignedReferees, setAssignedReferees] = useState(EMPTY_ASSIGNMENTS);
+  const [assignmentMeta, setAssignmentMeta] = useState(EMPTY_ASSIGNMENT_META);
 
   const { data: matchData, isLoading: matchLoading } = useMatch(matchId);
   const { data: availableRefereesData, isLoading: refereesLoading } =
@@ -93,17 +100,61 @@ const DelegationPage = () => {
     if (!match?.refereeAssignments) return;
 
     const nextAssignments = { ...EMPTY_ASSIGNMENTS };
+    const nextAssignmentMeta = { ...EMPTY_ASSIGNMENT_META };
     match.refereeAssignments.forEach((assignment) => {
       const slot = ROLE_TO_SLOT[assignment.role];
       if (slot) {
         nextAssignments[slot] = assignment.referee || null;
+        nextAssignmentMeta[slot] = assignment;
       }
     });
 
     setAssignedReferees(nextAssignments);
+    setAssignmentMeta(nextAssignmentMeta);
   }, [match?.id, match?.refereeAssignments]);
 
   const assignedCount = Object.values(assignedReferees).filter(Boolean).length;
+  const savedAssignmentsBySlot = useMemo(() => {
+    const saved = { ...EMPTY_ASSIGNMENTS };
+    if (!match?.refereeAssignments) return saved;
+
+    match.refereeAssignments.forEach((assignment) => {
+      const slot = ROLE_TO_SLOT[assignment.role];
+      if (slot) saved[slot] = assignment.refereeId;
+    });
+
+    return saved;
+  }, [match?.refereeAssignments]);
+
+  const hasAssignmentChanges = useMemo(() => {
+    return SLOT_CONFIG.some((config) => {
+      const currentRefereeId = assignedReferees[config.slot]?.id || null;
+      return currentRefereeId !== (savedAssignmentsBySlot[config.slot] || null);
+    });
+  }, [assignedReferees, savedAssignmentsBySlot]);
+
+  const isMatchStarted = match?.scheduledAt
+    ? new Date(match.scheduledAt) <= new Date()
+    : false;
+  const isMatchClosed = ["completed", "cancelled"].includes(match?.status);
+  const isConfirmed = match?.delegationStatus === "confirmed";
+  const savedAssignedCount =
+    match?.refereeAssignments?.filter(
+      (assignment) => assignment.status !== "declined",
+    ).length || 0;
+  const hasFullSavedCrew = savedAssignedCount >= 3;
+  const isAssignmentLocked =
+    isMatchStarted || isMatchClosed || isConfirmed || hasFullSavedCrew;
+
+  const saveDisabledReason = (() => {
+    if (isMatchClosed) return "This match is closed.";
+    if (isMatchStarted) return "This match has already started.";
+    if (isConfirmed) return "All referees confirmed this match.";
+    if (hasFullSavedCrew) return "Full crew assigned. Waiting for referee confirmations.";
+    if (assignedCount === 0) return "Select at least one referee.";
+    if (!hasAssignmentChanges) return "No assignment changes to save.";
+    return "";
+  })();
 
   const availableReferees = useMemo(() => {
     return allAvailableReferees
@@ -134,11 +185,17 @@ const DelegationPage = () => {
   }, [allAvailableReferees, assignedReferees]);
 
   const handleAssign = (referee, slot) => {
+    if (isAssignmentLocked) return;
     setAssignedReferees((prev) => ({ ...prev, [slot]: referee }));
+    setAssignmentMeta((prev) => ({ ...prev, [slot]: null }));
   };
 
   const handleRemove = (slot) => {
+    if (isAssignmentLocked || assignmentMeta[slot]?.status === "accepted") {
+      return;
+    }
     setAssignedReferees((prev) => ({ ...prev, [slot]: null }));
+    setAssignmentMeta((prev) => ({ ...prev, [slot]: null }));
   };
 
   const handleConfirmDelegation = async () => {
@@ -546,7 +603,9 @@ const DelegationPage = () => {
                 )
               }
               onClick={handleConfirmDelegation}
-              disabled={assignedCount === 0 || delegateReferees.isPending}
+              disabled={
+                Boolean(saveDisabledReason) || delegateReferees.isPending
+              }
               sx={{
                 flex: { xs: "1 1 180px", sm: "0 0 auto" },
                 px: 3,
@@ -563,6 +622,18 @@ const DelegationPage = () => {
             >
               {delegateReferees.isPending ? "Saving..." : "Save Assignment"}
             </Button>
+            {saveDisabledReason && (
+              <Typography
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  color: "#6b7280",
+                  fontSize: 12,
+                  textAlign: { xs: "left", sm: "right" },
+                }}
+              >
+                {saveDisabledReason}
+              </Typography>
+            )}
           </Box>
         </Box>
       </Box>
@@ -791,8 +862,14 @@ const DelegationPage = () => {
                 </Typography>
                 <Typography sx={{ color: "#6b7280", fontSize: 13, mt: 0.25 }}>
                   {assignedCount === 3
-                    ? "Full crew — ready to save."
-                    : "Select referees from the right panel."}
+                    ? isConfirmed
+                      ? "All referees confirmed this match."
+                      : hasFullSavedCrew
+                        ? "Full crew assigned — waiting for confirmations."
+                        : "Full crew — ready to save."
+                    : isMatchStarted
+                      ? "Match started — assignment is locked."
+                      : "Select referees from the right panel."}
                 </Typography>
               </Box>
 
@@ -833,6 +910,8 @@ const DelegationPage = () => {
                   key={config.slot}
                   config={config}
                   referee={assignedReferees[config.slot]}
+                  assignment={assignmentMeta[config.slot]}
+                  locked={isAssignmentLocked}
                   onRemove={() => handleRemove(config.slot)}
                 />
               ))}
@@ -921,6 +1000,7 @@ const DelegationPage = () => {
                   referee={referee}
                   assignedReferees={assignedReferees}
                   onAssign={handleAssign}
+                  disabled={isAssignmentLocked}
                 />
               ))}
 
@@ -953,7 +1033,10 @@ const DelegationPage = () => {
                   <Typography
                     sx={{ fontSize: 13, color: "#6b7280", maxWidth: 210 }}
                   >
-                    {emptyCandidatesMessage}
+                    {isAssignmentLocked
+                      ? saveDisabledReason ||
+                        "Assignments are locked for this match."
+                      : emptyCandidatesMessage}
                   </Typography>
                 </Box>
               )}
@@ -1030,7 +1113,12 @@ const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
   );
 };
 
-const AssignmentSlot = ({ config, referee, onRemove }) => {
+const AssignmentSlot = ({ config, referee, assignment, locked, onRemove }) => {
+  const response = assignment?.status;
+  const isAccepted = response === "accepted";
+  const isPending = response === "pending";
+  const canRemove = referee && !locked && !isAccepted;
+
   if (!referee) {
     return (
       <Box
@@ -1133,6 +1221,32 @@ const AssignmentSlot = ({ config, referee, onRemove }) => {
             >
               {config.label}
             </Box>
+            {response && (
+              <Box
+                sx={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: isAccepted ? "#22c55e" : "#eab308",
+                  bgcolor: isAccepted
+                    ? "rgba(34,197,94,0.12)"
+                    : "rgba(234,179,8,0.12)",
+                  border: "1px solid",
+                  borderColor: isAccepted
+                    ? "rgba(34,197,94,0.28)"
+                    : "rgba(234,179,8,0.28)",
+                  px: 1,
+                  py: "2px",
+                  borderRadius: "4px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {isAccepted
+                  ? "Confirmed"
+                  : isPending
+                    ? "Waiting to confirm"
+                    : "Assigned"}
+              </Box>
+            )}
           </Box>
           <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
             Category {referee.licenseCategory || "N/A"} ·{" "}
@@ -1141,22 +1255,24 @@ const AssignmentSlot = ({ config, referee, onRemove }) => {
         </Box>
       </Box>
 
-      <IconButton
-        onClick={onRemove}
-        size='small'
-        sx={{
-          color: "#4b5563",
-          flexShrink: 0,
-          "&:hover": { bgcolor: "rgba(239,68,68,0.1)", color: "#ef4444" },
-        }}
-      >
-        <CloseIcon fontSize='small' />
-      </IconButton>
+      {canRemove && (
+        <IconButton
+          onClick={onRemove}
+          size='small'
+          sx={{
+            color: "#4b5563",
+            flexShrink: 0,
+            "&:hover": { bgcolor: "rgba(239,68,68,0.1)", color: "#ef4444" },
+          }}
+        >
+          <CloseIcon fontSize='small' />
+        </IconButton>
+      )}
     </Box>
   );
 };
 
-const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
+const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
   return (
     <Box
       sx={{
@@ -1218,14 +1334,17 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
       >
         {SLOT_CONFIG.map((slotCfg) => {
           const occupied = Boolean(assignedReferees[slotCfg.slot]);
+          const isDisabled = disabled || occupied;
           return (
             <Box
               key={slotCfg.slot}
               onClick={
-                occupied ? undefined : () => onAssign(referee, slotCfg.slot)
+                isDisabled ? undefined : () => onAssign(referee, slotCfg.slot)
               }
               title={
-                occupied
+                disabled
+                  ? "Assignments are locked for this match"
+                  : occupied
                   ? `${slotCfg.label} slot is taken`
                   : `Assign as ${slotCfg.label}`
               }
@@ -1236,15 +1355,15 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
                 fontSize: "11px",
                 fontWeight: 600,
                 lineHeight: 1.4,
-                cursor: occupied ? "not-allowed" : "pointer",
+                cursor: isDisabled ? "not-allowed" : "pointer",
                 border: "1px solid",
-                borderColor: occupied ? "#1e1e22" : `${slotCfg.accent}44`,
-                color: occupied ? "#2a2a2e" : slotCfg.accent,
-                bgcolor: occupied ? "transparent" : `${slotCfg.accent}10`,
+                borderColor: isDisabled ? "#1e1e22" : `${slotCfg.accent}44`,
+                color: isDisabled ? "#2a2a2e" : slotCfg.accent,
+                bgcolor: isDisabled ? "transparent" : `${slotCfg.accent}10`,
                 userSelect: "none",
                 transition: "all 0.15s",
                 textAlign: "center",
-                ...(!occupied && {
+                ...(!isDisabled && {
                   "&:hover": {
                     bgcolor: `${slotCfg.accent}22`,
                     borderColor: `${slotCfg.accent}77`,
@@ -1252,7 +1371,7 @@ const CandidateRow = ({ referee, assignedReferees, onAssign }) => {
                 }),
               }}
             >
-              {occupied ? "—" : slotCfg.buttonLabel}
+              {isDisabled ? "—" : slotCfg.buttonLabel}
             </Box>
           );
         })}

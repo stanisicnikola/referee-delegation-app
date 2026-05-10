@@ -14,20 +14,29 @@ import {
 import {
   Search as SearchIcon,
   Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
   CalendarMonth as MatchesIcon,
 } from "@mui/icons-material";
-import { useMatches, useCompetitions, useCreateMatch } from "../../hooks";
+import {
+  useMatches,
+  useCompetitions,
+  useCreateMatch,
+  useUpdateMatch,
+  useDeleteMatch,
+} from "../../hooks";
 import MatchModal from "../../components/ui/MatchModal";
-import { useAuth } from "../../context";
+import { ConfirmDialog, DeleteButton, EditButton } from "../../components/ui";
 
 const MatchesPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [competitionFilter, setCompetitionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingMatch, setEditingMatch] = useState(null);
+  const [matchToDelete, setMatchToDelete] = useState(null);
 
   useEffect(() => {
     const competitionId = searchParams.get("competition");
@@ -39,7 +48,8 @@ const MatchesPage = () => {
   const { data: matchesData, isLoading } = useMatches({ limit: 100 });
   const { data: competitionsData } = useCompetitions({ limit: 100 });
   const createMatch = useCreateMatch();
-  const isAdmin = user?.role === "admin";
+  const updateMatch = useUpdateMatch();
+  const deleteMatch = useDeleteMatch();
 
   const allMatches = matchesData?.data || [];
   const competitions =
@@ -234,12 +244,54 @@ const MatchesPage = () => {
 
   const handleSubmit = async (formData) => {
     try {
-      await createMatch.mutateAsync(formData);
+      if (editingMatch) {
+        await updateMatch.mutateAsync({ id: editingMatch.id, data: formData });
+      } else {
+        await createMatch.mutateAsync(formData);
+      }
       setModalOpen(false);
+      setEditingMatch(null);
     } catch (error) {
       console.error("Error creating match:", error);
     }
   };
+
+  const handleOpenModal = (match = null) => {
+    setEditingMatch(match);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingMatch(null);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMatch.mutateAsync(matchToDelete.id);
+    } catch (error) {
+      console.error("Error deleting match:", error);
+    } finally {
+      setMatchToDelete(null);
+    }
+  };
+
+  const renderManagementActions = (match) => (
+    <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+      <EditButton
+        onClick={(e) => {
+          e.stopPropagation();
+          handleOpenModal(match);
+        }}
+      />
+      <DeleteButton
+        onClick={(e) => {
+          e.stopPropagation();
+          setMatchToDelete(match);
+        }}
+      />
+    </Box>
+  );
 
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
@@ -284,26 +336,24 @@ const MatchesPage = () => {
               Manage match schedule
             </Typography>
           </Box>
-          {isAdmin ? (
-            <Button
-              startIcon={<AddIcon />}
-              onClick={() => setModalOpen(true)}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 1.25,
-                borderRadius: "12px",
-                bgcolor: "#f97316",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: 500,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#ea580c" },
-              }}
-            >
-              New match
-            </Button>
-          ) : null}
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenModal()}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              px: 2.5,
+              py: 1.25,
+              borderRadius: "12px",
+              bgcolor: "#f97316",
+              color: "#fff",
+              fontSize: "14px",
+              fontWeight: 500,
+              textTransform: "none",
+              "&:hover": { bgcolor: "#ea580c" },
+            }}
+          >
+            New match
+          </Button>
         </Box>
       </Box>
 
@@ -548,7 +598,17 @@ const MatchesPage = () => {
                     }}
                   >
                     {getStatusBadge(match)}
-                    {getActionButton(match)}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 1,
+                        flexWrap: "wrap",
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      {getActionButton(match)}
+                      {renderManagementActions(match)}
+                    </Box>
                   </Box>
                 </Box>
               );
@@ -880,7 +940,16 @@ const MatchesPage = () => {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {getActionButton(match)}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              {getActionButton(match)}
+                              {renderManagementActions(match)}
+                            </Box>
                           </Box>
                         </Box>
                       );
@@ -893,14 +962,24 @@ const MatchesPage = () => {
         </Box>
       </Box>
 
-      {isAdmin && (
-        <MatchModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleSubmit}
-          isLoading={createMatch.isPending}
-        />
-      )}
+      <MatchModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        isLoading={createMatch.isPending || updateMatch.isPending}
+        editMatch={editingMatch}
+      />
+
+      <ConfirmDialog
+        open={Boolean(matchToDelete)}
+        onClose={() => setMatchToDelete(null)}
+        onConfirm={handleDelete}
+        title='Delete Match'
+        message='Are you sure you want to delete this match?'
+        confirmText='Delete'
+        confirmColor='error'
+        loading={deleteMatch.isPending}
+      />
     </Box>
   );
 };

@@ -13,16 +13,27 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Button,
 } from "@mui/material";
 import {
   LocationOn as LocationIcon,
   MoreVert as MoreIcon,
   Groups as GroupsIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { useMatches, useTeams } from "../../hooks";
+import {
+  useMatches,
+  useTeams,
+  useCreateTeam,
+  useUpdateTeam,
+  useDeleteTeam,
+} from "../../hooks";
 import TeamDetailsDialog from "../../components/delegate/TeamDetailsDialog";
 import TeamMatchesDialog from "../../components/delegate/TeamMatchesDialog";
-import { FilterSearch } from "../../components/ui";
+import { ConfirmDialog, FilterSearch } from "../../components/ui";
+import { TeamModal } from "../../components/user/TeamModal";
 
 const TeamsPage = () => {
   const [search, setSearch] = useState("");
@@ -31,11 +42,17 @@ const TeamsPage = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [matchesOpen, setMatchesOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [teamToDelete, setTeamToDelete] = useState(null);
 
   const { data: teamsData, isLoading } = useTeams({ limit: 100 });
   const { data: matchesData, isLoading: isMatchesLoading } = useMatches({
     limit: 500,
   });
+  const createTeam = useCreateTeam();
+  const updateTeam = useUpdateTeam();
+  const deleteTeam = useDeleteTeam();
   const teams = teamsData?.data || [];
   const matches = useMemo(() => matchesData?.data || [], [matchesData?.data]);
 
@@ -72,6 +89,46 @@ const TeamsPage = () => {
 
   const handleCloseDetails = () => setDetailsOpen(false);
   const handleCloseMatches = () => setMatchesOpen(false);
+
+  const handleOpenModal = (team = null) => {
+    setEditingTeam(team);
+    setModalOpen(true);
+    handleMenuClose();
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingTeam(null);
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      if (editingTeam) {
+        await updateTeam.mutateAsync({ id: editingTeam.id, data: formData });
+      } else {
+        await createTeam.mutateAsync(formData);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving team:", error);
+    }
+  };
+
+  const handleOpenDelete = (team = menuTeam) => {
+    if (!team) return;
+    setTeamToDelete(team);
+    handleMenuClose();
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteTeam.mutateAsync(teamToDelete.id);
+    } catch (error) {
+      console.error("Error deleting team:", error);
+    } finally {
+      setTeamToDelete(null);
+    }
+  };
 
   const getTeamColor = (index) => {
     const colors = [
@@ -160,6 +217,7 @@ const TeamsPage = () => {
               alignItems: "center",
               gap: 2,
               width: { xs: "100%", md: "auto" },
+              flexWrap: "wrap",
             }}
           >
             <Box
@@ -186,6 +244,24 @@ const TeamsPage = () => {
                 </Typography>
               </Box>
             </Box>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenModal()}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                px: 2.5,
+                py: 1.25,
+                borderRadius: "12px",
+                bgcolor: "#f97316",
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#ea580c" },
+              }}
+            >
+              New team
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -613,6 +689,28 @@ const TeamsPage = () => {
           >
             View matches
           </MenuItem>
+          <MenuItem
+            onClick={() => handleOpenModal(menuTeam)}
+            sx={{
+              color: "#fff",
+              fontSize: "14px",
+              "&:hover": { bgcolor: "#242428" },
+            }}
+          >
+            <EditIcon sx={{ fontSize: 16, mr: 1 }} />
+            Edit
+          </MenuItem>
+          <MenuItem
+            onClick={() => handleOpenDelete()}
+            sx={{
+              color: "#ef4444",
+              fontSize: "14px",
+              "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
+            }}
+          >
+            <DeleteIcon sx={{ fontSize: 16, mr: 1 }} />
+            Delete
+          </MenuItem>
         </Menu>
         <TeamDetailsDialog
           open={detailsOpen}
@@ -628,6 +726,25 @@ const TeamsPage = () => {
           team={selectedTeam}
           matches={selectedTeamMatches}
           isLoading={isMatchesLoading}
+        />
+
+        <TeamModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          isLoading={createTeam.isPending || updateTeam.isPending}
+          editTeam={editingTeam}
+        />
+
+        <ConfirmDialog
+          open={Boolean(teamToDelete)}
+          onClose={() => setTeamToDelete(null)}
+          onConfirm={handleDelete}
+          title='Delete Team'
+          message='Are you sure you want to delete this team?'
+          confirmText='Delete'
+          confirmColor='error'
+          loading={deleteTeam.isPending}
         />
       </Box>
     </Box>

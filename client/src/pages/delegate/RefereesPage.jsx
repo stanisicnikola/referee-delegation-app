@@ -13,18 +13,28 @@ import {
   Email as EmailIcon,
   LocationOn as LocationIcon,
   Star as StarIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import {
   useReferees,
   useAvailableRefereesForDate,
   useUnavailableRefereesForDate,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
 } from "../../hooks";
-import { FilterSearch } from "../../components/ui";
+import { ConfirmDialog, CustomButton, FilterSearch } from "../../components/ui";
+import UserModal from "../../components/user/UserModal";
 
 const RefereesPage = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [detailsReferee, setDetailsReferee] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [refereeToDelete, setRefereeToDelete] = useState(null);
 
   const todayDate = new Date().toLocaleDateString("en-CA");
   const { data: refereesData, isLoading } = useReferees({ limit: 100 });
@@ -32,6 +42,9 @@ const RefereesPage = () => {
     useAvailableRefereesForDate(todayDate);
   const { data: unavailableRefereesData } =
     useUnavailableRefereesForDate(todayDate);
+  const createUser = useCreateUser();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
   const referees = refereesData?.data || [];
   const availableRefereeIds = new Set(
     (availableRefereesData?.data || []).map((referee) => referee.id),
@@ -103,6 +116,40 @@ const RefereesPage = () => {
   const handleCloseDetails = () => {
     setDetailsReferee(null);
   };
+
+  const handleOpenModal = (referee = null) => {
+    setEditingUser(referee ? { ...referee.user, referee } : null);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      if (editingUser) {
+        await updateUser.mutateAsync({ id: editingUser.id, data: formData });
+      } else {
+        await createUser.mutateAsync({ ...formData, role: "referee" });
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving referee:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteUser.mutateAsync(refereeToDelete.userId);
+    } catch (error) {
+      console.error("Error deleting referee:", error);
+    } finally {
+      setRefereeToDelete(null);
+    }
+  };
+
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#121214",
@@ -170,6 +217,7 @@ const RefereesPage = () => {
               alignItems: "center",
               gap: 2,
               width: { xs: "100%", lg: "auto" },
+              flexWrap: "wrap",
             }}
           >
             {/* Stats */}
@@ -234,6 +282,24 @@ const RefereesPage = () => {
                 </Typography>
               </Box>
             </Box>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenModal()}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                px: 2.5,
+                py: 1.25,
+                borderRadius: "12px",
+                bgcolor: "#f97316",
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#ea580c" },
+              }}
+            >
+              New referee
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -323,7 +389,7 @@ const RefereesPage = () => {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                md: "repeat(auto-fill, minmax(300px, 1fr))",
+                md: "repeat(3, 1fr)",
               },
               gap: { xs: 2, md: 3 },
             }}
@@ -403,7 +469,7 @@ const RefereesPage = () => {
                           icon={
                             <StarIcon sx={{ fontSize: "14px !important" }} />
                           }
-                          label={`Category ${referee.licenseCategory || "N/A"}`}
+                          label={`Cat. ${referee.licenseCategory || "N/A"}`}
                           size='small'
                           sx={{
                             bgcolor: "rgba(249, 115, 22, 0.1)",
@@ -511,7 +577,9 @@ const RefereesPage = () => {
                         pt: 2,
                         borderTop: "1px solid #242428",
                         display: "flex",
-                        justifyContent: "flex-end",
+                        justifyContent: "space-between",
+                        gap: 1,
+                        flexWrap: "wrap",
                       }}
                     >
                       <Button
@@ -521,11 +589,40 @@ const RefereesPage = () => {
                           color: "#f97316",
                           textTransform: "none",
                           fontWeight: 600,
+                          bgcolor: "#1a1a1d",
                           "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
                         }}
                       >
                         View details
                       </Button>
+                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                        <Button
+                          size='small'
+                          startIcon={<EditIcon />}
+                          onClick={() => handleOpenModal(referee)}
+                          sx={{
+                            color: "#9ca3af",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": { bgcolor: "#242428", color: "#fff" },
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size='small'
+                          startIcon={<DeleteIcon />}
+                          onClick={() => setRefereeToDelete(referee)}
+                          sx={{
+                            color: "#ef4444",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
                     </Box>
                   </Box>
                 </Box>
@@ -541,6 +638,24 @@ const RefereesPage = () => {
         onClose={handleCloseDetails}
         avatarColor={getAvatarColor(detailsIndex)}
         availabilityStyle={detailsAvailabilityStyle}
+      />
+      <UserModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleSubmit}
+        isLoading={createUser.isPending || updateUser.isPending}
+        editUser={editingUser}
+        allowedRoles={["referee"]}
+      />
+      <ConfirmDialog
+        open={Boolean(refereeToDelete)}
+        onClose={() => setRefereeToDelete(null)}
+        onConfirm={handleDelete}
+        title='Delete Referee'
+        message='Are you sure you want to delete this referee?'
+        confirmText='Delete'
+        confirmColor='error'
+        loading={deleteUser.isPending}
       />
     </Box>
   );

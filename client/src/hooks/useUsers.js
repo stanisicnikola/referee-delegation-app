@@ -26,10 +26,11 @@ export const useUser = (id) => {
   });
 };
 
-export const useUserStatistics = () => {
+export const useUserStatistics = (options = {}) => {
   return useQuery({
     queryKey: userKeys.statistics(),
     queryFn: () => usersApi.getStatistics(),
+    ...options,
   });
 };
 

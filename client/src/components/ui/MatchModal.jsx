@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import {
@@ -10,9 +10,10 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import CustomSelect from "./CustomSelect";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { matchSchema } from "../../validations/matchSchema";
+import { createMatchSchema } from "../../validations/matchSchema";
 import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
+import { useAuth } from "../../context";
 
 const MatchModal = ({
   open,
@@ -21,6 +22,13 @@ const MatchModal = ({
   isLoading,
   editMatch = null,
 }) => {
+  const { user } = useAuth();
+  const canChangeDelegate = user?.role === "admin";
+  const schema = useMemo(
+    () => createMatchSchema({ requireDelegate: canChangeDelegate }),
+    [canChangeDelegate],
+  );
+
   const {
     control,
     handleSubmit,
@@ -28,7 +36,7 @@ const MatchModal = ({
     watch,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(matchSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       id: "",
       competitionId: "",
@@ -46,7 +54,9 @@ const MatchModal = ({
   const { data: teamsData } = useTeams({ limit: 100 });
   const { data: venuesData } = useVenues({ limit: 100 });
   const { data: competitionsData } = useCompetitions({ limit: 100 });
-  const { data: delegatesData } = useUserStatistics();
+  const { data: delegatesData } = useUserStatistics({
+    enabled: canChangeDelegate,
+  });
 
   const teams = teamsData?.data || [];
   const venues = venuesData?.data || [];
@@ -112,9 +122,13 @@ const MatchModal = ({
   }, [editMatch, open, reset]);
 
   const onFormSubmit = (data) => {
-    const { date, time, ...rest } = data;
+    const { date, time, delegateId, ...rest } = data;
     const scheduledAt = new Date(`${date}T${time}`).toISOString();
-    onSubmit({ ...rest, scheduledAt });
+    onSubmit({
+      ...rest,
+      ...(canChangeDelegate && delegateId ? { delegateId } : {}),
+      scheduledAt,
+    });
   };
 
   if (!open) return null;
@@ -189,7 +203,10 @@ const MatchModal = ({
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: canChangeDelegate ? "1fr 1fr" : "1fr",
+              },
               gap: 2,
             }}
           >
@@ -325,19 +342,21 @@ const MatchModal = ({
                 />
               )}
             />
-            <Controller
-              name='delegateId'
-              control={control}
-              render={({ field }) => (
-                <CustomSelect
-                  label='Delegate *'
-                  placeholder='Select delegate'
-                  options={delegates}
-                  error={errors.delegateId?.message}
-                  {...field}
-                />
-              )}
-            />
+            {canChangeDelegate && (
+              <Controller
+                name='delegateId'
+                control={control}
+                render={({ field }) => (
+                  <CustomSelect
+                    label='Delegate *'
+                    placeholder='Select delegate'
+                    options={delegates}
+                    error={errors.delegateId?.message}
+                    {...field}
+                  />
+                )}
+              />
+            )}
           </Box>
 
           {/* Notes */}

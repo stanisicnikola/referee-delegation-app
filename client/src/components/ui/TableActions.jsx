@@ -10,7 +10,7 @@ export const EditButton = ({ onClick, tooltip = "Edit", sx = {} }) => {
           color: "#6b7280",
           "&:hover": {
             bgcolor: "#242428",
-            color: "#8b5cf6",
+            color: "#9b9bab",
           },
           ...sx,
         }}

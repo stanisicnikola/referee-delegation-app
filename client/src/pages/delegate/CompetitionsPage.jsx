@@ -1,28 +1,38 @@
 import { useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Chip,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Typography, Button, Chip, CircularProgress } from "@mui/material";
 import {
   CalendarMonth as CalendarIcon,
   Groups as GroupsIcon,
   EmojiEvents as TrophyIcon,
   ArrowForward as ArrowIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useCompetitions, useCompetitionSummary } from "../../hooks";
-import { FilterSearch } from "../../components/ui";
+import {
+  useCompetitions,
+  useCompetitionSummary,
+  useCreateCompetition,
+  useUpdateCompetition,
+  useDeleteCompetition,
+} from "../../hooks";
+import { ConfirmDialog, FilterSearch } from "../../components/ui";
+import { CompetitionModal } from "../../components/user/CompetitionModal";
 
 const CompetitionsPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCompetition, setEditingCompetition] = useState(null);
+  const [competitionToDelete, setCompetitionToDelete] = useState(null);
 
   const { data: competitionsData, isLoading } = useCompetitions({ limit: 100 });
   const { data: summaryData } = useCompetitionSummary();
+  const createCompetition = useCreateCompetition();
+  const updateCompetition = useUpdateCompetition();
+  const deleteCompetition = useDeleteCompetition();
   const competitions = competitionsData?.data || [];
   const summary = summaryData?.data || {};
 
@@ -149,6 +159,42 @@ const CompetitionsPage = () => {
     }
   };
 
+  const handleOpenModal = (competition = null) => {
+    setEditingCompetition(competition);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingCompetition(null);
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      if (editingCompetition) {
+        await updateCompetition.mutateAsync({
+          id: editingCompetition.id,
+          data: formData,
+        });
+      } else {
+        await createCompetition.mutateAsync(formData);
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving competition:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteCompetition.mutateAsync(competitionToDelete.id);
+    } catch (error) {
+      console.error("Error deleting competition:", error);
+    } finally {
+      setCompetitionToDelete(null);
+    }
+  };
+
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#121214",
@@ -198,6 +244,7 @@ const CompetitionsPage = () => {
               alignItems: "center",
               gap: 2,
               width: { xs: "100%", sm: "auto" },
+              flexWrap: "wrap",
             }}
           >
             <Box
@@ -224,6 +271,24 @@ const CompetitionsPage = () => {
                 </Typography>
               </Box>
             </Box>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenModal()}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                px: 2.5,
+                py: 1.25,
+                borderRadius: "12px",
+                bgcolor: "#f97316",
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#ea580c" },
+              }}
+            >
+              New competition
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -412,8 +477,8 @@ const CompetitionsPage = () => {
                       sx={{
                         display: "grid",
                         gridTemplateColumns: {
-                          xs: "repeat(3, minmax(0, 1fr))",
-                          sm: "repeat(3, 1fr)",
+                          xs: "repeat(2, minmax(0, 1fr))",
+                          sm: "repeat(2, 1fr)",
                         },
                         gap: { xs: 1, sm: 2 },
                         mb: 3,
@@ -475,31 +540,6 @@ const CompetitionsPage = () => {
                           Gender
                         </Typography>
                       </Box>
-                      <Box
-                        sx={{
-                          textAlign: "center",
-                          p: { xs: 1, sm: 1.5 },
-                          bgcolor: "#0a0a0b",
-                          borderRadius: "10px",
-                          minWidth: 0,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontWeight: 600,
-                            color: "#f97316",
-                            fontSize: { xs: "14px", sm: "20px" },
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {statusStyle.label}
-                        </Typography>
-                        <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                          Status
-                        </Typography>
-                      </Box>
                     </Box>
 
                     {/* Progress */}
@@ -549,29 +589,67 @@ const CompetitionsPage = () => {
                     </Box>
 
                     {/* Actions */}
-                    <Button
-                      fullWidth
-                      endIcon={<ArrowIcon />}
-                      onClick={() =>
-                        navigate(
-                          `/delegate/matches?competition=${competition.id}`,
-                        )
-                      }
-                      sx={{
-                        py: 1.5,
-                        borderRadius: "10px",
-                        bgcolor: "#242428",
-                        color: "#fff",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        textTransform: "none",
-                        "&:hover": {
-                          bgcolor: "#2e2e33",
-                        },
-                      }}
-                    >
-                      View matches
-                    </Button>
+                    <Box sx={{ display: "grid", gap: 1 }}>
+                      <Button
+                        fullWidth
+                        endIcon={<ArrowIcon />}
+                        onClick={() =>
+                          navigate(
+                            `/delegate/matches?competition=${competition.id}`,
+                          )
+                        }
+                        sx={{
+                          py: 1.5,
+                          borderRadius: "10px",
+                          bgcolor: "#242428",
+                          color: "#fff",
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          textTransform: "none",
+                          "&:hover": {
+                            bgcolor: "#2e2e33",
+                          },
+                        }}
+                      >
+                        View matches
+                      </Button>
+
+                      <Box
+                        s
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 1,
+                        }}
+                      >
+                        <Button
+                          size='small'
+                          startIcon={<EditIcon />}
+                          onClick={() => handleOpenModal(competition)}
+                          sx={{
+                            color: "#9ca3af",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": { bgcolor: "#242428", color: "#fff" },
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size='small'
+                          startIcon={<DeleteIcon />}
+                          onClick={() => setCompetitionToDelete(competition)}
+                          sx={{
+                            color: "#ef4444",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    </Box>
                   </Box>
                 </Box>
               );
@@ -579,6 +657,23 @@ const CompetitionsPage = () => {
           </Box>
         )}
       </Box>
+      <CompetitionModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        isLoading={createCompetition.isPending || updateCompetition.isPending}
+        editCompetition={editingCompetition}
+      />
+      <ConfirmDialog
+        open={Boolean(competitionToDelete)}
+        onClose={() => setCompetitionToDelete(null)}
+        onConfirm={handleDelete}
+        title='Delete Competition'
+        message='Are you sure you want to delete this competition?'
+        confirmText='Delete'
+        confirmColor='error'
+        loading={deleteCompetition.isPending}
+      />
     </Box>
   );
 };
