@@ -10,6 +10,21 @@ const {
 const { AppError } = require("../middlewares");
 
 class RefereeService {
+  toLocalDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  getLocalDayRange(date) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  }
+
   async findAll(query = {}) {
     const { page = 1, limit = 10, licenseCategory, city, search } = query;
     const pageNum = parseInt(page, 10) || 1;
@@ -226,16 +241,90 @@ class RefereeService {
   }
 
   async getOverallStatistics() {
-    const total = await Referee.count();
-    const international = await Referee.count({
-      where: { licenseCategory: "international" },
-    });
-    const A = await Referee.count({ where: { licenseCategory: "A" } });
-    const B = await Referee.count({ where: { licenseCategory: "B" } });
-    const C = await Referee.count({ where: { licenseCategory: "C" } });
-    const regional = await Referee.count({
-      where: { licenseCategory: "regional" },
-    });
+    const [
+      total,
+      international,
+      A,
+      B,
+      C,
+      regional,
+      active,
+      inactive,
+      suspended,
+    ] = await Promise.all([
+      Referee.count(),
+      Referee.count({ where: { licenseCategory: "international" } }),
+      Referee.count({ where: { licenseCategory: "A" } }),
+      Referee.count({ where: { licenseCategory: "B" } }),
+      Referee.count({ where: { licenseCategory: "C" } }),
+      Referee.count({ where: { licenseCategory: "regional" } }),
+      Referee.count({
+        include: [{ model: User, as: "user", where: { status: "active" } }],
+      }),
+      Referee.count({
+        include: [{ model: User, as: "user", where: { status: "inactive" } }],
+      }),
+      Referee.count({
+        include: [{ model: User, as: "user", where: { status: "suspended" } }],
+      }),
+    ]);
+
+    const today = new Date();
+    const todayKey = this.toLocalDateKey(today);
+    const { start: todayStart, end: tomorrowStart } =
+      this.getLocalDayRange(today);
+
+    const [activeReferees, unavailableTodayRows, assignedTodayRows] =
+      await Promise.all([
+        Referee.findAll({
+          include: [{ model: User, as: "user", where: { status: "active" } }],
+          attributes: ["id"],
+        }),
+        RefereeAvailability.findAll({
+          where: { date: todayKey, isAvailable: false },
+          attributes: ["refereeId"],
+          raw: true,
+        }),
+        MatchReferee.findAll({
+          where: { status: { [Op.ne]: "declined" } },
+          include: [
+            {
+              model: Match,
+              as: "match",
+              where: {
+                scheduledAt: {
+                  [Op.gte]: todayStart,
+                  [Op.lt]: tomorrowStart,
+                },
+              },
+              attributes: [],
+            },
+          ],
+          attributes: ["refereeId"],
+          raw: true,
+        }),
+      ]);
+
+    const activeRefereeIds = new Set(activeReferees.map((r) => r.id));
+    const blockedActiveRefereeIds = new Set();
+
+    for (const row of unavailableTodayRows) {
+      if (activeRefereeIds.has(row.refereeId)) {
+        blockedActiveRefereeIds.add(row.refereeId);
+      }
+    }
+
+    for (const row of assignedTodayRows) {
+      if (activeRefereeIds.has(row.refereeId)) {
+        blockedActiveRefereeIds.add(row.refereeId);
+      }
+    }
+
+    const availableToday = Math.max(
+      0,
+      activeRefereeIds.size - blockedActiveRefereeIds.size,
+    );
+    const unavailableToday = Math.max(0, total - availableToday);
 
     return {
       total,
@@ -245,6 +334,15 @@ class RefereeService {
         B,
         C,
         regional,
+      },
+      byStatus: {
+        active,
+        inactive,
+        suspended,
+      },
+      availabilityToday: {
+        available: availableToday,
+        unavailable: unavailableToday,
       },
     };
   }
