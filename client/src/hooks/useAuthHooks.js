@@ -24,9 +24,17 @@ export const useVerifyPassword = () => {
 };
 
 export const useChangePassword = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data) => authApi.changePassword(data),
     onSuccess: (data) => {
+      if (data?.data) {
+        queryClient.setQueryData(authKeys.me, data.data);
+        localStorage.setItem("user", JSON.stringify(data.data));
+      } else {
+        queryClient.invalidateQueries({ queryKey: authKeys.me });
+      }
       toast.success(data?.message || "Password changed successfully!", {
         toastId: "auth-change-password",
       });

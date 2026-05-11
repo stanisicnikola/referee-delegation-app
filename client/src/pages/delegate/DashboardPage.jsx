@@ -755,11 +755,7 @@ const DashboardPage = () => {
                 {availability.slice(0, 5).map((day) => {
                   const availableReferees = day.referees || [];
                   const statusColor =
-                    day.availableCount > 10
-                      ? "#22c55e"
-                      : day.availableCount > 5
-                        ? "#eab308"
-                        : "#ef4444";
+                    day.availableCount > 0 ? "#22c55e" : "#ef4444";
 
                   return (
                     <Box

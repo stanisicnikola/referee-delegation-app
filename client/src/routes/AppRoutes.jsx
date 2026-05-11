@@ -1,8 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuth } from "../context";
 import { AdminLayout, DelegateLayout, RefereeLayout } from "../layouts";
 import {
   LoginPage,
+  ResetPasswordPage,
   DashboardPage,
   UsersPage,
   RefereesPage,
@@ -33,6 +40,7 @@ import {
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return null; // Or a loading spinner
@@ -45,6 +53,17 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   // Check role-based access
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to='/login' replace />;
+  }
+
+  if (user?.mustChangePassword) {
+    const passwordChangePath =
+      user.role === "referee"
+        ? "/referee/profile"
+        : `/${user.role}/settings`;
+
+    if (location.pathname !== passwordChangePath) {
+      return <Navigate to={passwordChangePath} replace />;
+    }
   }
 
   return children;
@@ -86,6 +105,7 @@ const AppRoutes = () => {
             </PublicRoute>
           }
         />
+        <Route path='/reset-password/:token' element={<ResetPasswordPage />} />
 
         {/* Admin routes */}
         <Route

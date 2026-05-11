@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -66,6 +66,17 @@ const SettingsPage = () => {
     setNewPassword("");
     setConfirmPassword("");
   };
+
+  useEffect(() => {
+    if (user?.mustChangePassword) {
+      setPasswordModalOpen(true);
+      setActiveStep(0);
+      setError("");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  }, [user?.mustChangePassword]);
 
   const handleVerifyPassword = async () => {
     if (!currentPassword) {

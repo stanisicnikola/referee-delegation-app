@@ -53,6 +53,10 @@ Create/update `server/.env` with:
 - `JWT_EXPIRES_IN`
 - `NODE_ENV`
 - `UPLOAD_PATH`
+- `CLIENT_URL` (for links in emails, for example `http://localhost:5173`)
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE`
+- `MAIL_FROM`
+- `PASSWORD_RESET_TOKEN_TTL_HOURS` (optional, default `168`)
 
 Run migrations and start server:
 

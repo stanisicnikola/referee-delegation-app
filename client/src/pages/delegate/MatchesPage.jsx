@@ -10,6 +10,7 @@ import {
   FormControl,
   Button,
   Skeleton,
+  TablePagination,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -31,6 +32,8 @@ import { ConfirmDialog, DeleteButton, EditButton } from "../../components/ui";
 const MatchesPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [competitionFilter, setCompetitionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -45,34 +48,28 @@ const MatchesPage = () => {
     setStatusFilter(status || "all");
   }, [searchParams]);
 
-  const { data: matchesData, isLoading } = useMatches({ limit: 100 });
+  useEffect(() => {
+    setPage(0);
+  }, [search, competitionFilter, statusFilter]);
+
+  const { data: matchesData, isLoading } = useMatches({
+    page: page + 1,
+    limit: rowsPerPage,
+    search: search || undefined,
+    competitionId:
+      competitionFilter !== "all" ? competitionFilter : undefined,
+    delegationStatus: statusFilter !== "all" ? statusFilter : undefined,
+  });
   const { data: competitionsData } = useCompetitions({ limit: 100 });
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const deleteMatch = useDeleteMatch();
 
-  const allMatches = matchesData?.data || [];
+  const matches = matchesData?.data || [];
+  const pagination = matchesData?.pagination || {};
+  const totalMatches = pagination.total || 0;
   const competitions =
     competitionsData?.data || competitionsData?.competitions || [];
-
-  const matches = allMatches.filter((match) => {
-    const matchesSearch =
-      search === "" ||
-      match.homeTeam?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      match.awayTeam?.name?.toLowerCase().includes(search.toLowerCase());
-
-    const matchesCompetition =
-      competitionFilter === "all" || match.competitionId === competitionFilter;
-
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "pending" && match.delegationStatus === "pending") ||
-      (statusFilter === "partial" && match.delegationStatus === "partial") ||
-      (statusFilter === "complete" && match.delegationStatus === "complete") ||
-      (statusFilter === "confirmed" && match.delegationStatus === "confirmed");
-
-    return matchesSearch && matchesCompetition && matchesStatus;
-  });
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -291,6 +288,28 @@ const MatchesPage = () => {
         }}
       />
     </Box>
+  );
+
+  const paginationFooter = (
+    <TablePagination
+      component='div'
+      count={totalMatches}
+      page={page}
+      rowsPerPage={rowsPerPage}
+      onPageChange={(_, newPage) => setPage(newPage)}
+      onRowsPerPageChange={(e) => {
+        setRowsPerPage(parseInt(e.target.value, 10));
+        setPage(0);
+      }}
+      rowsPerPageOptions={[5, 10, 25, 50]}
+      sx={{
+        borderTop: "1px solid #242428",
+        color: "#6b7280",
+        "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
+        "& .MuiIconButton-root": { color: "#6b7280" },
+        "& .Mui-disabled": { color: "#3f3f46 !important" },
+      }}
+    />
   );
 
   const inputStyles = {
@@ -613,6 +632,18 @@ const MatchesPage = () => {
                 </Box>
               );
             })
+          )}
+          {!isLoading && totalMatches > 0 && (
+            <Box
+              sx={{
+                bgcolor: "#121214",
+                borderRadius: "14px",
+                border: "1px solid #242428",
+                overflow: "hidden",
+              }}
+            >
+              {paginationFooter}
+            </Box>
           )}
         </Box>
 
@@ -957,6 +988,7 @@ const MatchesPage = () => {
                   )}
                 </Box>
               </Box>
+              {paginationFooter}
             </Box>
           )}
         </Box>

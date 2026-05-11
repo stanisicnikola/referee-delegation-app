@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -34,8 +34,10 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../context";
 import { useMyStatistics } from "../../hooks";
+import { authKeys } from "../../hooks/useAuthHooks";
 import { authApi } from "../../api";
 import { useSnackbar } from "notistack";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Orange accent for referee panel
 const ACCENT_COLOR = "#f97316";
@@ -43,6 +45,7 @@ const ACCENT_COLOR = "#f97316";
 const ProfilePage = () => {
   const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
   // Statistics
   const { data: statisticsData } = useMyStatistics();
@@ -89,10 +92,15 @@ const ProfilePage = () => {
     setPasswordLoading(true);
 
     try {
-      await authApi.changePassword({
+      const response = await authApi.changePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
+
+      if (response?.data) {
+        queryClient.setQueryData(authKeys.me, response.data);
+        localStorage.setItem("user", JSON.stringify(response.data));
+      }
 
       enqueueSnackbar("Lozinka je uspješno promijenjena", {
         variant: "success",
@@ -111,6 +119,12 @@ const ProfilePage = () => {
       setPasswordLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.mustChangePassword) {
+      setPasswordDialogOpen(true);
+    }
+  }, [user?.mustChangePassword]);
 
   // Get referee info if available
   const referee = user?.referee || user?.Referee;

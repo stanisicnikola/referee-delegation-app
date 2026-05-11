@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -14,6 +14,7 @@ import {
   Menu,
   MenuItem,
   Button,
+  TablePagination,
 } from "@mui/material";
 import {
   LocationOn as LocationIcon,
@@ -36,6 +37,8 @@ import { ConfirmDialog, FilterSearch } from "../../components/ui";
 import { TeamModal } from "../../components/user/TeamModal";
 
 const TeamsPage = () => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuTeam, setMenuTeam] = useState(null);
@@ -46,7 +49,15 @@ const TeamsPage = () => {
   const [editingTeam, setEditingTeam] = useState(null);
   const [teamToDelete, setTeamToDelete] = useState(null);
 
-  const { data: teamsData, isLoading } = useTeams({ limit: 100 });
+  useEffect(() => {
+    setPage(0);
+  }, [search]);
+
+  const { data: teamsData, isLoading } = useTeams({
+    page: page + 1,
+    limit: rowsPerPage,
+    search: search || undefined,
+  });
   const { data: matchesData, isLoading: isMatchesLoading } = useMatches({
     limit: 500,
   });
@@ -54,14 +65,30 @@ const TeamsPage = () => {
   const updateTeam = useUpdateTeam();
   const deleteTeam = useDeleteTeam();
   const teams = teamsData?.data || [];
+  const totalTeams = teamsData?.pagination?.total || 0;
   const matches = useMemo(() => matchesData?.data || [], [matchesData?.data]);
 
-  // Filter teams
-  const filteredTeams = teams.filter((team) => {
-    return (
-      search === "" || team.name?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  const paginationFooter = (
+    <TablePagination
+      component='div'
+      count={totalTeams}
+      page={page}
+      rowsPerPage={rowsPerPage}
+      onPageChange={(_, newPage) => setPage(newPage)}
+      onRowsPerPageChange={(e) => {
+        setRowsPerPage(parseInt(e.target.value, 10));
+        setPage(0);
+      }}
+      rowsPerPageOptions={[5, 10, 25, 50]}
+      sx={{
+        borderTop: "1px solid #242428",
+        color: "#6b7280",
+        "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
+        "& .MuiIconButton-root": { color: "#6b7280" },
+        "& .Mui-disabled": { color: "#3f3f46 !important" },
+      }}
+    />
+  );
 
   const handleMenuOpen = (event, team) => {
     setAnchorEl(event.currentTarget);
@@ -237,7 +264,7 @@ const TeamsPage = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <GroupsIcon sx={{ color: "#f97316", fontSize: 20 }} />
                 <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                  {teams.length}
+                  {totalTeams}
                 </Typography>
                 <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
                   teams
@@ -299,7 +326,8 @@ const TeamsPage = () => {
               <CircularProgress sx={{ color: "#f97316" }} />
             </Box>
           ) : (
-            filteredTeams.map((team, index) => (
+            <>
+              {teams.map((team, index) => (
               <Box
                 key={team.id}
                 sx={{
@@ -440,7 +468,20 @@ const TeamsPage = () => {
                   </Box>
                 </Box>
               </Box>
-            ))
+              ))}
+              {totalTeams > 0 && (
+                <Box
+                  sx={{
+                    bgcolor: "#121214",
+                    borderRadius: "14px",
+                    border: "1px solid #242428",
+                    overflow: "hidden",
+                  }}
+                >
+                  {paginationFooter}
+                </Box>
+              )}
+            </>
           )}
         </Box>
 
@@ -553,7 +594,7 @@ const TeamsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredTeams.map((team, index) => (
+                  {teams.map((team, index) => (
                     <TableRow
                       key={team.id}
                       sx={{
@@ -652,6 +693,7 @@ const TeamsPage = () => {
               </Table>
             </TableContainer>
           )}
+          {!isLoading && totalTeams > 0 && paginationFooter}
         </Box>
 
         {/* Menu */}
