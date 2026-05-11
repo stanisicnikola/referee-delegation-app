@@ -1,7 +1,9 @@
 const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const { User, Referee, sequelize } = require("../models");
 const { AppError } = require("../middlewares");
+const mailService = require("./mailService");
 
 class UserService {
   async findAll(query = {}) {
@@ -74,9 +76,21 @@ class UserService {
 
     // Use transaction to ensure both user and referee are created together
     const transaction = await sequelize.transaction();
+    let committed = false;
 
     try {
       const passwordHash = await bcrypt.hash(userData.password, 12);
+      const requirePasswordChange = Boolean(userData.requirePasswordChange);
+      const sendWelcomeEmail = Boolean(userData.sendWelcomeEmail);
+      const passwordResetToken = sendWelcomeEmail && requirePasswordChange
+        ? crypto.randomBytes(32).toString("hex")
+        : null;
+      const passwordResetTokenHash = passwordResetToken
+        ? this.hashPasswordResetToken(passwordResetToken)
+        : null;
+      const passwordResetExpiresAt = passwordResetToken
+        ? this.getPasswordResetExpiry()
+        : null;
 
       // Extract referee-specific data
       const {
@@ -88,6 +102,9 @@ class UserService {
         experienceYears,
         bankAccount,
         notes,
+        confirmPassword,
+        sendWelcomeEmail: _sendWelcomeEmail,
+        requirePasswordChange: _requirePasswordChange,
         ...userOnlyData
       } = userData;
 
@@ -95,6 +112,9 @@ class UserService {
         {
           ...userOnlyData,
           passwordHash,
+          mustChangePassword: requirePasswordChange,
+          passwordResetTokenHash,
+          passwordResetExpiresAt,
         },
         { transaction },
       );
@@ -118,13 +138,46 @@ class UserService {
       }
 
       await transaction.commit();
+      committed = true;
 
       // Return user with referee data
-      return this.findById(user.id);
+      const createdUser = await this.findById(user.id);
+      let welcomeEmail = null;
+
+      if (sendWelcomeEmail) {
+        try {
+          welcomeEmail = await mailService.sendWelcomeEmail({
+            user: createdUser,
+            resetToken: passwordResetToken,
+          });
+        } catch (error) {
+          console.error("Welcome email delivery failed:", error);
+          welcomeEmail = {
+            failed: true,
+            reason: "Email delivery failed.",
+          };
+        }
+      }
+
+      return {
+        user: createdUser,
+        welcomeEmail,
+      };
     } catch (error) {
-      await transaction.rollback();
+      if (!committed) {
+        await transaction.rollback();
+      }
       throw error;
     }
+  }
+
+  hashPasswordResetToken(token) {
+    return crypto.createHash("sha256").update(token).digest("hex");
+  }
+
+  getPasswordResetExpiry() {
+    const hours = Number(process.env.PASSWORD_RESET_TOKEN_TTL_HOURS || 168);
+    return new Date(Date.now() + hours * 60 * 60 * 1000);
   }
 
   async update(id, userData, actor = null) {

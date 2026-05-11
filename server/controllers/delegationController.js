@@ -163,7 +163,7 @@ const rejectAssignment = asyncHandler(async (req, res) => {
  * @access  Private/Admin,Delegate
  */
 const getDelegateDashboard = asyncHandler(async (req, res) => {
-  const data = await delegationService.getDelegateDashboard();
+  const data = await delegationService.getDelegateDashboard(req.user);
 
   res.json({
     success: true,

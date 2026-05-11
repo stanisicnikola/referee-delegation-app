@@ -51,6 +51,7 @@ const query = z.object({
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   round: z.string().optional(),
+  search: z.string().optional(),
 });
 
 const params = z.object({

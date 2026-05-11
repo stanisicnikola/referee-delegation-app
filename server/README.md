@@ -39,6 +39,10 @@ Expected in `server/.env`:
 - `JWT_EXPIRES_IN`: token TTL, default `7d`
 - `NODE_ENV`: runtime environment
 - `UPLOAD_PATH`: upload directory setting
+- `CLIENT_URL`: frontend URL used for password setup links
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE`: SMTP delivery settings
+- `MAIL_FROM`: sender address for app emails
+- `PASSWORD_RESET_TOKEN_TTL_HOURS`: password setup/reset link TTL, default `168`
 
 DB config is loaded in `config/config.js`.
 

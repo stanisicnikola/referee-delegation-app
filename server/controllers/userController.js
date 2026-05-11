@@ -35,11 +35,25 @@ const getUser = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const createUser = asyncHandler(async (req, res) => {
-  const user = await userService.create(req.body, req.user);
+  const result = await userService.create(req.body, req.user);
+  const emailSkipped = result.welcomeEmail?.skipped;
+  const emailFailed = result.welcomeEmail?.failed;
 
   res.status(201).json({
     success: true,
-    data: user,
+    message: emailSkipped
+      ? "User created successfully. Welcome email was not sent because SMTP is not configured."
+      : emailFailed
+        ? "User created successfully. Welcome email could not be delivered."
+      : "User created successfully.",
+    data: result.user,
+    meta: {
+      welcomeEmailSent: Boolean(
+        result.welcomeEmail && !emailSkipped && !emailFailed,
+      ),
+      welcomeEmailSkipped: Boolean(emailSkipped),
+      welcomeEmailFailed: Boolean(emailFailed),
+    },
   });
 });
 

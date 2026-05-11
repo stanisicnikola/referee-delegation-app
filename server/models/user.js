@@ -45,6 +45,22 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         field: "password_hash",
       },
+      mustChangePassword: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: "must_change_password",
+      },
+      passwordResetTokenHash: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: "password_reset_token_hash",
+      },
+      passwordResetExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "password_reset_expires_at",
+      },
       firstName: {
         type: DataTypes.STRING(100),
         allowNull: false,

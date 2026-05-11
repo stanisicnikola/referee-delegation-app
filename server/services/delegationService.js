@@ -13,6 +13,17 @@ const {
 const { AppError } = require("../middlewares");
 
 class DelegationService {
+  toLocalDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  getDelegateMatchScope(actor) {
+    return actor?.role === "delegate" ? { delegatedBy: actor.id } : {};
+  }
+
   isMatchStarted(match) {
     return match.scheduledAt && new Date(match.scheduledAt) <= new Date();
   }
@@ -510,9 +521,10 @@ class DelegationService {
    * Get delegate dashboard data
    * KPI rule: count only future matches (scheduledAt >= now)
    */
-  async getDelegateDashboard() {
+  async getDelegateDashboard(actor = null) {
     const now = new Date();
     const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const matchScope = this.getDelegateMatchScope(actor);
 
     // Summary counts for future matches only
     const [
@@ -524,12 +536,13 @@ class DelegationService {
     ] = await Promise.all([
       Match.count({
         where: {
+          ...matchScope,
           delegationStatus: "pending",
-          scheduledAt: { [Op.gte]: now },
         },
       }),
       Match.count({
         where: {
+          ...matchScope,
           scheduledAt: { [Op.gte]: now },
         },
       }),
@@ -538,13 +551,14 @@ class DelegationService {
       }),
       Match.count({
         where: {
+          ...matchScope,
           delegationStatus: "confirmed",
-          scheduledAt: { [Op.gte]: now },
         },
       }),
       // Notifications: matches awaiting delegation in next 7 days
       Match.count({
         where: {
+          ...matchScope,
           delegationStatus: { [Op.in]: ["pending", "partial"] },
           scheduledAt: {
             [Op.gte]: now,
@@ -557,6 +571,7 @@ class DelegationService {
     // Upcoming matches (max 4, sorted by scheduledAt ASC)
     const upcomingMatches = await Match.findAll({
       where: {
+        ...matchScope,
         scheduledAt: { [Op.gte]: now },
       },
       include: [
@@ -595,44 +610,15 @@ class DelegationService {
     current.setHours(0, 0, 0, 0);
 
     for (let i = 0; i < 7; i++) {
-      const dateKey = current.toISOString().split("T")[0];
+      const dateKey = this.toLocalDateKey(current);
       const nextDay = new Date(current);
       nextDay.setDate(nextDay.getDate() + 1);
-
-      // Count referees explicitly unavailable
-      const unavailableCount = await RefereeAvailability.count({
-        where: {
-          date: dateKey,
-          isAvailable: false,
-        },
-      });
-
-      // Count referees already assigned to matches on this day
-      const assignedCount = await MatchReferee.count({
-        distinct: true,
-        col: "referee_id",
-        include: [
-          {
-            model: Match,
-            as: "match",
-            where: {
-              scheduledAt: {
-                [Op.gte]: current,
-                [Op.lt]: nextDay,
-              },
-            },
-          },
-        ],
-      });
 
       // Total active referees
       const totalActive = await Referee.count({
         include: [{ model: User, as: "user", where: { status: "active" } }],
       });
 
-      const availableCount = Math.max(0, totalActive - unavailableCount - assignedCount);
-
-      // Get sample available referees (max 3)
       const unavailableIds = await RefereeAvailability.findAll({
         where: { date: dateKey, isAvailable: false },
         attributes: ["refereeId"],
@@ -656,12 +642,19 @@ class DelegationService {
         raw: true,
       });
 
+      const unavailableRefereeIds = [
+        ...new Set(unavailableIds.map((r) => r.refereeId)),
+      ];
+      const assignedRefereeIds = [
+        ...new Set(assignedIds.map((r) => r.refereeId)),
+      ];
       const excludeIds = [
         ...new Set([
-          ...unavailableIds.map((r) => r.refereeId),
-          ...assignedIds.map((r) => r.refereeId),
+          ...unavailableRefereeIds,
+          ...assignedRefereeIds,
         ]),
       ];
+      const availableCount = Math.max(0, totalActive - excludeIds.length);
 
       const whereClause = {};
       if (excludeIds.length > 0) {
@@ -685,8 +678,8 @@ class DelegationService {
       result.push({
         date: dateKey,
         availableCount,
-        unavailableCount,
-        assignedCount,
+        unavailableCount: unavailableRefereeIds.length,
+        assignedCount: assignedRefereeIds.length,
         referees: sampleReferees.map((r) => ({
           id: r.id,
           name: `${r.user.firstName} ${r.user.lastName}`,

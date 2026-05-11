@@ -72,6 +72,18 @@ const changePassword = z.object({
     .regex(/[0-9]/, "Password must contain at least one number."),
 });
 
+const resetPassword = z.object({
+  token: z
+    .string({ required_error: "Reset token is required." })
+    .min(32, "Invalid reset token."),
+  newPassword: z
+    .string({ required_error: "New password is required." })
+    .min(8, "New password must be at least 8 characters.")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter.")
+    .regex(/[0-9]/, "Password must contain at least one number."),
+});
+
 const verifyPassword = z.object({
   password: z
     .string({ required_error: "Password is required." })
@@ -83,5 +95,6 @@ module.exports = {
   register,
   registerReferee,
   changePassword,
+  resetPassword,
   verifyPassword,
 };

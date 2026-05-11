@@ -1,5 +1,7 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const { User, Referee, sequelize } = require("../models");
 const { AppError } = require("../middlewares");
 
@@ -181,9 +183,49 @@ class AuthService {
     }
 
     const newPasswordHash = await this.hashPassword(newPassword);
-    await user.update({ passwordHash: newPasswordHash });
+    await user.update({
+      passwordHash: newPasswordHash,
+      mustChangePassword: false,
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+    });
 
-    return { message: "Password changed successfully." };
+    const updatedUser = await this.getCurrentUser(userId);
+
+    return {
+      message: "Password changed successfully.",
+      user: updatedUser,
+    };
+  }
+
+  hashPasswordResetToken(token) {
+    return crypto.createHash("sha256").update(token).digest("hex");
+  }
+
+  async resetPasswordWithToken(token, newPassword) {
+    const tokenHash = this.hashPasswordResetToken(token);
+
+    const user = await User.findOne({
+      where: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { [Op.gt]: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new AppError("Password reset link is invalid or expired.", 400);
+    }
+
+    const passwordHash = await this.hashPassword(newPassword);
+
+    await user.update({
+      passwordHash,
+      mustChangePassword: false,
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+    });
+
+    return { message: "Password has been updated successfully." };
   }
 
   // Verify current password

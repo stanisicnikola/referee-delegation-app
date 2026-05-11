@@ -18,6 +18,17 @@ const create = z.object({
   phone: z.string().optional().nullable(),
   role: z.enum(["admin", "delegate", "referee"]),
   status: z.enum(["active", "inactive", "suspended"]),
+  licenseNumber: z.string().optional(),
+  licenseCategory: z.string().optional(),
+  dateOfBirth: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  experienceYears: z.union([z.number(), z.string()]).optional(),
+  bankAccount: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  confirmPassword: z.string().optional(),
+  sendWelcomeEmail: z.boolean().optional(),
+  requirePasswordChange: z.boolean().optional(),
 });
 
 const update = z.object({

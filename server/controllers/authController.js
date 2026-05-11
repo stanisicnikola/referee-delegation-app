@@ -65,11 +65,31 @@ const getMe = asyncHandler(async (req, res) => {
  */
 const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  await authService.changePassword(req.user.id, currentPassword, newPassword);
+  const result = await authService.changePassword(
+    req.user.id,
+    currentPassword,
+    newPassword,
+  );
 
   res.json({
     success: true,
-    message: "Password changed successfully.",
+    message: result.message,
+    data: result.user,
+  });
+});
+
+/**
+ * @desc    Reset password with one-time token
+ * @route   POST /api/auth/reset-password
+ * @access  Public
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+  await authService.resetPasswordWithToken(token, newPassword);
+
+  res.json({
+    success: true,
+    message: "Password has been updated successfully.",
   });
 });
 
@@ -108,6 +128,7 @@ module.exports = {
   registerReferee,
   getMe,
   changePassword,
+  resetPassword,
   verifyPassword,
   deleteMe,
 };
