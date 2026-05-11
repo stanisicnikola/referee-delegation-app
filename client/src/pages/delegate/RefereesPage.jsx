@@ -19,14 +19,14 @@ import {
 } from "@mui/icons-material";
 import {
   useReferees,
-  useAvailableRefereesForDate,
-  useUnavailableRefereesForDate,
+  useRefereesStatistics,
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks";
-import { ConfirmDialog, CustomButton, FilterSearch } from "../../components/ui";
+import { ConfirmDialog, FilterSearch } from "../../components/ui";
 import UserModal from "../../components/user/UserModal";
+import StatusBadge from "../../components/user/StatusBadge";
 
 const RefereesPage = () => {
   const [search, setSearch] = useState("");
@@ -36,24 +36,13 @@ const RefereesPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [refereeToDelete, setRefereeToDelete] = useState(null);
 
-  const todayDate = new Date().toLocaleDateString("en-CA");
   const { data: refereesData, isLoading } = useReferees({ limit: 100 });
-  const { data: availableRefereesData } =
-    useAvailableRefereesForDate(todayDate);
-  const { data: unavailableRefereesData } =
-    useUnavailableRefereesForDate(todayDate);
+  const { data: statisticsData } = useRefereesStatistics();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   const referees = refereesData?.data || [];
-  const availableRefereeIds = new Set(
-    (availableRefereesData?.data || []).map((referee) => referee.id),
-  );
-  const unavailableRefereeIds = new Set(
-    (unavailableRefereesData?.data || []).map(
-      (availability) => availability.refereeId,
-    ),
-  );
+  const stats = statisticsData?.data || {};
 
   // Filter referees
   const filteredReferees = referees.filter((referee) => {
@@ -65,38 +54,6 @@ const RefereesPage = () => {
       categoryFilter === "all" || referee.licenseCategory === categoryFilter;
     return matchesSearch && matchesCategory;
   });
-
-  const getAvailability = (refereeId) => {
-    if (unavailableRefereeIds.has(refereeId)) return "unavailable";
-    if (availableRefereeIds.has(refereeId)) return "available";
-    return "unknown";
-  };
-
-  const getAvailabilityStyle = (status) => {
-    switch (status) {
-      case "available":
-        return {
-          bg: "rgba(34, 197, 94, 0.1)",
-          color: "#22c55e",
-          dot: "#22c55e",
-          label: "Available",
-        };
-      case "unavailable":
-        return {
-          bg: "rgba(239, 68, 68, 0.1)",
-          color: "#ef4444",
-          dot: "#ef4444",
-          label: "Unavailable",
-        };
-      default:
-        return {
-          bg: "#242428",
-          color: "#6b7280",
-          dot: "#6b7280",
-          label: "N/A",
-        };
-    }
-  };
 
   const getAvatarColor = (index) => {
     const colors = [
@@ -162,16 +119,13 @@ const RefereesPage = () => {
   };
 
   // Stats
-  const totalReferees = referees.length;
-  const availableCount = referees.filter(
-    (referee) => getAvailability(referee.id) === "available",
-  ).length;
-  const unavailableCount = referees.filter(
-    (referee) => getAvailability(referee.id) === "unavailable",
-  ).length;
-  const detailsAvailabilityStyle = detailsReferee
-    ? getAvailabilityStyle(getAvailability(detailsReferee.id))
-    : getAvailabilityStyle("unknown");
+  const totalReferees = stats.total ?? refereesData?.pagination?.total ?? 0;
+  const availableCount =
+    stats.availabilityToday?.available ??
+    referees.filter((referee) => referee.user?.status === "active").length;
+  const unavailableCount =
+    stats.availabilityToday?.unavailable ??
+    Math.max(0, totalReferees - availableCount);
   const detailsIndex = detailsReferee
     ? Math.max(
         0,
@@ -208,7 +162,7 @@ const RefereesPage = () => {
               Referees
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-              View and manage referee availability
+              View and manage referee profiles and status
             </Typography>
           </Box>
           <Box
@@ -260,7 +214,7 @@ const RefereesPage = () => {
                   {availableCount}
                 </Typography>
                 <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                  Available
+                  Available today
                 </Typography>
               </Box>
               <Box
@@ -278,7 +232,7 @@ const RefereesPage = () => {
                   {unavailableCount}
                 </Typography>
                 <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                  Unavailable
+                  Unavailable today
                 </Typography>
               </Box>
             </Box>
@@ -395,8 +349,6 @@ const RefereesPage = () => {
             }}
           >
             {filteredReferees.map((referee, index) => {
-              const availability = getAvailability(referee.id);
-              const availStyle = getAvailabilityStyle(availability);
               return (
                 <Box
                   key={referee.id}
@@ -481,35 +433,7 @@ const RefereesPage = () => {
                             "& .MuiChip-icon": { color: "#f97316" },
                           }}
                         />
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: "6px",
-                            bgcolor: availStyle.bg,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              bgcolor: availStyle.dot,
-                            }}
-                          />
-                          <Typography
-                            sx={{
-                              fontSize: "12px",
-                              fontWeight: 500,
-                              color: availStyle.color,
-                            }}
-                          >
-                            {availStyle.label}
-                          </Typography>
-                        </Box>
+                        <StatusBadge status={referee.user?.status} />
                       </Box>
                     </Box>
                   </Box>
@@ -637,7 +561,6 @@ const RefereesPage = () => {
         referee={detailsReferee}
         onClose={handleCloseDetails}
         avatarColor={getAvatarColor(detailsIndex)}
-        availabilityStyle={detailsAvailabilityStyle}
       />
       <UserModal
         open={modalOpen}

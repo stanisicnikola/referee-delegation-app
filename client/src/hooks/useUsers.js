@@ -62,6 +62,7 @@ export const useUpdateUser = () => {
     mutationFn: ({ id, data }) => usersApi.update(id, data),
     onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.statistics() });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
       queryClient.invalidateQueries({ queryKey: ["referees"] });

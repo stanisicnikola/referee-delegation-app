@@ -48,7 +48,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import { adminTheme } from "../theme";
-import { useUsers, useReferees } from "../hooks";
+import { useReferees, useUserStatistics } from "../hooks";
 import SidebarUserMenu from "../components/ui/SidebarUserMenu";
 
 const DRAWER_WIDTH = 240;
@@ -64,13 +64,13 @@ const AdminLayout = () => {
   const [notificationAnchor, setNotificationAnchor] = useState(null);
 
   // Fetch counts for sidebar badges
-  const { data: usersData } = useUsers();
+  const { data: usersStatisticsData } = useUserStatistics();
   const { data: refereesData } = useReferees();
-  const delegates = usersData?.data?.filter((user) => user.role === "delegate");
+  const userStats = usersStatisticsData?.data || {};
 
-  const userCount = usersData?.pagination?.total || 0;
+  const userCount = userStats.total || 0;
   const refereeCount = refereesData?.pagination?.total || 0;
-  const delegatesCount = delegates?.length || 0;
+  const delegatesCount = userStats.byRole?.delegates || 0;
 
   // Mock notifications
   const notifications = [

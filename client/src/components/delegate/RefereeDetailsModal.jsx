@@ -9,6 +9,7 @@ import {
   DialogActions,
 } from "@mui/material";
 import { Star as StarIcon } from "@mui/icons-material";
+import StatusBadge from "../user/StatusBadge";
 
 const formatDate = (value) => {
   if (!value) return null;
@@ -22,7 +23,6 @@ const RefereeDetailsModal = ({
   referee,
   onClose,
   avatarColor,
-  availabilityStyle,
 }) => {
   return (
     <Dialog
@@ -85,35 +85,7 @@ const RefereeDetailsModal = ({
                   }}
                 />
               )}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: "6px",
-                  bgcolor: availabilityStyle.bg,
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    bgcolor: availabilityStyle.dot,
-                  }}
-                />
-                <Typography
-                  sx={{
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    color: availabilityStyle.color,
-                  }}
-                >
-                  {availabilityStyle.label}
-                </Typography>
-              </Box>
+              <StatusBadge status={referee?.user?.status} />
             </Box>
           </Box>
         </Box>
