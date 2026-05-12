@@ -77,7 +77,7 @@ const deleteMatch = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const updateResult = asyncHandler(async (req, res) => {
-  const match = await matchService.updateResult(req.params.id, req.body);
+  const match = await matchService.updateResult(req.params.id, req.body, req.user);
 
   res.json({
     success: true,

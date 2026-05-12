@@ -28,6 +28,136 @@ class DelegationService {
     return match.scheduledAt && new Date(match.scheduledAt) <= new Date();
   }
 
+  getRoundNumber(round) {
+    if (round === null || round === undefined || round === "") return null;
+    if (typeof round === "number" && Number.isFinite(round)) return round;
+
+    const matches = String(round).match(/\d+/g);
+    if (!matches?.length) return null;
+
+    const roundNumber = Number.parseInt(matches[matches.length - 1], 10);
+    return Number.isFinite(roundNumber) ? roundNumber : null;
+  }
+
+  getMatchTeams(match) {
+    return [
+      {
+        id: match.homeTeamId,
+        name: match.homeTeam?.name || "home team",
+      },
+      {
+        id: match.awayTeamId,
+        name: match.awayTeam?.name || "away team",
+      },
+    ].filter((team, index, teams) => {
+      return team.id && teams.findIndex((item) => item.id === team.id) === index;
+    });
+  }
+
+  getRefereeDisplayName(referee) {
+    const firstName = referee?.user?.firstName || "";
+    const lastName = referee?.user?.lastName || "";
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || "Referee";
+  }
+
+  async getConsecutiveTeamAssignmentViolations(match, refereeIds, options = {}) {
+    const currentRound = this.getRoundNumber(match.round);
+    if (!currentRound || currentRound <= 3 || refereeIds.length === 0) {
+      return new Map();
+    }
+
+    const previousRounds = [currentRound - 1, currentRound - 2, currentRound - 3];
+    if (previousRounds.some((round) => round < 1)) return new Map();
+
+    const teams = this.getMatchTeams(match);
+    if (teams.length === 0) return new Map();
+
+    const previousAssignments = await MatchReferee.findAll({
+      where: {
+        refereeId: { [Op.in]: refereeIds },
+        status: { [Op.ne]: "declined" },
+      },
+      include: [
+        {
+          model: Match,
+          as: "match",
+          required: true,
+          attributes: [
+            "id",
+            "competitionId",
+            "homeTeamId",
+            "awayTeamId",
+            "round",
+            "status",
+          ],
+          where: {
+            id: { [Op.ne]: match.id },
+            competitionId: match.competitionId,
+            status: { [Op.ne]: "cancelled" },
+            [Op.or]: [
+              { homeTeamId: { [Op.in]: teams.map((team) => team.id) } },
+              { awayTeamId: { [Op.in]: teams.map((team) => team.id) } },
+            ],
+          },
+        },
+      ],
+      transaction: options.transaction,
+    });
+
+    const roundsByRefereeAndTeam = new Map();
+
+    for (const assignment of previousAssignments) {
+      const previousMatch = assignment.match;
+      const previousRound = this.getRoundNumber(previousMatch?.round);
+      if (!previousRounds.includes(previousRound)) continue;
+
+      for (const team of teams) {
+        const involved =
+          previousMatch.homeTeamId === team.id || previousMatch.awayTeamId === team.id;
+        if (!involved) continue;
+
+        const key = `${assignment.refereeId}:${team.id}`;
+        const rounds = roundsByRefereeAndTeam.get(key) || new Set();
+        rounds.add(previousRound);
+        roundsByRefereeAndTeam.set(key, rounds);
+      }
+    }
+
+    const violations = new Map();
+
+    for (const refereeId of refereeIds) {
+      for (const team of teams) {
+        const key = `${refereeId}:${team.id}`;
+        const rounds = roundsByRefereeAndTeam.get(key);
+        const hasThreeConsecutivePreviousRounds =
+          rounds && previousRounds.every((round) => rounds.has(round));
+
+        if (!hasThreeConsecutivePreviousRounds) continue;
+
+        const refereeViolations = violations.get(refereeId) || [];
+        refereeViolations.push({
+          teamId: team.id,
+          teamName: team.name,
+          rounds: [...previousRounds].sort((a, b) => a - b),
+        });
+        violations.set(refereeId, refereeViolations);
+      }
+    }
+
+    return violations;
+  }
+
+  assertNoConsecutiveTeamAssignmentViolation(referee, violations) {
+    if (!violations?.length) return;
+
+    const violation = violations[0];
+    throw new AppError(
+      `${this.getRefereeDisplayName(referee)} cannot be assigned to this match because they already officiated ${violation.teamName} in rounds ${violation.rounds.join(", ")} of this competition.`,
+      400
+    );
+  }
+
   assertMatchCanBeChanged(match) {
     if (["completed", "cancelled"].includes(match.status)) {
       throw new AppError(
@@ -71,7 +201,12 @@ class DelegationService {
   async delegateReferees(matchId, delegationData, delegateId) {
     const { refereeAssignments = [] } = delegationData;
 
-    const match = await Match.findByPk(matchId);
+    const match = await Match.findByPk(matchId, {
+      include: [
+        { model: Team, as: "homeTeam", attributes: ["id", "name"] },
+        { model: Team, as: "awayTeam", attributes: ["id", "name"] },
+      ],
+    });
     if (!match) {
       throw new AppError("Match not found.", 404);
     }
@@ -122,6 +257,10 @@ class DelegationService {
           assignment,
         ])
       );
+      const consecutiveTeamViolations =
+        await this.getConsecutiveTeamAssignmentViolations(match, refereeIds, {
+          transaction,
+        });
 
       for (const assignment of activeExistingAssignments) {
         const requested = requestedByRefereeId.get(assignment.refereeId);
@@ -157,6 +296,7 @@ class DelegationService {
         }
 
         const referee = await Referee.findByPk(assignment.refereeId, {
+          include: [{ model: User, as: "user" }],
           transaction,
         });
         if (!referee) {
@@ -165,6 +305,11 @@ class DelegationService {
             400
           );
         }
+
+        this.assertNoConsecutiveTeamAssignmentViolation(
+          referee,
+          consecutiveTeamViolations.get(assignment.refereeId)
+        );
 
         // Check if referee is available on that date
         const matchDate = match.scheduledAt.toISOString().split("T")[0];
@@ -343,7 +488,12 @@ class DelegationService {
    * @param {string} matchId - Match ID
    */
   async getAvailableRefereesForMatch(matchId) {
-    const match = await Match.findByPk(matchId);
+    const match = await Match.findByPk(matchId, {
+      include: [
+        { model: Team, as: "homeTeam", attributes: ["id", "name"] },
+        { model: Team, as: "awayTeam", attributes: ["id", "name"] },
+      ],
+    });
     if (!match) {
       throw new AppError("Match not found.", 404);
     }
@@ -396,7 +546,15 @@ class DelegationService {
       order: [[{ model: User, as: "user" }, "lastName", "ASC"]],
     });
 
-    return availableReferees;
+    const consecutiveTeamViolations =
+      await this.getConsecutiveTeamAssignmentViolations(
+        match,
+        availableReferees.map((referee) => referee.id)
+      );
+
+    return availableReferees.filter(
+      (referee) => !consecutiveTeamViolations.has(referee.id)
+    );
   }
 
   /**

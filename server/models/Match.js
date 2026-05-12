@@ -112,6 +112,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      statusReason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: "status_reason",
+      },
+      reportNotes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: "report_notes",
+      },
     },
     {
       sequelize,

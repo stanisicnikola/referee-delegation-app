@@ -230,25 +230,56 @@ class MatchService {
       data.delegatedBy = delegateId;
     }
 
+    if (data.status === "cancelled") {
+      if (!data.statusReason?.trim()) {
+        throw new AppError("Cancellation reason is required.", 400);
+      }
+      data.statusReason = data.statusReason.trim();
+    }
+
+    if (data.status === "postponed") {
+      if (!data.scheduledAt) {
+        throw new AppError("New match date and time are required.", 400);
+      }
+      if (new Date(data.scheduledAt) <= new Date()) {
+        throw new AppError("New match date and time must be in the future.", 400);
+      }
+      if (!data.statusReason?.trim()) {
+        throw new AppError("Postponement reason is required.", 400);
+      }
+      data.statusReason = data.statusReason.trim();
+    }
+
     await match.update(data);
 
     return this.findById(id, actor);
   }
 
-  async updateResult(id, resultData) {
+  async updateResult(id, resultData, actor = null) {
     const match = await Match.findByPk(id);
 
     if (!match) {
       throw new AppError("Match not found.", 404);
     }
 
+    this.assertDelegateCanAccessMatch(match, actor);
+
+    if (["cancelled", "postponed"].includes(match.status)) {
+      throw new AppError("Cannot complete a cancelled or postponed match.", 400);
+    }
+
+    if (match.scheduledAt && new Date(match.scheduledAt) > new Date()) {
+      throw new AppError("Match cannot be completed before it starts.", 400);
+    }
+
     await match.update({
       homeScore: resultData.homeScore,
       awayScore: resultData.awayScore,
+      reportNotes: resultData.reportNotes || null,
       status: "completed",
     });
 
-    return this.findById(id);
+    return this.findById(id, actor);
   }
 
   async delete(id, actor = null) {

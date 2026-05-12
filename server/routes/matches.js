@@ -56,7 +56,7 @@ router.delete(
 // Update result
 router.put(
   "/:id/result",
-  authorize("admin"),
+  authorize("admin", "delegate"),
   validate(matchSchemas.params, "params"),
   validate(matchSchemas.updateResult),
   matchController.updateResult

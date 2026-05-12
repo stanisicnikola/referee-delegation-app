@@ -28,12 +28,14 @@ const update = z.object({
     .enum(["scheduled", "in_progress", "completed", "postponed", "cancelled"])
     .optional(),
   notes: z.string().optional().nullable(),
+  statusReason: z.string().optional().nullable(),
   delegateId: z.string().uuid().optional(),
 });
 
 const updateResult = z.object({
   homeScore: z.number().int().min(0),
   awayScore: z.number().int().min(0),
+  reportNotes: z.string().optional().nullable(),
 });
 
 const query = z.object({
