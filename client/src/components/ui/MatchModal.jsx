@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { Box, Typography, IconButton } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Box, Typography, IconButton, Button } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import {
   useTeams,
@@ -24,6 +24,10 @@ const MatchModal = ({
 }) => {
   const { user } = useAuth();
   const canChangeDelegate = user?.role === "admin";
+  const [statusAction, setStatusAction] = useState(null);
+  const [statusReason, setStatusReason] = useState("");
+  const [postponeDate, setPostponeDate] = useState("");
+  const [postponeTime, setPostponeTime] = useState("");
   const schema = useMemo(
     () => createMatchSchema({ requireDelegate: canChangeDelegate }),
     [canChangeDelegate],
@@ -104,6 +108,14 @@ const MatchModal = ({
           notes: editMatch.notes || "",
           delegateId: editMatch.delegate?.id || editMatch.delegateId || "",
         });
+        setStatusAction(null);
+        setStatusReason(editMatch.statusReason || "");
+        setPostponeDate(
+          matchDate ? matchDate.toISOString().split("T")[0] : "",
+        );
+        setPostponeTime(
+          matchDate ? matchDate.toTimeString().substring(0, 5) : "",
+        );
       } else {
         reset({
           id: "",
@@ -117,6 +129,10 @@ const MatchModal = ({
           notes: "",
           delegateId: "",
         });
+        setStatusAction(null);
+        setStatusReason("");
+        setPostponeDate("");
+        setPostponeTime("");
       }
     }
   }, [editMatch, open, reset]);
@@ -130,6 +146,42 @@ const MatchModal = ({
       scheduledAt,
     });
   };
+
+  const handleStatusAction = async () => {
+    const reason = statusReason.trim();
+    if (!statusAction || !reason) return;
+
+    if (statusAction === "cancelled") {
+      await onSubmit({
+        status: "cancelled",
+        statusReason: reason,
+      });
+      return;
+    }
+
+    if (statusAction === "postponed") {
+      if (!postponeDate || !postponeTime) return;
+      await onSubmit({
+        status: "postponed",
+        statusReason: reason,
+        scheduledAt: new Date(`${postponeDate}T${postponeTime}`).toISOString(),
+      });
+    }
+  };
+
+  const canChangeMatchStatus =
+    editMatch && !["completed", "cancelled"].includes(editMatch.status);
+  const statusActionLabel =
+    statusAction === "cancelled"
+      ? "Cancel Match"
+      : statusAction === "postponed"
+        ? "Postpone Match"
+        : "";
+  const statusActionDisabled =
+    isLoading ||
+    !statusAction ||
+    !statusReason.trim() ||
+    (statusAction === "postponed" && (!postponeDate || !postponeTime));
 
   if (!open) return null;
 
@@ -374,6 +426,176 @@ const MatchModal = ({
               />
             )}
           />
+
+          {canChangeMatchStatus && (
+            <Box
+              sx={{
+                border: "1px solid #242428",
+                borderRadius: "14px",
+                p: { xs: 1.5, sm: 2 },
+                display: "grid",
+                gap: 1.5,
+                bgcolor: "#0d0d0f",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: { xs: "stretch", sm: "center" },
+                  justifyContent: "space-between",
+                  gap: 1,
+                  flexDirection: { xs: "column", sm: "row" },
+                }}
+              >
+                <Box>
+                  <Typography
+                    sx={{ color: "#fff", fontSize: 15, fontWeight: 700 }}
+                  >
+                    Match status
+                  </Typography>
+                  <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
+                    Cancel this match or postpone it to a new date.
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 1,
+                    minWidth: { sm: 260 },
+                  }}
+                >
+                  <Button
+                    onClick={() => {
+                      setStatusAction("cancelled");
+                      setStatusReason("");
+                    }}
+                    sx={{
+                      color: "#ef4444",
+                      bgcolor:
+                        statusAction === "cancelled"
+                          ? "rgba(239,68,68,0.14)"
+                          : "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.28)",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      fontWeight: 700,
+                      "&:hover": { bgcolor: "rgba(239,68,68,0.18)" },
+                    }}
+                  >
+                    Cancel Match
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setStatusAction("postponed");
+                      setStatusReason("");
+                    }}
+                    sx={{
+                      color: "#38bdf8",
+                      bgcolor:
+                        statusAction === "postponed"
+                          ? "rgba(56,189,248,0.14)"
+                          : "rgba(56,189,248,0.08)",
+                      border: "1px solid rgba(56,189,248,0.28)",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      fontWeight: 700,
+                      "&:hover": { bgcolor: "rgba(56,189,248,0.18)" },
+                    }}
+                  >
+                    Postpone Match
+                  </Button>
+                </Box>
+              </Box>
+
+              {statusAction && (
+                <Box sx={{ display: "grid", gap: 1.5 }}>
+                  {statusAction === "postponed" && (
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                        gap: 1.5,
+                      }}
+                    >
+                      <CustomInput
+                        type='date'
+                        label='New date *'
+                        value={postponeDate}
+                        onChange={(event) => setPostponeDate(event.target.value)}
+                        sx={{
+                          "& input::-webkit-calendar-picker-indicator": {
+                            filter: "invert(1)",
+                          },
+                        }}
+                      />
+                      <CustomInput
+                        type='time'
+                        label='New time *'
+                        value={postponeTime}
+                        onChange={(event) => setPostponeTime(event.target.value)}
+                        sx={{
+                          "& input::-webkit-calendar-picker-indicator": {
+                            filter: "invert(1)",
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  <CustomInput
+                    label={
+                      statusAction === "cancelled"
+                        ? "Cancellation reason *"
+                        : "Postponement reason *"
+                    }
+                    placeholder={
+                      statusAction === "cancelled"
+                        ? "Why is this match being cancelled?"
+                        : "Why is this match being postponed?"
+                    }
+                    multiline
+                    rows={3}
+                    value={statusReason}
+                    onChange={(event) => setStatusReason(event.target.value)}
+                  />
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                      flexDirection: { xs: "column-reverse", sm: "row" },
+                    }}
+                  >
+                    <Button
+                      onClick={() => {
+                        setStatusAction(null);
+                        setStatusReason("");
+                      }}
+                      disabled={isLoading}
+                      sx={{
+                        color: "#9ca3af",
+                        borderRadius: "10px",
+                        textTransform: "none",
+                        px: 2,
+                      }}
+                    >
+                      Close status form
+                    </Button>
+                    <CustomButton
+                      onClick={handleStatusAction}
+                      loading={isLoading}
+                      disabled={statusActionDisabled}
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
+                    >
+                      {statusActionLabel}
+                    </CustomButton>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
         </Box>
         <Box
           sx={{

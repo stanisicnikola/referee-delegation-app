@@ -129,6 +129,12 @@ export const useUpdateMatchResult = () => {
     onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: matchKeys.lists() });
       queryClient.invalidateQueries({ queryKey: matchKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: matchKeys.upcoming() });
+      queryClient.invalidateQueries({
+        queryKey: matchKeys.pendingDelegation(),
+      });
+      queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
       toast.success(data?.message || "Match result updated successfully!", {
         toastId: "match-result-update",
       });

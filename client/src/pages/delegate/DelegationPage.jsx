@@ -10,6 +10,10 @@ import {
   IconButton,
   CircularProgress,
   Skeleton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -25,6 +29,7 @@ import {
   useMatch,
   useDelegateReferees,
   useAvailableRefereesForMatch,
+  useUpdateMatchResult,
 } from "../../hooks";
 
 const EMPTY_ASSIGNMENTS = {
@@ -84,11 +89,18 @@ const DelegationPage = () => {
   const [search, setSearch] = useState("");
   const [assignedReferees, setAssignedReferees] = useState(EMPTY_ASSIGNMENTS);
   const [assignmentMeta, setAssignmentMeta] = useState(EMPTY_ASSIGNMENT_META);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [resultForm, setResultForm] = useState({
+    homeScore: "",
+    awayScore: "",
+    reportNotes: "",
+  });
 
   const { data: matchData, isLoading: matchLoading } = useMatch(matchId);
   const { data: availableRefereesData, isLoading: refereesLoading } =
     useAvailableRefereesForMatch(matchId);
   const delegateReferees = useDelegateReferees();
+  const updateMatchResult = useUpdateMatchResult();
 
   const match = matchData?.data || matchData;
   const allAvailableReferees = useMemo(
@@ -133,9 +145,15 @@ const DelegationPage = () => {
     });
   }, [assignedReferees, savedAssignmentsBySlot]);
 
-  const isMatchStarted = match?.scheduledAt
+  const hasMatchStartTimePassed = match?.scheduledAt
     ? new Date(match.scheduledAt) <= new Date()
     : false;
+  const effectiveMatchStatus =
+    match?.status === "scheduled" && hasMatchStartTimePassed
+      ? "in_progress"
+      : match?.status;
+  const isMatchFinished = match?.status === "completed";
+  const isMatchStarted = effectiveMatchStatus === "in_progress";
   const isMatchClosed = ["completed", "cancelled"].includes(match?.status);
   const isConfirmed = match?.delegationStatus === "confirmed";
   const savedAssignedCount =
@@ -147,6 +165,7 @@ const DelegationPage = () => {
     isMatchStarted || isMatchClosed || isConfirmed || hasFullSavedCrew;
 
   const saveDisabledReason = (() => {
+    if (isMatchFinished) return "This match is finished.";
     if (isMatchClosed) return "This match is closed.";
     if (isMatchStarted) return "This match has already started.";
     if (isConfirmed) return "All referees confirmed this match.";
@@ -217,6 +236,53 @@ const DelegationPage = () => {
     }
   };
 
+  const handleOpenResultModal = () => {
+    setResultForm({
+      homeScore:
+        match?.homeScore === null || match?.homeScore === undefined
+          ? ""
+          : String(match.homeScore),
+      awayScore:
+        match?.awayScore === null || match?.awayScore === undefined
+          ? ""
+          : String(match.awayScore),
+      reportNotes: match?.reportNotes || "",
+    });
+    setResultModalOpen(true);
+  };
+
+  const handleCloseResultModal = () => {
+    if (updateMatchResult.isPending) return;
+    setResultModalOpen(false);
+  };
+
+  const handleCompleteMatch = async () => {
+    const homeScore = Number(resultForm.homeScore);
+    const awayScore = Number(resultForm.awayScore);
+    if (
+      !Number.isInteger(homeScore) ||
+      !Number.isInteger(awayScore) ||
+      homeScore < 0 ||
+      awayScore < 0
+    ) {
+      return;
+    }
+
+    try {
+      await updateMatchResult.mutateAsync({
+        id: matchId,
+        data: {
+          homeScore,
+          awayScore,
+          reportNotes: resultForm.reportNotes.trim() || null,
+        },
+      });
+      setResultModalOpen(false);
+    } catch (error) {
+      console.error("Error completing match:", error);
+    }
+  };
+
   const formatMatchDate = (dateString) => {
     if (!dateString) return { shortDay: "–", fullDate: "TBA", time: "–:–" };
     const date = new Date(dateString);
@@ -264,6 +330,44 @@ const DelegationPage = () => {
         label: "Unknown",
         color: "#9ca3af",
         bg: "rgba(107, 114, 128, 0.2)",
+      }
+    );
+  };
+
+  const getMatchStatusChip = (status) => {
+    const map = {
+      scheduled: {
+        label: "Scheduled",
+        color: "#9ca3af",
+        bg: "rgba(107, 114, 128, 0.12)",
+      },
+      in_progress: {
+        label: "In progress",
+        color: "#f97316",
+        bg: "rgba(249, 115, 22, 0.12)",
+      },
+      completed: {
+        label: "Completed",
+        color: "#22c55e",
+        bg: "rgba(34, 197, 94, 0.12)",
+      },
+      postponed: {
+        label: "Postponed",
+        color: "#38bdf8",
+        bg: "rgba(56, 189, 248, 0.14)",
+      },
+      cancelled: {
+        label: "Cancelled",
+        color: "#ef4444",
+        bg: "rgba(239, 68, 68, 0.12)",
+      },
+    };
+
+    return (
+      map[status] || {
+        label: "Unknown",
+        color: "#9ca3af",
+        bg: "rgba(107, 114, 128, 0.12)",
       }
     );
   };
@@ -459,6 +563,18 @@ const DelegationPage = () => {
 
   const dateInfo = formatMatchDate(match?.scheduledAt);
   const statusChip = getStatusChip(match?.delegationStatus);
+  const matchStatusChip = getMatchStatusChip(effectiveMatchStatus);
+  const canCompleteMatch =
+    effectiveMatchStatus === "in_progress" && assignedCount > 0;
+  const resultHomeScore = Number(resultForm.homeScore);
+  const resultAwayScore = Number(resultForm.awayScore);
+  const resultFormInvalid =
+    resultForm.homeScore === "" ||
+    resultForm.awayScore === "" ||
+    !Number.isInteger(resultHomeScore) ||
+    !Number.isInteger(resultAwayScore) ||
+    resultHomeScore < 0 ||
+    resultAwayScore < 0;
 
   const emptyCandidatesMessage =
     allAvailableReferees.length === 0
@@ -466,8 +582,22 @@ const DelegationPage = () => {
       : availableWithoutSearch.length === 0
         ? "All eligible referees are already assigned to this match. Remove a slot to swap."
         : "No referees match your search.";
+  const darkFieldSx = {
+    "& .MuiInputLabel-root": { color: "#6b7280" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#f97316" },
+    "& .MuiOutlinedInput-root": {
+      bgcolor: "#1a1a1d",
+      borderRadius: "10px",
+      "& fieldset": { borderColor: "#242428" },
+      "&:hover fieldset": { borderColor: "#3f3f46" },
+      "&.Mui-focused fieldset": { borderColor: "#f97316" },
+    },
+    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
+    "& .MuiInputBase-inputMultiline": { color: "#fff", fontSize: "14px" },
+  };
 
   return (
+    <>
     <Box sx={{ width: "100%" }}>
       {/* ── Sticky header ───────────────────────────────────────────────── */}
       <Box
@@ -534,95 +664,145 @@ const DelegationPage = () => {
               justifyContent: { xs: "space-between", sm: "flex-end" },
             }}
           >
-            {/* Progress indicator */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: 2,
-                py: 0.875,
-                borderRadius: "10px",
-                bgcolor:
-                  assignedCount === 3
-                    ? "rgba(34,197,94,0.09)"
-                    : assignedCount > 0
-                      ? "rgba(249,115,22,0.09)"
-                      : "rgba(107,114,128,0.09)",
-                border: "1px solid",
-                borderColor:
-                  assignedCount === 3
-                    ? "rgba(34,197,94,0.25)"
-                    : assignedCount > 0
-                      ? "rgba(249,115,22,0.25)"
-                      : "rgba(107,114,128,0.22)",
-                flex: { xs: "1 1 145px", sm: "0 0 auto" },
-              }}
-            >
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                {[0, 1, 2].map((i) => (
-                  <Box
-                    key={i}
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      bgcolor:
-                        i < assignedCount
-                          ? assignedCount === 3
-                            ? "#22c55e"
-                            : "#f97316"
-                          : "#3f3f46",
-                      transition: "background 0.3s",
-                    }}
-                  />
-                ))}
-              </Box>
+            {isMatchFinished ? (
               <Typography
                 sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  px: 1.5,
+                  py: 0.875,
+                  borderRadius: "10px",
+                  color: "#8dd9a8",
+                  bgcolor: "rgba(34, 197, 94, 0.08)",
+                  border: "1px solid rgba(34, 197, 94, 0.18)",
                   fontSize: "13px",
-                  fontWeight: 600,
-                  color:
-                    assignedCount === 3
-                      ? "#22c55e"
-                      : assignedCount > 0
-                        ? "#f97316"
-                        : "#9ca3af",
+                  fontWeight: 700,
+                  textAlign: { xs: "left", sm: "right" },
                 }}
               >
-                {assignedCount}/3 assigned
+                This match is finished.
               </Typography>
-            </Box>
+            ) : (
+              <>
+                {/* Progress indicator */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 2,
+                    py: 0.875,
+                    borderRadius: "10px",
+                    bgcolor:
+                      assignedCount === 3
+                        ? "rgba(34,197,94,0.09)"
+                        : assignedCount > 0
+                          ? "rgba(249,115,22,0.09)"
+                          : "rgba(107,114,128,0.09)",
+                    border: "1px solid",
+                    borderColor:
+                      assignedCount === 3
+                        ? "rgba(34,197,94,0.25)"
+                        : assignedCount > 0
+                          ? "rgba(249,115,22,0.25)"
+                          : "rgba(107,114,128,0.22)",
+                    flex: { xs: "1 1 145px", sm: "0 0 auto" },
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 0.5 }}>
+                    {[0, 1, 2].map((i) => (
+                      <Box
+                        key={i}
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          bgcolor:
+                            i < assignedCount
+                              ? assignedCount === 3
+                                ? "#22c55e"
+                                : "#f97316"
+                              : "#3f3f46",
+                          transition: "background 0.3s",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color:
+                        assignedCount === 3
+                          ? "#22c55e"
+                          : assignedCount > 0
+                            ? "#f97316"
+                            : "#9ca3af",
+                    }}
+                  >
+                    {assignedCount}/3 assigned
+                  </Typography>
+                </Box>
 
-            <Button
-              startIcon={
-                delegateReferees.isPending ? (
-                  <CircularProgress size={14} sx={{ color: "#fff" }} />
+                {canCompleteMatch ? (
+                  <Button
+                    startIcon={
+                      updateMatchResult.isPending ? (
+                        <CircularProgress size={14} sx={{ color: "#fff" }} />
+                      ) : (
+                        <CheckIcon />
+                      )
+                    }
+                    onClick={handleOpenResultModal}
+                    disabled={updateMatchResult.isPending}
+                    sx={{
+                      flex: { xs: "1 1 180px", sm: "0 0 auto" },
+                      px: 3,
+                      py: 1.25,
+                      borderRadius: "12px",
+                      bgcolor: "#22c55e",
+                      color: "#fff",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      "&:hover": { bgcolor: "#16a34a" },
+                      "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
+                    }}
+                  >
+                    Finish Match
+                  </Button>
                 ) : (
-                  <CheckIcon />
-                )
-              }
-              onClick={handleConfirmDelegation}
-              disabled={
-                Boolean(saveDisabledReason) || delegateReferees.isPending
-              }
-              sx={{
-                flex: { xs: "1 1 180px", sm: "0 0 auto" },
-                px: 3,
-                py: 1.25,
-                borderRadius: "12px",
-                bgcolor: "#f97316",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: 600,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#ea580c" },
-                "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
-              }}
-            >
-              {delegateReferees.isPending ? "Saving..." : "Save Assignment"}
-            </Button>
-            {saveDisabledReason && (
+                  <Button
+                    startIcon={
+                      delegateReferees.isPending ? (
+                        <CircularProgress size={14} sx={{ color: "#fff" }} />
+                      ) : (
+                        <CheckIcon />
+                      )
+                    }
+                    onClick={handleConfirmDelegation}
+                    disabled={
+                      Boolean(saveDisabledReason) || delegateReferees.isPending
+                    }
+                    sx={{
+                      flex: { xs: "1 1 180px", sm: "0 0 auto" },
+                      px: 3,
+                      py: 1.25,
+                      borderRadius: "12px",
+                      bgcolor: "#f97316",
+                      color: "#fff",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      "&:hover": { bgcolor: "#ea580c" },
+                      "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
+                    }}
+                  >
+                    {delegateReferees.isPending ? "Saving..." : "Save Assignment"}
+                  </Button>
+                )}
+              </>
+            )}
+            {!isMatchFinished && !canCompleteMatch && saveDisabledReason && (
               <Typography
                 sx={{
                   width: { xs: "100%", sm: "auto" },
@@ -697,38 +877,40 @@ const DelegationPage = () => {
               </Box>
             </Box>
 
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 0.75,
-                fontSize: "13px",
-                fontWeight: 600,
-                color: statusChip.color,
-                bgcolor: statusChip.bg,
-                border: `1px solid ${statusChip.color}33`,
-                px: 1.5,
-                py: 0.5,
-                borderRadius: "9999px",
-              }}
-            >
+            {!isMatchFinished && (
               <Box
                 sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  bgcolor: statusChip.color,
-                  ...(match?.delegationStatus === "pending" && {
-                    animation: "pulse 2s infinite",
-                    "@keyframes pulse": {
-                      "0%, 100%": { opacity: 1 },
-                      "50%": { opacity: 0.4 },
-                    },
-                  }),
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: statusChip.color,
+                  bgcolor: statusChip.bg,
+                  border: `1px solid ${statusChip.color}33`,
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: "9999px",
                 }}
-              />
-              {statusChip.label}
-            </Box>
+              >
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: statusChip.color,
+                    ...(match?.delegationStatus === "pending" && {
+                      animation: "pulse 2s infinite",
+                      "@keyframes pulse": {
+                        "0%, 100%": { opacity: 1 },
+                        "50%": { opacity: 0.4 },
+                      },
+                    }),
+                  }}
+                />
+                {statusChip.label}
+              </Box>
+            )}
           </Box>
 
           {/* Teams vs block */}
@@ -737,41 +919,25 @@ const DelegationPage = () => {
               display: "grid",
               gridTemplateColumns: { xs: "1fr", md: "1fr auto 1fr" },
               alignItems: "center",
-              gap: 2,
+              gap: { xs: 2.25, md: 2 },
               py: 1,
             }}
           >
-            <TeamSummary
-              team={match?.homeTeam}
-              sideLabel='Home'
-              color='#3b82f6'
-            />
-
             <Box
               sx={{
-                textAlign: "center",
-                px: { xs: 0, md: 2 },
-                py: { xs: 1, md: 0 },
+                display: { xs: "flex", md: "none" },
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 0.75,
+                mb: 0.5,
               }}
             >
-              <Typography
-                sx={{
-                  color: "#2e2e33",
-                  fontSize: 30,
-                  fontWeight: 800,
-                  letterSpacing: "0.1em",
-                  lineHeight: 1,
-                }}
-              >
-                VS
-              </Typography>
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   gap: 0.75,
                   justifyContent: "center",
-                  mt: 1,
                 }}
               >
                 <EventIcon sx={{ fontSize: 14, color: "#6b7280" }} />
@@ -785,6 +951,87 @@ const DelegationPage = () => {
                   alignItems: "center",
                   gap: 0.75,
                   justifyContent: "center",
+                }}
+              >
+                <TimeIcon sx={{ fontSize: 14, color: "#f97316" }} />
+                <Typography
+                  sx={{ color: "#f97316", fontSize: 17, fontWeight: 700 }}
+                >
+                  {dateInfo.time}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  px: 1.25,
+                  py: 0.4,
+                  borderRadius: "9999px",
+                  color: matchStatusChip.color,
+                  bgcolor: matchStatusChip.bg,
+                  border: `1px solid ${matchStatusChip.color}33`,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: matchStatusChip.color,
+                  }}
+                />
+                {matchStatusChip.label}
+              </Box>
+            </Box>
+
+            <TeamSummary
+              team={match?.homeTeam}
+              sideLabel='Home'
+              color='#3b82f6'
+              score={isMatchFinished ? match?.homeScore : undefined}
+            />
+
+            <Box
+              sx={{
+                textAlign: "center",
+                px: { xs: 0, md: 2 },
+                py: { xs: 0, md: 0 },
+              }}
+            >
+              <Typography
+                sx={{
+                  color: "#2e2e33",
+                  fontSize: { xs: 28, md: 30 },
+                  fontWeight: 800,
+                  letterSpacing: "0.1em",
+                  lineHeight: 1,
+                }}
+              >
+                VS
+              </Typography>
+              <Box
+                sx={{
+                  display: { xs: "none", md: "flex" },
+                  alignItems: "center",
+                  gap: 0.75,
+                  justifyContent: "center",
+                  mt: 1,
+                }}
+              >
+                <EventIcon sx={{ fontSize: 14, color: "#6b7280" }} />
+                <Typography sx={{ color: "#9ca3af", fontSize: 12 }}>
+                  {dateInfo.shortDay}, {dateInfo.fullDate}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: { xs: "none", md: "flex" },
+                  alignItems: "center",
+                  gap: 0.75,
+                  justifyContent: "center",
                   mt: 0.5,
                 }}
               >
@@ -795,6 +1042,32 @@ const DelegationPage = () => {
                   {dateInfo.time}
                 </Typography>
               </Box>
+              <Box
+                sx={{
+                  display: { xs: "none", md: "inline-flex" },
+                  alignItems: "center",
+                  gap: 0.75,
+                  mt: 1,
+                  px: 1.25,
+                  py: 0.4,
+                  borderRadius: "9999px",
+                  color: matchStatusChip.color,
+                  bgcolor: matchStatusChip.bg,
+                  border: `1px solid ${matchStatusChip.color}33`,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: matchStatusChip.color,
+                  }}
+                />
+                {matchStatusChip.label}
+              </Box>
             </Box>
 
             <TeamSummary
@@ -802,6 +1075,7 @@ const DelegationPage = () => {
               sideLabel='Away'
               color='#ef4444'
               align='right'
+              score={isMatchFinished ? match?.awayScore : undefined}
             />
           </Box>
 
@@ -1043,33 +1317,190 @@ const DelegationPage = () => {
             </Box>
           </Box>
         </Box>
+
+        {isMatchFinished && (
+          <Box
+            sx={{
+              bgcolor: "#121214",
+              borderRadius: "16px",
+              border: "1px solid #242428",
+              p: { xs: 2, sm: 3 },
+            }}
+          >
+            <Typography sx={{ color: "#fff", fontSize: 18, fontWeight: 700 }}>
+              Match Report
+            </Typography>
+            <Box
+              sx={{
+                mt: 1.5,
+                p: { xs: 1.5, sm: 2 },
+                borderRadius: "12px",
+                bgcolor: "#0d0d0f",
+                border: "1px solid #1e1e22",
+                minHeight: 72,
+              }}
+            >
+              <Typography
+                sx={{
+                  color: match?.reportNotes ? "#d1d5db" : "#6b7280",
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {match?.reportNotes || "No report notes added."}
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </Box>
     </Box>
+
+    <Dialog
+      open={resultModalOpen}
+      onClose={handleCloseResultModal}
+      fullWidth
+      maxWidth='sm'
+      PaperProps={{
+        sx: {
+          bgcolor: "#121214",
+          color: "#fff",
+          border: "1px solid #242428",
+          borderRadius: "16px",
+          backgroundImage: "none",
+        },
+      }}
+    >
+      <DialogTitle sx={{ pb: 1, fontWeight: 700 }}>
+        Complete Match
+      </DialogTitle>
+      <DialogContent sx={{ display: "grid", gap: 2, pt: "8px !important" }}>
+        <Typography sx={{ color: "#9ca3af", fontSize: 13 }}>
+          {match?.homeTeam?.name || "Home"} vs {match?.awayTeam?.name || "Away"}
+        </Typography>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 1.5,
+          }}
+        >
+          <TextField
+            label={match?.homeTeam?.name || "Home score"}
+            type='number'
+            value={resultForm.homeScore}
+            onChange={(event) =>
+              setResultForm((prev) => ({
+                ...prev,
+                homeScore: event.target.value,
+              }))
+            }
+            inputProps={{ min: 0, step: 1 }}
+            sx={darkFieldSx}
+          />
+          <TextField
+            label={match?.awayTeam?.name || "Away score"}
+            type='number'
+            value={resultForm.awayScore}
+            onChange={(event) =>
+              setResultForm((prev) => ({
+                ...prev,
+                awayScore: event.target.value,
+              }))
+            }
+            inputProps={{ min: 0, step: 1 }}
+            sx={darkFieldSx}
+          />
+        </Box>
+
+        <TextField
+          label='Match report'
+          value={resultForm.reportNotes}
+          onChange={(event) =>
+            setResultForm((prev) => ({
+              ...prev,
+              reportNotes: event.target.value,
+            }))
+          }
+          multiline
+          minRows={4}
+          placeholder='Add match notes, incidents, or administrative remarks...'
+          sx={darkFieldSx}
+        />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexWrap: "wrap" }}>
+        <Button
+          onClick={handleCloseResultModal}
+          disabled={updateMatchResult.isPending}
+          sx={{
+            color: "#9ca3af",
+            textTransform: "none",
+            borderRadius: "10px",
+            px: 2,
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleCompleteMatch}
+          disabled={resultFormInvalid || updateMatchResult.isPending}
+          startIcon={
+            updateMatchResult.isPending ? (
+              <CircularProgress size={14} sx={{ color: "#fff" }} />
+            ) : (
+              <CheckIcon />
+            )
+          }
+          sx={{
+            bgcolor: "#22c55e",
+            color: "#fff",
+            textTransform: "none",
+            borderRadius: "10px",
+            px: 2.5,
+            fontWeight: 700,
+            "&:hover": { bgcolor: "#16a34a" },
+            "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
+          }}
+        >
+          Complete Match
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
+const TeamSummary = ({ team, sideLabel, color, align = "left", score }) => {
   const initials =
     team?.shortName || team?.name?.substring(0, 3).toUpperCase() || "TBA";
   const isRight = align === "right";
+  const hasScore = score !== null && score !== undefined;
 
   return (
     <Box
       sx={{
-        display: "flex",
+        display: "grid",
+        gridTemplateColumns: {
+          xs: hasScore ? "52px minmax(0, 1fr) 58px" : "52px minmax(0, 1fr)",
+          md: hasScore
+            ? isRight
+              ? "58px minmax(0, 1fr) 52px"
+              : "52px minmax(0, 1fr) 58px"
+            : "52px minmax(0, 1fr)",
+        },
         alignItems: "center",
         gap: 1.5,
-        flexDirection: {
-          xs: "row",
-          md: isRight ? "row-reverse" : "row",
-        },
         minWidth: 0,
       }}
     >
       <Box
         sx={{
+          gridColumn: { xs: 1, md: isRight ? 3 : 1 },
+          gridRow: 1,
           width: 52,
           height: 52,
           borderRadius: "14px",
@@ -1091,6 +1522,8 @@ const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
         sx={{
           textAlign: { xs: "left", md: isRight ? "right" : "left" },
           minWidth: 0,
+          gridColumn: { xs: 2, md: 2 },
+          gridRow: 1,
         }}
       >
         <Typography
@@ -1101,6 +1534,7 @@ const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
             lineHeight: 1.2,
             overflow: "hidden",
             textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
           {team?.name || "TBA"}
@@ -1109,6 +1543,30 @@ const TeamSummary = ({ team, sideLabel, color, align = "left" }) => {
           {sideLabel}
         </Typography>
       </Box>
+      {hasScore && (
+        <Box
+          sx={{
+            gridColumn: { xs: 3, md: isRight ? 1 : 3 },
+            gridRow: 1,
+            width: 54,
+            height: 54,
+            borderRadius: "10px",
+            bgcolor: "rgba(34, 197, 94, 0.08)",
+            border: "1px solid rgba(34, 197, 94, 0.22)",
+            color: "#d1fae5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 24,
+            fontWeight: 800,
+            lineHeight: 1,
+            flexShrink: 0,
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.02)",
+          }}
+        >
+          {score}
+        </Box>
+      )}
     </Box>
   );
 };

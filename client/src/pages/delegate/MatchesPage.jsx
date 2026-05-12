@@ -56,8 +56,7 @@ const MatchesPage = () => {
     page: page + 1,
     limit: rowsPerPage,
     search: search || undefined,
-    competitionId:
-      competitionFilter !== "all" ? competitionFilter : undefined,
+    competitionId: competitionFilter !== "all" ? competitionFilter : undefined,
     delegationStatus: statusFilter !== "all" ? statusFilter : undefined,
   });
   const { data: competitionsData } = useCompetitions({ limit: 100 });
@@ -669,22 +668,26 @@ const MatchesPage = () => {
                   gap: 3,
                 }}
               >
-                {["Date", "Match", "Competition", "Venue", "Status"].map(
-                  (label) => (
-                    <Typography
-                      key={label}
-                      sx={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: "#2e2e33",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {label}
-                    </Typography>
-                  ),
-                )}
+                {[
+                  "Date",
+                  "Match",
+                  "Competition",
+                  "Venue",
+                  "Delegation Status",
+                ].map((label) => (
+                  <Typography
+                    key={label}
+                    sx={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#2e2e33",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                ))}
               </Box>
               {[0, 1, 2, 3, 4].map((i) => (
                 <Box
@@ -800,7 +803,7 @@ const MatchesPage = () => {
                       "Match",
                       "Competition",
                       "Venue",
-                      "Status",
+                      "Delegation Status",
                       "",
                     ].map((header, i) => (
                       <Box
