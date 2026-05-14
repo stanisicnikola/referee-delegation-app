@@ -50,9 +50,23 @@ const SettingsPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isAdmin = user?.role === "admin";
-  const isDelegate = user?.role === "delegate";
-  const rolePrimaryVariant = isDelegate ? "delegate-primary" : "admin-primary";
-  const roleOutlineVariant = isDelegate ? "delegate-outline" : "admin-outline";
+  const roleVariants = {
+    admin: {
+      primary: "admin-primary",
+      outline: "admin-outline",
+    },
+    delegate: {
+      primary: "delegate-primary",
+      outline: "delegate-outline",
+    },
+    referee: {
+      primary: "referee-primary",
+      outline: "referee-outline",
+    },
+  };
+  const roleVariant = roleVariants[user?.role] || roleVariants.admin;
+  const rolePrimaryVariant = roleVariant.primary;
+  const roleOutlineVariant = roleVariant.outline;
   const loading =
     verifyPasswordMutation.isPending || changePasswordMutation.isPending;
   const deleteLoading = deleteMeMutation.isPending;

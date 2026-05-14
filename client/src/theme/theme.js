@@ -447,8 +447,15 @@ const delegateTheme = createPanelTheme({
   dark: "#ea580c",
 });
 
+// Referee theme (green accent)
+const refereeTheme = createPanelTheme({
+  main: "#22c55e",
+  light: "#4ade80",
+  dark: "#16a34a",
+});
+
 // Default export for backwards compatibility (login)
 export default loginTheme;
 
 // Named exports
-export { loginTheme, adminTheme, delegateTheme };
+export { loginTheme, adminTheme, delegateTheme, refereeTheme };

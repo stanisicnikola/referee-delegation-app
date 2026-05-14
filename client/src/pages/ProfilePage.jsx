@@ -20,14 +20,30 @@ import { CustomButton, PageHeader } from "../components/ui";
 const ProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isDelegate = user?.role === "delegate";
-  const basePath = user?.role === "delegate" ? "/delegate" : "/admin";
-  const roleOutlineVariant = isDelegate ? "delegate-outline" : "admin-outline";
-  const roleAccent = isDelegate ? "#f97316" : "#8b5cf6";
-  const roleAccentDark = isDelegate ? "#ea580c" : "#7c3aed";
-  const roleAccentSoft = isDelegate
-    ? "rgba(249, 115, 22, 0.1)"
-    : "rgba(139, 92, 246, 0.1)";
+  const roleStyles = {
+    admin: {
+      basePath: "/admin",
+      outlineVariant: "admin-outline",
+      accent: "#8b5cf6",
+      accentDark: "#7c3aed",
+      accentSoft: "rgba(139, 92, 246, 0.1)",
+    },
+    delegate: {
+      basePath: "/delegate",
+      outlineVariant: "delegate-outline",
+      accent: "#f97316",
+      accentDark: "#ea580c",
+      accentSoft: "rgba(249, 115, 22, 0.1)",
+    },
+    referee: {
+      basePath: "/referee",
+      outlineVariant: "referee-outline",
+      accent: "#22c55e",
+      accentDark: "#16a34a",
+      accentSoft: "rgba(34, 197, 94, 0.1)",
+    },
+  };
+  const roleStyle = roleStyles[user?.role] || roleStyles.admin;
 
   return (
     <Box
@@ -61,7 +77,7 @@ const ProfilePage = () => {
                 height: 100,
                 mx: "auto",
                 mb: 2,
-                background: `linear-gradient(135deg, ${roleAccent}, ${roleAccentDark})`,
+                background: `linear-gradient(135deg, ${roleStyle.accent}, ${roleStyle.accentDark})`,
                 fontSize: "2.5rem",
                 fontWeight: 700,
               }}
@@ -108,7 +124,7 @@ const ProfilePage = () => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
+                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
                 >
                   <PersonIcon />
                 </Avatar>
@@ -132,7 +148,7 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
+                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
                 >
                   <PersonIcon />
                 </Avatar>
@@ -156,7 +172,7 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
+                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
                 >
                   <EmailIcon />
                 </Avatar>
@@ -184,7 +200,7 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleAccentSoft, color: roleAccent }}
+                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
                 >
                   <PhoneIcon />
                 </Avatar>
@@ -230,15 +246,15 @@ const ProfilePage = () => {
                     gap: 1.5,
                   }}
                 >
-                  <SecurityIcon sx={{ color: roleAccent }} />
+                  <SecurityIcon sx={{ color: roleStyle.accent }} />
                   <Typography variant='body2' sx={{ color: "text.secondary" }}>
                     Manage your account and preferences
                   </Typography>
                 </Box>
                 <CustomButton
-                  variant={roleOutlineVariant}
+                  variant={roleStyle.outlineVariant}
                   size='small'
-                  onClick={() => navigate(`${basePath}/settings`)}
+                  onClick={() => navigate(`${roleStyle.basePath}/settings`)}
                   sx={{
                     width: { xs: "100%", sm: "auto" },
                     justifyContent: "center",

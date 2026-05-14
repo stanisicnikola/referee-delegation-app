@@ -3,7 +3,7 @@ import { Button, CircularProgress } from "@mui/material";
 /**
  * Reusable Button component that fits the project's design system.
  *
- * @param {string} variant - admin-primary | delegate-primary | admin-outline | delegate-outline | primary | secondary | danger | outline
+ * @param {string} variant - admin-primary | delegate-primary | referee-primary | admin-outline | delegate-outline | referee-outline | primary | secondary | danger | outline
  * @param {boolean} loading - Shows a spinner if true
  * @param {boolean} disabled - Disables the button
  * @param {ReactNode} children - Button text or content
@@ -60,6 +60,21 @@ const CustomButton = ({
           },
           "&.Mui-disabled": {
             bgcolor: "#f9731650",
+            color: "#ffffff60",
+          },
+        };
+      case "referee-primary":
+        return {
+          ...baseStyles,
+          bgcolor: "#22c55e",
+          color: "#fff",
+          "&:hover": {
+            bgcolor: "#16a34a",
+            transform: "translateY(-1px)",
+            boxShadow: "0 4px 12px rgba(34, 197, 94, 0.25)",
+          },
+          "&.Mui-disabled": {
+            bgcolor: "#22c55e50",
             color: "#ffffff60",
           },
         };
@@ -121,6 +136,17 @@ const CustomButton = ({
           "&:hover": {
             bgcolor: "rgba(244, 148, 79, 0.09)",
             borderColor: "#f66905",
+          },
+        };
+      case "referee-outline":
+        return {
+          ...baseStyles,
+          border: "1px solid",
+          borderColor: "rgba(34, 197, 94, 0.55)",
+          color: "#22c55e",
+          "&:hover": {
+            bgcolor: "rgba(34, 197, 94, 0.06)",
+            borderColor: "#16a34a",
           },
         };
       case "outline":

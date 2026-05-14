@@ -25,7 +25,6 @@ import {
   RefereeAvailabilityPage,
   RefereeNotificationsPage,
   RefereeHistoryPage,
-  RefereeProfilePage,
   ProfilePage,
 } from "../pages";
 import {
@@ -58,7 +57,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   if (user?.mustChangePassword) {
     const passwordChangePath =
       user.role === "referee"
-        ? "/referee/profile"
+        ? "/referee/settings"
         : `/${user.role}/settings`;
 
     if (location.pathname !== passwordChangePath) {
@@ -168,7 +167,8 @@ const AppRoutes = () => {
           <Route path='availability' element={<RefereeAvailabilityPage />} />
           <Route path='notifications' element={<RefereeNotificationsPage />} />
           <Route path='history' element={<RefereeHistoryPage />} />
-          <Route path='profile' element={<RefereeProfilePage />} />
+          <Route path='settings' element={<SettingsPage />} />
+          <Route path='profile' element={<ProfilePage />} />
         </Route>
 
         {/* Default redirects */}

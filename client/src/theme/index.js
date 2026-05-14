@@ -1,1 +1,7 @@
-export { default, loginTheme, adminTheme, delegateTheme } from "./theme";
+export {
+  default,
+  loginTheme,
+  adminTheme,
+  delegateTheme,
+  refereeTheme,
+} from "./theme";
