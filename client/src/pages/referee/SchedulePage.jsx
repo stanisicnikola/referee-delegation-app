@@ -1,574 +1,1072 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
+  Alert,
   Box,
-  Typography,
-  Paper,
   Button,
-  Avatar,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  useMediaQuery,
-  useTheme,
   CircularProgress,
-  Grid,
+  FormControl,
+  MenuItem,
+  Paper,
+  Select,
+  Snackbar,
   Stack,
-  AvatarGroup,
-  Tooltip,
+  Typography,
 } from "@mui/material";
 import {
-  CalendarMonth as CalendarIcon,
-  FilterList as FilterIcon,
-  Download as DownloadIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+  ExpandMore as ExpandMoreIcon,
   LocationOn as LocationIcon,
-  AccessTime as TimeIcon,
-  SportsSoccer as SoccerIcon,
+  SportsBasketball as BasketballIcon,
 } from "@mui/icons-material";
-import { useMyAssignments, useCompetitions } from "../../hooks";
+import {
+  useCompetitions,
+  useConfirmAssignment,
+  useMyAssignments,
+  useRejectAssignment,
+} from "../../hooks";
 
-// Orange accent for referee panel
-const ACCENT_COLOR = "#f97316";
+const COLORS = {
+  bg: "#0a0a0b",
+  card: "#121214",
+  cardHover: "#17171a",
+  panel: "#1a1a1d",
+  border: "#242428",
+  borderSoft: "rgba(255, 255, 255, 0.08)",
+  text: "#f8fafc",
+  muted: "#6b7280",
+  mutedStrong: "#9ca3af",
+  orange: "#f97316",
+  yellow: "#eab308",
+  green: "#22c55e",
+  red: "#ef4444",
+  blue: "#60a5fa",
+  purple: "#c084fc",
+};
+
+const roleOptions = [
+  { value: "all", label: "All Roles" },
+  { value: "first_referee", label: "1st Referee" },
+  { value: "second_referee", label: "2nd Referee" },
+  { value: "third_referee", label: "3rd Referee" },
+];
+
+const periodOptions = [
+  { value: "upcoming", label: "Upcoming" },
+  { value: "past", label: "Past" },
+  { value: "all", label: "All Matches" },
+];
+
+const getMatch = (assignment) => assignment?.match || assignment?.Match || null;
+
+const getAssignmentMatchId = (assignment) =>
+  assignment?.matchId || assignment?.match_id || getMatch(assignment)?.id;
+
+const getScheduledDate = (match) => {
+  const value = match?.scheduledAt || match?.matchDate || match?.date;
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getTeamName = (match, side) => {
+  const key = side === "home" ? "homeTeam" : "awayTeam";
+  const fallbackKey = side === "home" ? "HomeTeam" : "AwayTeam";
+
+  return (
+    match?.[key]?.name ||
+    match?.[fallbackKey]?.name ||
+    (side === "home" ? "Home team" : "Away team")
+  );
+};
+
+const getCompetition = (match) =>
+  match?.competition || match?.Competition || null;
+
+const getCompetitionName = (match) =>
+  getCompetition(match)?.name || "Competition";
+
+const getCompetitionId = (match) =>
+  match?.competitionId || match?.competition_id || getCompetition(match)?.id;
+
+const getVenueText = (match) => {
+  const venue = match?.venue || match?.Venue;
+  if (!venue) return "Venue not set";
+
+  return [venue.name, venue.city].filter(Boolean).join(", ");
+};
+
+const getRefereeAssignments = (match) =>
+  match?.refereeAssignments ||
+  match?.RefereeAssignments ||
+  match?.matchReferees ||
+  [];
+
+const getRefereeName = (assignment) => {
+  const user =
+    assignment?.referee?.user ||
+    assignment?.referee?.User ||
+    assignment?.Referee?.user ||
+    assignment?.Referee?.User;
+  const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  return name || "Colleague";
+};
+
+const getInitials = (name) => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+};
+
+const isConfirmedStatus = (status) =>
+  ["accepted", "confirmed"].includes(status);
+
+const formatDate = (match) => {
+  const date = getScheduledDate(match);
+
+  if (!date) {
+    return {
+      day: "--",
+      month: "---",
+      weekday: "---",
+      time: "--:--",
+      monthGroup: "Date not set",
+      sortKey: "9999-99",
+    };
+  }
+
+  const month = date.toLocaleDateString("en-US", { month: "short" });
+  const monthGroup = date.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return {
+    day: String(date.getDate()).padStart(2, "0"),
+    month,
+    weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+    time: date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }),
+    monthGroup,
+    sortKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}`,
+  };
+};
+
+const getRoleBadge = (role) => {
+  const roles = {
+    first_referee: {
+      label: "1st Referee",
+      color: COLORS.purple,
+      bg: "rgba(192, 132, 252, 0.18)",
+    },
+    second_referee: {
+      label: "2nd Referee",
+      color: COLORS.blue,
+      bg: "rgba(40, 87, 245, 0.34)",
+    },
+    third_referee: {
+      label: "3rd Referee",
+      color: COLORS.green,
+      bg: "rgba(7, 118, 22, 0.2)",
+    },
+    head: {
+      label: "Head Referee",
+      color: COLORS.purple,
+      bg: "rgba(192, 132, 252, 0.18)",
+    },
+    main: {
+      label: "Main Referee",
+      color: COLORS.purple,
+      bg: "rgba(192, 132, 252, 0.18)",
+    },
+    assistant: {
+      label: "Assistant",
+      color: COLORS.blue,
+      bg: "rgba(96, 165, 250, 0.16)",
+    },
+    second: {
+      label: "2nd Referee",
+      color: COLORS.mutedStrong,
+      bg: "rgba(255, 255, 255, 0.1)",
+    },
+    third: {
+      label: "3rd Referee",
+      color: COLORS.mutedStrong,
+      bg: "rgba(255, 255, 255, 0.1)",
+    },
+    fourth: {
+      label: "4th Official",
+      color: "#f472b6",
+      bg: "rgba(244, 114, 182, 0.16)",
+    },
+  };
+
+  return (
+    roles[role] || {
+      label: role || "Referee",
+      color: COLORS.mutedStrong,
+      bg: "rgba(255, 255, 255, 0.1)",
+    }
+  );
+};
+
+const getStatusBadge = (status) => {
+  const statuses = {
+    pending: {
+      label: "Pending",
+      color: COLORS.orange,
+      bg: "rgba(249, 115, 22, 0.16)",
+    },
+    accepted: {
+      label: "Confirmed",
+      color: COLORS.green,
+      bg: "rgba(34, 197, 94, 0.45)",
+    },
+    confirmed: {
+      label: "Confirmed",
+      color: COLORS.green,
+      bg: "rgba(34, 197, 94, 0.14)",
+    },
+    declined: {
+      label: "Declined",
+      color: COLORS.red,
+      bg: "rgba(239, 68, 68, 0.15)",
+    },
+    completed: {
+      label: "Completed",
+      color: COLORS.mutedStrong,
+      bg: "rgba(255, 255, 255, 0.1)",
+    },
+  };
+
+  return (
+    statuses[status] || {
+      label: status || "Unknown",
+      color: COLORS.mutedStrong,
+      bg: "rgba(255, 255, 255, 0.1)",
+    }
+  );
+};
+
+const pluralizeMatches = (count) => `${count} match${count === 1 ? "" : "es"}`;
+
+const getConfirmedColleagues = (assignment) => {
+  if (!isConfirmedStatus(assignment.status)) return [];
+
+  const currentRefereeId = assignment.refereeId || assignment.referee_id;
+  const match = getMatch(assignment);
+
+  return getRefereeAssignments(match)
+    .filter((matchAssignment) => {
+      const refereeId = matchAssignment.refereeId || matchAssignment.referee_id;
+
+      return (
+        refereeId &&
+        refereeId !== currentRefereeId &&
+        isConfirmedStatus(matchAssignment.status)
+      );
+    })
+    .map((matchAssignment, index) => ({
+      id:
+        matchAssignment.refereeId ||
+        matchAssignment.referee_id ||
+        matchAssignment.id ||
+        index,
+      name: getRefereeName(matchAssignment),
+    }));
+};
 
 const SchedulePage = () => {
-  const theme = useTheme();
-  const _isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const _isSmall = useMediaQuery(theme.breakpoints.down("sm"));
-
-  // Filters
   const [selectedCompetition, setSelectedCompetition] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState("upcoming");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  // Fetch data
-  const { data: assignmentsData, isLoading: assignmentsLoading } =
-    useMyAssignments();
+  const {
+    data: assignmentsData,
+    isLoading: assignmentsLoading,
+    refetch,
+  } = useMyAssignments();
   const { data: competitionsData } = useCompetitions();
+  const confirmAssignment = useConfirmAssignment();
+  const rejectAssignment = useRejectAssignment();
 
   const assignments = useMemo(
     () => assignmentsData?.data || [],
-    [assignmentsData?.data]
+    [assignmentsData?.data],
   );
-  const competitions = competitionsData?.data || [];
 
-  // Filter assignments
+  const competitions = useMemo(
+    () => competitionsData?.data || [],
+    [competitionsData?.data],
+  );
+
   const filteredAssignments = useMemo(() => {
-    let filtered = [...assignments];
     const now = new Date();
 
-    // Filter by period
-    if (selectedPeriod === "upcoming") {
-      filtered = filtered.filter(
-        (a) => a.match && new Date(a.match.scheduledAt) >= now
-      );
-    } else if (selectedPeriod === "past") {
-      filtered = filtered.filter(
-        (a) => a.match && new Date(a.match.scheduledAt) < now
-      );
-    }
+    return assignments
+      .filter((assignment) => {
+        const match = getMatch(assignment);
+        const scheduledDate = getScheduledDate(match);
 
-    // Filter by competition
-    if (selectedCompetition !== "all") {
-      filtered = filtered.filter(
-        (a) => a.match?.competitionId === parseInt(selectedCompetition)
-      );
-    }
+        if (!match) return false;
 
-    // Filter by role
-    if (selectedRole !== "all") {
-      filtered = filtered.filter((a) => a.role === selectedRole);
-    }
+        if (selectedPeriod === "upcoming") {
+          if (!scheduledDate || scheduledDate < now) return false;
+        }
 
-    // Sort by date
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.match?.scheduledAt || 0);
-      const dateB = new Date(b.match?.scheduledAt || 0);
-      return selectedPeriod === "past" ? dateB - dateA : dateA - dateB;
-    });
+        if (selectedPeriod === "past") {
+          if (!scheduledDate || scheduledDate >= now) return false;
+        }
 
-    return filtered;
-  }, [assignments, selectedCompetition, selectedRole, selectedPeriod]);
+        if (
+          selectedCompetition !== "all" &&
+          String(getCompetitionId(match)) !== String(selectedCompetition)
+        ) {
+          return false;
+        }
 
-  // Group by month
+        if (selectedRole !== "all" && assignment.role !== selectedRole) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        const dateA = getScheduledDate(getMatch(a))?.getTime() || 0;
+        const dateB = getScheduledDate(getMatch(b))?.getTime() || 0;
+
+        return selectedPeriod === "past" ? dateB - dateA : dateA - dateB;
+      });
+  }, [assignments, selectedCompetition, selectedPeriod, selectedRole]);
+
   const groupedByMonth = useMemo(() => {
-    const groups = {};
+    const groups = new Map();
 
     filteredAssignments.forEach((assignment) => {
-      if (!assignment.match) return;
-      const date = new Date(assignment.match.scheduledAt);
-      const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
-      const monthName = date.toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      });
+      const match = getMatch(assignment);
+      const dateInfo = formatDate(match);
 
-      if (!groups[monthKey]) {
-        groups[monthKey] = { name: monthName, matches: [] };
+      if (!groups.has(dateInfo.sortKey)) {
+        groups.set(dateInfo.sortKey, {
+          name: dateInfo.monthGroup,
+          matches: [],
+        });
       }
-      groups[monthKey].matches.push(assignment);
+
+      groups.get(dateInfo.sortKey).matches.push(assignment);
     });
 
-    return Object.entries(groups).sort((a, b) => {
-      return selectedPeriod === "past"
-        ? b[0].localeCompare(a[0])
-        : a[0].localeCompare(b[0]);
-    });
+    return [...groups.entries()].sort(([keyA], [keyB]) =>
+      selectedPeriod === "past"
+        ? keyB.localeCompare(keyA)
+        : keyA.localeCompare(keyB),
+    );
   }, [filteredAssignments, selectedPeriod]);
 
-  const roles = [
-    { value: "all", label: "All Roles" },
-    { value: "head", label: "Head Referee" },
-    { value: "main", label: "Main Referee" },
-    { value: "assistant", label: "Assistant" },
-    { value: "second", label: "2nd Referee" },
-    { value: "third", label: "3rd Referee" },
-    { value: "fourth", label: "4th Official" },
-  ];
+  const handleConfirm = async (assignment) => {
+    const matchId = getAssignmentMatchId(assignment);
+    if (!matchId) return;
 
-  const periods = [
-    { value: "upcoming", label: "Upcoming" },
-    { value: "past", label: "Past" },
-    { value: "all", label: "All" },
-  ];
-
-  const formatDate = (dateString) => {
-    if (!dateString) return { day: "-", month: "-", weekday: "-", time: "-" };
-    const date = new Date(dateString);
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return {
-      day: date.getDate(),
-      month: months[date.getMonth()],
-      weekday: weekdays[date.getDay()],
-      time: date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-    };
+    try {
+      await confirmAssignment.mutateAsync(matchId);
+      await refetch();
+      setSnackbar({
+        open: true,
+        message: "Assignment confirmed.",
+        severity: "success",
+      });
+    } catch {
+      setSnackbar({
+        open: true,
+        message: "Could not confirm the assignment.",
+        severity: "error",
+      });
+    }
   };
 
-  const getRoleBadge = (role) => {
-    const roleMap = {
-      head: { label: "Head Referee", color: "#22c55e" },
-      main: { label: "Head Referee", color: "#22c55e" },
-      assistant: { label: "Assistant", color: "#3b82f6" },
-      second: { label: "2nd Referee", color: "#3b82f6" },
-      third: { label: "3rd Referee", color: "#8b5cf6" },
-      fourth: { label: "4th Official", color: "#ec4899" },
-    };
-    return roleMap[role] || { label: role || "Referee", color: "grey" };
+  const handleDecline = async (assignment) => {
+    const matchId = getAssignmentMatchId(assignment);
+    if (!matchId) return;
+
+    try {
+      await rejectAssignment.mutateAsync({
+        matchId,
+        data: { reason: "Declined from schedule" },
+      });
+      await refetch();
+      setSnackbar({
+        open: true,
+        message: "Assignment declined.",
+        severity: "info",
+      });
+    } catch {
+      setSnackbar({
+        open: true,
+        message: "Could not decline the assignment.",
+        severity: "error",
+      });
+    }
   };
 
-  const getStatusBadge = (status) => {
-    const statuses = {
-      pending: { label: "Pending", color: ACCENT_COLOR },
-      accepted: { label: "Confirmed", color: "#22c55e" },
-      confirmed: { label: "Confirmed", color: "#22c55e" },
-      declined: { label: "Declined", color: "#ef4444" },
-      completed: { label: "Completed", color: "#6b7280" },
-    };
-    return statuses[status] || { label: status || "Unknown", color: "grey" };
-  };
-
-  const handleExportCalendar = () => {
-    // TODO: Implement calendar export
-    console.log("Exporting calendar...");
-  };
+  const isActionPending =
+    confirmAssignment.isPending || rejectAssignment.isPending;
 
   if (assignmentsLoading) {
     return (
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
           minHeight: "50vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: COLORS.bg,
         }}
       >
-        <CircularProgress sx={{ color: ACCENT_COLOR }} />
+        <CircularProgress sx={{ color: COLORS.green }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      {/* Header */}
+    <Box sx={{ minHeight: "100%", bgcolor: COLORS.bg, color: COLORS.text }}>
       <Box
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          gap: 2,
-          mb: 3,
+          px: { xs: 2, sm: 3, lg: 4 },
+          py: { xs: 2.5, md: 3 },
+          maxWidth: 1800,
+          mx: "auto",
         }}
       >
-        <Box>
-          <Typography variant='h5' fontWeight={600} color='white'>
-            My Schedule
-          </Typography>
-          <Typography variant='body2' color='grey.400'>
-            View all your assigned matches
-          </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: { xs: "stretch", lg: "flex-start" },
+            justifyContent: "space-between",
+            gap: 2.5,
+            mb: 3.5,
+            flexDirection: { xs: "column", lg: "column" },
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontSize: { xs: "34px", sm: "40px", md: "48px" },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.05,
+              }}
+            >
+              My Schedule
+            </Typography>
+            <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
+              Overview of all your matches
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(3, minmax(0, 1fr))",
+                lg: "260px 220px 220px",
+              },
+              gap: { xs: 1.25, md: 1.5 },
+              width: { xs: "100%", lg: "auto" },
+            }}
+          >
+            <FilterSelect
+              ariaLabel='Competition'
+              value={selectedCompetition}
+              onChange={setSelectedCompetition}
+              options={[
+                { value: "all", label: "All Competitions" },
+                ...competitions.map((competition) => ({
+                  value: competition.id,
+                  label: competition.name,
+                })),
+              ]}
+            />
+            <FilterSelect
+              ariaLabel='Role'
+              value={selectedRole}
+              onChange={setSelectedRole}
+              options={roleOptions}
+            />
+            <FilterSelect
+              active
+              ariaLabel='Period'
+              value={selectedPeriod}
+              onChange={setSelectedPeriod}
+              options={periodOptions}
+            />
+          </Box>
         </Box>
-        <Button
-          variant='outlined'
-          startIcon={<DownloadIcon />}
-          onClick={handleExportCalendar}
-          sx={{
-            borderColor: "rgba(255,255,255,0.2)",
-            color: "white",
-            "&:hover": {
-              borderColor: ACCENT_COLOR,
-              bgcolor: "rgba(249, 115, 22, 0.1)",
-            },
-            width: { xs: "100%", sm: "auto" },
-          }}
-        >
-          Export Calendar
-        </Button>
-      </Box>
 
-      {/* Filters */}
-      <Paper
-        sx={{
-          p: 2,
-          mb: 3,
-          bgcolor: "rgba(255,255,255,0.05)",
-          borderRadius: 2,
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        <Grid container spacing={2} alignItems='center'>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth size='small'>
-              <InputLabel sx={{ color: "grey.400" }}>Period</InputLabel>
-              <Select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                label='Period'
-                sx={{
-                  color: "white",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.2)",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.3)",
-                  },
-                  "& .MuiSvgIcon-root": { color: "grey.400" },
-                }}
-              >
-                {periods.map((period) => (
-                  <MenuItem key={period.value} value={period.value}>
-                    {period.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth size='small'>
-              <InputLabel sx={{ color: "grey.400" }}>Competition</InputLabel>
-              <Select
-                value={selectedCompetition}
-                onChange={(e) => setSelectedCompetition(e.target.value)}
-                label='Competition'
-                sx={{
-                  color: "white",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.2)",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.3)",
-                  },
-                  "& .MuiSvgIcon-root": { color: "grey.400" },
-                }}
-              >
-                <MenuItem value='all'>All Competitions</MenuItem>
-                {competitions.map((comp) => (
-                  <MenuItem key={comp.id} value={comp.id}>
-                    {comp.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth size='small'>
-              <InputLabel sx={{ color: "grey.400" }}>Role</InputLabel>
-              <Select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                label='Role'
-                sx={{
-                  color: "white",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.2)",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.3)",
-                  },
-                  "& .MuiSvgIcon-root": { color: "grey.400" },
-                }}
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role.value} value={role.value}>
-                    {role.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Results count */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant='body2' color='grey.400'>
-          {filteredAssignments.length} match
-          {filteredAssignments.length !== 1 ? "es" : ""} found
-        </Typography>
-      </Box>
-
-      {/* Schedule List */}
-      {filteredAssignments.length === 0 ? (
-        <Paper
-          sx={{
-            p: 6,
-            bgcolor: "rgba(255,255,255,0.05)",
-            borderRadius: 2,
-            border: "1px solid rgba(255,255,255,0.1)",
-            textAlign: "center",
-          }}
-        >
-          <CalendarIcon sx={{ fontSize: 64, color: "grey.600", mb: 2 }} />
-          <Typography variant='h6' color='grey.400' gutterBottom>
-            No matches found
-          </Typography>
-          <Typography variant='body2' color='grey.500'>
-            Try adjusting your filters or check back later for new assignments
-          </Typography>
-        </Paper>
-      ) : (
-        <Stack spacing={3}>
-          {groupedByMonth.map(([monthKey, group]) => (
-            <Box key={monthKey}>
-              {/* Month Header */}
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
-              >
-                <Typography variant='h6' color='white' fontWeight={600}>
-                  {group.name}
-                </Typography>
-                <Chip
-                  size='small'
-                  label={`${group.matches.length} match${
-                    group.matches.length !== 1 ? "es" : ""
-                  }`}
+        {filteredAssignments.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <Stack spacing={4.25}>
+            {groupedByMonth.map(([monthKey, group]) => (
+              <Box key={monthKey}>
+                <Box
                   sx={{
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    color: "grey.300",
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 1,
+                    mb: 2,
                   }}
-                />
+                >
+                  <Typography
+                    sx={{
+                      color: COLORS.text,
+                      fontSize: { xs: "1.08rem", md: "1.25rem" },
+                      fontWeight: 800,
+                    }}
+                  >
+                    {group.name}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: COLORS.muted,
+                      fontSize: { xs: "0.86rem", md: "0.92rem" },
+                      fontWeight: 700,
+                    }}
+                  >
+                    ({pluralizeMatches(group.matches.length)})
+                  </Typography>
+                </Box>
+
+                <Stack spacing={1.75}>
+                  {group.matches.map((assignment) => (
+                    <MatchCard
+                      key={assignment.id || getAssignmentMatchId(assignment)}
+                      assignment={assignment}
+                      isActionPending={isActionPending}
+                      onConfirm={handleConfirm}
+                      onDecline={handleDecline}
+                    />
+                  ))}
+                </Stack>
               </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
 
-              {/* Matches */}
-              <Stack spacing={2}>
-                {group.matches.map((assignment) => {
-                  const match = assignment.match;
-                  const dateInfo = formatDate(match?.scheduledAt);
-                  const roleBadge = getRoleBadge(assignment.role);
-                  const statusBadge = getStatusBadge(assignment.status);
-
-                  return (
-                    <Paper
-                      key={assignment.id}
-                      sx={{
-                        p: 2,
-                        bgcolor: "rgba(255,255,255,0.05)",
-                        borderRadius: 2,
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        "&:hover": { bgcolor: "rgba(255,255,255,0.08)" },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 2,
-                          flexDirection: { xs: "column", md: "row" },
-                          alignItems: { xs: "flex-start", md: "center" },
-                        }}
-                      >
-                        {/* Date Box */}
-                        <Box
-                          sx={{
-                            minWidth: 70,
-                            textAlign: "center",
-                            bgcolor: "rgba(249, 115, 22, 0.1)",
-                            borderRadius: 1.5,
-                            p: 1.5,
-                            border: `1px solid ${ACCENT_COLOR}30`,
-                          }}
-                        >
-                          <Typography
-                            variant='caption'
-                            color={ACCENT_COLOR}
-                            fontWeight={500}
-                          >
-                            {dateInfo.month}
-                          </Typography>
-                          <Typography
-                            variant='h4'
-                            color='white'
-                            fontWeight={700}
-                          >
-                            {dateInfo.day}
-                          </Typography>
-                          <Typography variant='caption' color='grey.500'>
-                            {dateInfo.weekday}
-                          </Typography>
-                        </Box>
-
-                        {/* Match Info */}
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                              mb: 0.5,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <Typography
-                              variant='h6'
-                              color='white'
-                              fontWeight={600}
-                            >
-                              {match?.homeTeam?.name || "TBD"} vs{" "}
-                              {match?.awayTeam?.name || "TBD"}
-                            </Typography>
-                            {match?.homeScore !== null &&
-                              match?.awayScore !== null && (
-                                <Chip
-                                  size='small'
-                                  label={`${match.homeScore} - ${match.awayScore}`}
-                                  sx={{
-                                    bgcolor: "rgba(255,255,255,0.1)",
-                                    color: "white",
-                                    fontWeight: 600,
-                                  }}
-                                />
-                              )}
-                          </Box>
-
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <TimeIcon
-                                sx={{ fontSize: 16, color: "grey.500" }}
-                              />
-                              <Typography variant='body2' color='grey.400'>
-                                {dateInfo.time}
-                              </Typography>
-                            </Box>
-                            {match?.venue && (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 0.5,
-                                }}
-                              >
-                                <LocationIcon
-                                  sx={{ fontSize: 16, color: "grey.500" }}
-                                />
-                                <Typography variant='body2' color='grey.400'>
-                                  {match.venue.name}
-                                </Typography>
-                              </Box>
-                            )}
-                            {match?.competition && (
-                              <Chip
-                                size='small'
-                                label={match.competition.name}
-                                sx={{
-                                  bgcolor: "rgba(255,255,255,0.05)",
-                                  color: "grey.400",
-                                  height: 22,
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </Box>
-
-                        {/* Role & Status Badges */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: { xs: "row", md: "column" },
-                            gap: 1,
-                            alignItems: { xs: "center", md: "flex-end" },
-                          }}
-                        >
-                          <Chip
-                            size='small'
-                            label={roleBadge.label}
-                            sx={{
-                              bgcolor: `${roleBadge.color}20`,
-                              color: roleBadge.color,
-                              fontWeight: 600,
-                            }}
-                          />
-                          <Chip
-                            size='small'
-                            label={statusBadge.label}
-                            sx={{
-                              bgcolor: `${statusBadge.color}20`,
-                              color: statusBadge.color,
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                    </Paper>
-                  );
-                })}
-              </Stack>
-            </Box>
-          ))}
-        </Stack>
-      )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3600}
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() =>
+            setSnackbar((current) => ({ ...current, open: false }))
+          }
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
+};
+
+const FilterSelect = ({
+  active = false,
+  ariaLabel,
+  value,
+  onChange,
+  options,
+}) => (
+  <FormControl fullWidth>
+    <Select
+      displayEmpty
+      IconComponent={ExpandMoreIcon}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      inputProps={{ "aria-label": ariaLabel }}
+      MenuProps={{
+        PaperProps: {
+          sx: {
+            mt: 1,
+            bgcolor: COLORS.panel,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: "12px",
+          },
+        },
+      }}
+      sx={{
+        height: 52,
+        borderRadius: "14px",
+        bgcolor: "#18181b",
+        color: COLORS.text,
+        fontWeight: 800,
+        fontSize: "0.9rem",
+        "& .MuiSelect-select": {
+          py: 0,
+          px: 2.25,
+          display: "flex",
+          alignItems: "center",
+        },
+        "& .MuiOutlinedInput-notchedOutline": {
+          borderColor: active ? COLORS.orange : COLORS.border,
+          borderWidth: active ? 2 : 1,
+        },
+        "&:hover .MuiOutlinedInput-notchedOutline": {
+          borderColor: active ? COLORS.orange : "rgba(255, 255, 255, 0.18)",
+        },
+        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          borderColor: COLORS.orange,
+          boxShadow: "0 0 0 3px rgba(249, 115, 22, 0.14)",
+        },
+        "& .MuiSvgIcon-root": {
+          color: COLORS.mutedStrong,
+          right: 16,
+        },
+      }}
+    >
+      {options.map((option) => (
+        <MenuItem key={option.value} value={option.value}>
+          {option.label}
+        </MenuItem>
+      ))}
+    </Select>
+  </FormControl>
+);
+
+const EmptyState = () => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: { xs: 4, md: 6 },
+      borderRadius: "16px",
+      bgcolor: COLORS.card,
+      border: `1px solid ${COLORS.border}`,
+      textAlign: "center",
+    }}
+  >
+    <BasketballIcon sx={{ fontSize: 58, color: COLORS.muted, mb: 1.5 }} />
+    <Typography sx={{ color: COLORS.text, fontWeight: 800, fontSize: 18 }}>
+      No matches found
+    </Typography>
+    <Typography sx={{ color: COLORS.mutedStrong, fontSize: 14, mt: 0.75 }}>
+      Adjust the filters to see more assignments.
+    </Typography>
+  </Paper>
+);
+
+const MatchCard = ({ assignment, isActionPending, onConfirm, onDecline }) => {
+  const match = getMatch(assignment);
+  const dateInfo = formatDate(match);
+  const role = getRoleBadge(assignment.role);
+  const status = getStatusBadge(assignment.status);
+  const isPending = assignment.status === "pending";
+  const showColleagues = isConfirmedStatus(assignment.status);
+  const colleagues = getConfirmedColleagues(assignment);
+  const roundLabel = match?.round ? `Round ${match.round}` : null;
+  const matchNumberLabel = match?.matchNumber
+    ? `Match ${match.matchNumber}`
+    : null;
+  const footerItems = [roundLabel, matchNumberLabel].filter(Boolean);
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        overflow: "hidden",
+        borderRadius: "18px",
+        bgcolor: COLORS.card,
+        border: isPending
+          ? `1px solid rgba(234, 179, 8, 0.42)`
+          : `1px solid ${COLORS.border}`,
+        transition: "background-color 0.16s ease, border-color 0.16s ease",
+        "&:hover": {
+          bgcolor: COLORS.cardHover,
+          borderColor: isPending
+            ? "rgba(234, 179, 8, 0.56)"
+            : "rgba(255, 255, 255, 0.16)",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "124px minmax(0, 1fr) auto",
+          },
+          gridTemplateAreas: {
+            xs: `"date" "content" "actions"`,
+            md: `"date content actions"`,
+          },
+          minHeight: { md: 148 },
+        }}
+      >
+        <DateRail dateInfo={dateInfo} isPending={isPending} />
+
+        <Box
+          sx={{
+            gridArea: "content",
+            minWidth: 0,
+            px: { xs: 2.25, md: 3 },
+            py: { xs: 2.25, md: 3 },
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              mb: 1.35,
+            }}
+          >
+            <TinyBadge label={getCompetitionName(match)} tone='competition' />
+            <TinyBadge label={role.label} color={role.color} bg={role.bg} />
+          </Box>
+
+          <Typography
+            sx={{
+              color: COLORS.text,
+              fontWeight: 800,
+              fontSize: { xs: "1rem", md: "1.08rem" },
+              lineHeight: 1.25,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {getTeamName(match, "home")} vs {getTeamName(match, "away")}
+          </Typography>
+
+          <Box
+            sx={{
+              mt: 1.15,
+              display: "flex",
+              alignItems: "center",
+              gap: 0.75,
+              color: COLORS.mutedStrong,
+              minWidth: 0,
+            }}
+          >
+            <LocationIcon sx={{ color: COLORS.muted, fontSize: 19 }} />
+            <Typography
+              sx={{
+                fontSize: { xs: 14, md: 15 },
+                fontWeight: 650,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: { xs: "normal", sm: "nowrap" },
+              }}
+            >
+              {getVenueText(match)}
+            </Typography>
+          </Box>
+
+          {(showColleagues || footerItems.length > 0) && (
+            <Box
+              sx={{
+                mt: 2.15,
+                pt: 1.75,
+                borderTop: `1px solid ${COLORS.borderSoft}`,
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexWrap: "wrap",
+                color: COLORS.mutedStrong,
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              {showColleagues && <ColleaguesInfo colleagues={colleagues} />}
+              {showColleagues && footerItems.length > 0 && <FooterDot />}
+              {footerItems.map((item, index) => (
+                <Box
+                  key={item}
+                  sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                >
+                  {index > 0 && <FooterDot />}
+                  <span>{item}</span>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            gridArea: "actions",
+            px: { xs: 2.25, md: 3 },
+            pb: { xs: 2.25, md: 0 },
+            py: { md: 3 },
+            display: "flex",
+            alignItems: { xs: "stretch", md: "center" },
+            justifyContent: { xs: "flex-start", md: "flex-end" },
+            minWidth: { md: isPending ? 218 : 154 },
+          }}
+        >
+          {isPending ? (
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                flexDirection: { xs: "column", sm: "row" },
+                width: { xs: "100%", sm: "auto" },
+              }}
+            >
+              <Button
+                variant='contained'
+                startIcon={<CloseIcon />}
+                disabled={isActionPending}
+                onClick={() => onDecline(assignment)}
+                sx={declineButtonSx}
+              >
+                Decline
+              </Button>
+              <Button
+                variant='contained'
+                startIcon={<CheckIcon />}
+                disabled={isActionPending}
+                onClick={() => onConfirm(assignment)}
+                sx={confirmButtonSx}
+              >
+                Confirm
+              </Button>
+            </Box>
+          ) : (
+            <StatusPill status={status} />
+          )}
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
+
+const DateRail = ({ dateInfo, isPending }) => (
+  <Box
+    sx={{
+      gridArea: "date",
+      minHeight: { xs: 86, md: "100%" },
+      bgcolor: isPending ? "rgba(234, 179, 8, 0.06)" : COLORS.panel,
+      borderRight: { xs: "none", md: `1px solid ${COLORS.border}` },
+      borderBottom: { xs: `1px solid ${COLORS.border}`, md: "none" },
+      display: "flex",
+      flexDirection: { xs: "row", md: "column" },
+      alignItems: "center",
+      justifyContent: { xs: "space-between", md: "center" },
+      gap: { xs: 1.5, md: 0.25 },
+      px: { xs: 2.25, md: 1.5 },
+      py: { xs: 1.5, md: 2.25 },
+      textAlign: { xs: "left", md: "center" },
+    }}
+  >
+    <Box>
+      <Typography
+        sx={{
+          color: COLORS.mutedStrong,
+          fontSize: 12,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: 0,
+        }}
+      >
+        {dateInfo.weekday}
+      </Typography>
+      <Typography
+        sx={{
+          color: COLORS.text,
+          fontSize: { xs: 30, md: 34 },
+          lineHeight: 1,
+          fontWeight: 900,
+          mt: 0.4,
+        }}
+      >
+        {dateInfo.day}
+      </Typography>
+    </Box>
+
+    <Typography
+      sx={{
+        color: COLORS.mutedStrong,
+        fontSize: { xs: 15, md: 16 },
+        fontWeight: 800,
+      }}
+    >
+      {dateInfo.time}
+    </Typography>
+  </Box>
+);
+
+const ColleaguesInfo = ({ colleagues }) => (
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Typography component='span' sx={{ fontSize: 13, fontWeight: 800 }}>
+      Colleagues:
+    </Typography>
+    {colleagues.length > 0 ? (
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        {colleagues.map((colleague, index) => (
+          <Box
+            key={colleague.id}
+            title={colleague.name}
+            sx={{
+              width: 30,
+              height: 30,
+              ml: index === 0 ? 0 : -0.65,
+              borderRadius: "50%",
+              border: `2px solid ${COLORS.card}`,
+              bgcolor: index % 2 === 0 ? "#5578f2" : "#d946b9",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 900,
+              lineHeight: 1,
+            }}
+          >
+            {getInitials(colleague.name)}
+          </Box>
+        ))}
+      </Box>
+    ) : (
+      <Typography
+        component='span'
+        sx={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}
+      >
+        None
+      </Typography>
+    )}
+  </Box>
+);
+
+const FooterDot = () => (
+  <Box
+    sx={{
+      width: 4,
+      height: 4,
+      borderRadius: "50%",
+      bgcolor: COLORS.muted,
+      flexShrink: 0,
+    }}
+  />
+);
+
+const TinyBadge = ({ label, tone, color, bg }) => {
+  const isCompetition = tone === "competition";
+
+  return (
+    <Chip
+      size='small'
+      label={label}
+      sx={{
+        height: 25,
+        borderRadius: "7px",
+        bgcolor: isCompetition ? "rgba(249, 115, 22, 0.16)" : bg,
+        color: isCompetition ? COLORS.orange : color,
+        fontSize: 12,
+        fontWeight: 900,
+        maxWidth: { xs: 180, md: 240 },
+        "& .MuiChip-label": {
+          px: 1.25,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }}
+    />
+  );
+};
+
+const StatusPill = ({ status }) => (
+  <Box
+    sx={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 0.85,
+      px: 1.85,
+      py: 0.75,
+      borderRadius: "999px",
+      bgcolor: status.bg,
+      color: status.color,
+      fontSize: 13,
+      fontWeight: 900,
+      whiteSpace: "nowrap",
+    }}
+  >
+    {status.label === "Confirmed" ? (
+      <CheckIcon sx={{ fontSize: 17 }} />
+    ) : (
+      <Box
+        sx={{
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          bgcolor: status.color,
+        }}
+      />
+    )}
+    {status.label}
+  </Box>
+);
+
+const confirmButtonSx = {
+  px: 1.85,
+  py: 0.95,
+  borderRadius: "10px",
+  background: COLORS.border,
+  color: COLORS.text,
+  boxShadow: "none",
+  fontSize: 13,
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+  "&:hover": {
+    background: "rgba(48, 227, 66, 0.26)",
+    boxShadow: "none",
+  },
+  "&.Mui-disabled": {
+    background: "rgba(255, 255, 255, 0.08)",
+    color: COLORS.muted,
+  },
+  "& .MuiButton-startIcon": { color: COLORS.green },
+};
+
+const declineButtonSx = {
+  px: 1.85,
+  py: 0.95,
+  borderRadius: "10px",
+  background: "rgba(239, 68, 68, 0.16)",
+  color: "#fca5a5",
+  boxShadow: "none",
+  fontSize: 13,
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+  "&:hover": {
+    background: "rgba(239, 68, 68, 0.24)",
+    boxShadow: "none",
+  },
+  "&.Mui-disabled": {
+    background: "rgba(255, 255, 255, 0.08)",
+    color: COLORS.muted,
+  },
+  "& .MuiButton-startIcon": { color: COLORS.red },
 };
 
 export default SchedulePage;
