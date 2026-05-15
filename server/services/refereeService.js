@@ -191,6 +191,49 @@ class RefereeService {
       order: [[{ model: Match, as: "match" }, "scheduledAt", "DESC"]],
     });
 
+    const matchIds = [
+      ...new Set(rows.map((assignment) => assignment.matchId).filter(Boolean)),
+    ];
+
+    if (matchIds.length > 0) {
+      const acceptedAssignments = await MatchReferee.findAll({
+        where: {
+          matchId: { [Op.in]: matchIds },
+          status: "accepted",
+        },
+        include: [
+          {
+            model: Referee,
+            as: "referee",
+            include: [
+              {
+                model: User,
+                as: "user",
+                attributes: ["id", "firstName", "lastName", "avatarUrl"],
+              },
+            ],
+          },
+        ],
+        order: [["role", "ASC"]],
+      });
+
+      const assignmentsByMatchId = acceptedAssignments.reduce(
+        (acc, assignment) => {
+          if (!acc[assignment.matchId]) acc[assignment.matchId] = [];
+          acc[assignment.matchId].push(assignment);
+          return acc;
+        },
+        {},
+      );
+
+      rows.forEach((assignment) => {
+        assignment.match?.setDataValue(
+          "refereeAssignments",
+          assignmentsByMatchId[assignment.matchId] || [],
+        );
+      });
+    }
+
     return {
       data: rows,
       pagination: {
