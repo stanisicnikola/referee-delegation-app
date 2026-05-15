@@ -5,6 +5,9 @@ const {
   MatchReferee,
   RefereeAvailability,
   Match,
+  Competition,
+  Team,
+  Venue,
   sequelize,
 } = require("../models");
 const { AppError } = require("../middlewares");
@@ -175,6 +178,12 @@ class RefereeService {
           model: Match,
           as: "match",
           where: Object.keys(matchWhere).length > 0 ? matchWhere : undefined,
+          include: [
+            { model: Competition, as: "competition" },
+            { model: Team, as: "homeTeam" },
+            { model: Team, as: "awayTeam" },
+            { model: Venue, as: "venue" },
+          ],
         },
       ],
       limit,
