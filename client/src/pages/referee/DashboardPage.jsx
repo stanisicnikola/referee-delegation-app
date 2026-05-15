@@ -1,61 +1,241 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueries } from "@tanstack/react-query";
 import {
   Box,
   Typography,
   Paper,
   Button,
-  Avatar,
   Chip,
   IconButton,
   useMediaQuery,
   useTheme,
   CircularProgress,
-  Grid,
   Stack,
-  Alert,
   Tooltip,
 } from "@mui/material";
 import {
   CalendarMonth as CalendarIcon,
   TrendingUp as TrendingIcon,
-  Star as StarIcon,
-  CheckCircle as CheckIcon,
-  Warning as WarningIcon,
+  StarBorder as StarIcon,
+  CheckCircleOutline as CheckIcon,
+  WarningAmber as WarningIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   LocationOn as LocationIcon,
-  SportsSoccer as SoccerIcon,
+  SportsBasketball as BasketballIcon,
   AccessTime as TimeIcon,
-  EmojiEvents as TrophyIcon,
+  EmojiEventsOutlined as TrophyIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../context";
 import { useMyAssignments, useMyStatistics } from "../../hooks";
+import { matchesApi } from "../../api";
 
-// Orange accent for referee panel
-const ACCENT_COLOR = "#f97316";
+const COLORS = {
+  bg: "#0a0a0b",
+  card: "#121214",
+  cardHover: "#17171a",
+  border: "#242428",
+  borderSoft: "rgba(255, 255, 255, 0.08)",
+  text: "#ffffff",
+  muted: "#6b7280",
+  mutedStrong: "#9ca3af",
+  green: "#22c55e",
+  orange: "#f97316",
+  warning: "#eab308",
+  blue: "#3b82f6",
+  purple: "#a855f7",
+  red: "#ef4444",
+};
+
+const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const getMatch = (assignment) => assignment?.match || assignment?.Match || null;
+
+const getAssignmentMatchId = (assignment) =>
+  assignment?.matchId || assignment?.match_id || getMatch(assignment)?.id;
+
+const hasMatchDetails = (match) =>
+  Boolean(
+    match &&
+    (match.homeTeam || match.HomeTeam) &&
+    (match.awayTeam || match.AwayTeam) &&
+    (match.venue || match.Venue),
+  );
+
+const getMatchDateValue = (match) =>
+  match?.scheduledAt || match?.matchDate || match?.date || null;
+
+const toValidDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getTeamName = (match, side) => {
+  const key = side === "home" ? "homeTeam" : "awayTeam";
+  const fallbackKey = side === "home" ? "HomeTeam" : "AwayTeam";
+  return (
+    match?.[key]?.name ||
+    match?.[fallbackKey]?.name ||
+    (side === "home" ? "Home team" : "Away team")
+  );
+};
+
+const getVenueText = (match) => {
+  const venue = match?.venue || match?.Venue;
+  if (!venue) return "Venue not set";
+  return [venue.name, venue.city].filter(Boolean).join(", ");
+};
+
+const getCompetitionName = (match) =>
+  match?.competition?.name || match?.Competition?.name || "Competition";
+
+const formatDateBadge = (value) => {
+  const date = toValidDate(value);
+  if (!date) {
+    return { weekday: "-", day: "--", month: "---", time: "--:--" };
+  }
+
+  return {
+    weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+    day: date.getDate().toString().padStart(2, "0"),
+    month: date.toLocaleDateString("en-US", { month: "short" }),
+    time: date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }),
+  };
+};
+
+const getRoleBadge = (role) => {
+  const roles = {
+    first_referee: { label: "1st Referee", color: COLORS.green },
+    second_referee: { label: "2nd Referee", color: COLORS.blue },
+    third_referee: { label: "3rd Referee", color: COLORS.purple },
+    head: { label: "Lead Referee", color: COLORS.green },
+    main: { label: "Lead Referee", color: COLORS.green },
+    assistant: { label: "Assistant", color: COLORS.blue },
+    second: { label: "2nd Referee", color: COLORS.blue },
+    third: { label: "3rd Referee", color: COLORS.purple },
+    fourth: { label: "4th Official", color: "#ec4899" },
+  };
+
+  return roles[role] || { label: role || "Referee", color: COLORS.muted };
+};
+
+const getStatusBadge = (status) => {
+  const statuses = {
+    pending: {
+      label: "Awaiting confirmation",
+      shortLabel: "Pending",
+      color: COLORS.warning,
+    },
+    accepted: {
+      label: "Confirmed",
+      shortLabel: "Confirmed",
+      color: COLORS.green,
+    },
+    confirmed: {
+      label: "Confirmed",
+      shortLabel: "Confirmed",
+      color: COLORS.green,
+    },
+    declined: {
+      label: "Declined",
+      shortLabel: "Declined",
+      color: COLORS.red,
+    },
+  };
+
+  return (
+    statuses[status] || {
+      label: status || "Unknown",
+      shortLabel: status || "Unknown",
+      color: COLORS.muted,
+    }
+  );
+};
+
+const isLeadRole = (role) =>
+  ["first_referee", "head", "main", "lead_referee"].includes(role);
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const theme = useTheme();
-  const _isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
-
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
-  // Fetch real data from API
   const { data: assignmentsData, isLoading: assignmentsLoading } =
     useMyAssignments();
   const { data: statisticsData, isLoading: statsLoading } = useMyStatistics();
 
-  const isLoading = assignmentsLoading || statsLoading;
-
-  // Process assignments data with useMemo
-  const assignments = useMemo(
+  const rawAssignments = useMemo(
     () => assignmentsData?.data || [],
-    [assignmentsData?.data]
+    [assignmentsData?.data],
   );
+
+  const missingMatchIds = useMemo(() => {
+    const ids = rawAssignments
+      .filter((assignment) => !hasMatchDetails(getMatch(assignment)))
+      .map(getAssignmentMatchId)
+      .filter(Boolean);
+
+    return [...new Set(ids)];
+  }, [rawAssignments]);
+
+  const matchDetailQueries = useQueries({
+    queries: missingMatchIds.map((id) => ({
+      queryKey: ["matches", "detail", id, "referee-dashboard"],
+      queryFn: () => matchesApi.getById(id),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const hydratedMatchesById = useMemo(() => {
+    return matchDetailQueries.reduce((acc, query, index) => {
+      const match = query.data?.data;
+      if (match) {
+        acc[missingMatchIds[index]] = match;
+      }
+      return acc;
+    }, {});
+  }, [matchDetailQueries, missingMatchIds]);
+
+  const assignments = useMemo(
+    () =>
+      rawAssignments.map((assignment) => {
+        const match = getMatch(assignment);
+        if (hasMatchDetails(match)) return assignment;
+
+        const hydratedMatch =
+          hydratedMatchesById[getAssignmentMatchId(assignment)];
+        if (!hydratedMatch) return assignment;
+
+        return {
+          ...assignment,
+          match: hydratedMatch,
+        };
+      }),
+    [hydratedMatchesById, rawAssignments],
+  );
+
   const statistics = useMemo(
     () =>
       statisticsData?.data || {
@@ -64,756 +244,873 @@ const DashboardPage = () => {
         declined: 0,
         pending: 0,
       },
-    [statisticsData?.data]
+    [statisticsData?.data],
   );
 
-  // Filter upcoming matches (future dates)
+  const pendingDelegations = useMemo(
+    () => assignments.filter((assignment) => assignment.status === "pending"),
+    [assignments],
+  );
+
   const upcomingMatches = useMemo(() => {
+    const now = new Date();
+
     return assignments
-      .filter(
-        (a) =>
-          a.match &&
-          new Date(a.match.scheduledAt || a.match.matchDate) > new Date()
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.match.scheduledAt || a.match.matchDate) -
-          new Date(b.match.scheduledAt || b.match.matchDate)
-      )
+      .filter((assignment) => {
+        const matchDate = toValidDate(getMatchDateValue(getMatch(assignment)));
+        return matchDate && matchDate >= now;
+      })
+      .sort((a, b) => {
+        const firstDate = toValidDate(getMatchDateValue(getMatch(a)));
+        const secondDate = toValidDate(getMatchDateValue(getMatch(b)));
+        return firstDate - secondDate;
+      })
       .slice(0, 5);
   }, [assignments]);
 
-  // Pending delegations (assignments with pending status)
-  const pendingDelegations = useMemo(() => {
-    return assignments.filter((a) => a.status === "pending");
-  }, [assignments]);
-
-  // Calculate stats for current month
   const currentMonthStats = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    const thisMonthMatches = assignments.filter((a) => {
-      if (!a.match) return false;
-      const matchDate = new Date(a.match.scheduledAt);
+    const thisMonthMatches = assignments.filter((assignment) => {
+      const matchDate = toValidDate(getMatchDateValue(getMatch(assignment)));
       return (
+        matchDate &&
         matchDate.getMonth() === currentMonth &&
         matchDate.getFullYear() === currentYear
       );
     });
 
-    const asHeadReferee = assignments.filter(
-      (a) => a.role === "head" || a.role === "main"
-    ).length;
-
     return {
       thisMonth: thisMonthMatches.length,
       upcoming: upcomingMatches.length,
-      asHead: asHeadReferee,
+      asLead: assignments.filter((assignment) => isLeadRole(assignment.role))
+        .length,
       seasonTotal: statistics.total || assignments.length,
     };
-  }, [assignments, upcomingMatches, statistics]);
+  }, [assignments, statistics.total, upcomingMatches.length]);
 
-  // Calendar data
   const calendarData = useMemo(() => {
     const year = calendarMonth.getFullYear();
     const month = calendarMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay();
-
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const today = new Date();
     const days = [];
 
-    // Empty cells
-    for (let i = 0; i < startingDay; i++) {
+    for (let index = 0; index < startOffset; index += 1) {
       days.push({ day: null, type: "empty" });
     }
 
-    // Days of month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-        day
-      ).padStart(2, "0")}`;
-
-      // Check if there's a match on this day
-      const hasMatch = assignments.some((a) => {
-        if (!a.match) return false;
-        const matchDate = new Date(a.match.scheduledAt);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const hasMatch = assignments.some((assignment) => {
+        const matchDate = toValidDate(getMatchDateValue(getMatch(assignment)));
         return (
+          matchDate &&
           matchDate.getDate() === day &&
           matchDate.getMonth() === month &&
           matchDate.getFullYear() === year
         );
       });
 
+      const isToday =
+        today.getDate() === day &&
+        today.getMonth() === month &&
+        today.getFullYear() === year;
+
       days.push({
         day,
         type: hasMatch ? "match" : "normal",
-        date: dateStr,
+        isToday,
       });
     }
 
     return days;
-  }, [calendarMonth, assignments]);
+  }, [assignments, calendarMonth]);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return { day: "-", month: "-", weekday: "-", time: "-" };
-    const date = new Date(dateString);
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return {
-      day: date.getDate(),
-      month: months[date.getMonth()],
-      weekday: weekdays[date.getDay()],
-      time: date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-    };
-  };
-
-  const getRoleBadge = (role) => {
-    const roles = {
-      head: { label: "Head Referee", color: "#22c55e" },
-      main: { label: "Head Referee", color: "#22c55e" },
-      assistant: { label: "Assistant", color: "#3b82f6" },
-      second: { label: "2nd Referee", color: "#3b82f6" },
-      third: { label: "3rd Referee", color: "#8b5cf6" },
-      fourth: { label: "4th Official", color: "#ec4899" },
-    };
-    return roles[role] || { label: role || "Referee", color: "grey" };
-  };
-
-  const getStatusBadge = (status) => {
-    const statuses = {
-      pending: { label: "Pending", color: ACCENT_COLOR },
-      accepted: { label: "Confirmed", color: "#22c55e" },
-      confirmed: { label: "Confirmed", color: "#22c55e" },
-      declined: { label: "Declined", color: "#ef4444" },
-    };
-    return statuses[status] || { label: status || "Unknown", color: "grey" };
-  };
-
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+  const stats = [
+    {
+      label: "Matches this month",
+      value: currentMonthStats.thisMonth,
+      icon: CalendarIcon,
+      color: COLORS.orange,
+      bg: "rgba(249, 115, 22, 0.12)",
+    },
+    {
+      label: "Upcoming matches",
+      value: currentMonthStats.upcoming,
+      icon: TrendingIcon,
+      color: COLORS.blue,
+      bg: "rgba(59, 130, 246, 0.12)",
+    },
+    {
+      label: "As lead referee",
+      value: currentMonthStats.asLead,
+      icon: StarIcon,
+      color: COLORS.purple,
+      bg: "rgba(168, 85, 247, 0.12)",
+    },
+    {
+      label: "Season total",
+      value: currentMonthStats.seasonTotal,
+      icon: TrophyIcon,
+      color: COLORS.green,
+      bg: "rgba(34, 197, 94, 0.12)",
+    },
   ];
-
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const handlePrevMonth = () => {
     setCalendarMonth(
-      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1)
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1),
     );
   };
 
   const handleNextMonth = () => {
     setCalendarMonth(
-      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1)
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1),
     );
   };
 
-  if (isLoading) {
+  const matchDetailsLoading = matchDetailQueries.some(
+    (query) => query.isLoading || query.isFetching,
+  );
+
+  if (assignmentsLoading || statsLoading || matchDetailsLoading) {
     return (
       <Box
         sx={{
+          minHeight: "100vh",
+          bgcolor: COLORS.bg,
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          minHeight: "50vh",
+          justifyContent: "center",
         }}
       >
-        <CircularProgress sx={{ color: ACCENT_COLOR }} />
+        <CircularProgress sx={{ color: COLORS.green }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h5' fontWeight={600} color='white'>
-          Welcome, {user?.firstName || "Referee"}!
-        </Typography>
-        <Typography variant='body2' color='grey.400'>
-          Here&apos;s your overview for today
-        </Typography>
-      </Box>
+    <Box sx={{ minHeight: "100%", bgcolor: COLORS.bg, color: COLORS.text }}>
+      <Box
+        sx={{
+          px: { xs: 2, sm: 3, lg: 4 },
+          py: { xs: 2.5, md: 3 },
+          maxWidth: 1800,
+          mx: "auto",
+        }}
+      >
+        <DashboardHeader user={user} />
 
-      {/* Pending Alert */}
-      {pendingDelegations.length > 0 && (
-        <Alert
-          severity='warning'
+        {pendingDelegations.length > 0 && (
+          <PendingBanner
+            count={pendingDelegations.length}
+            onView={() => navigate("/referee/pending")}
+          />
+        )}
+
+        <Box
           sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              lg: "repeat(4, minmax(0, 1fr))",
+            },
+            gap: 2.5,
             mb: 3,
-            bgcolor: "rgba(249, 115, 22, 0.1)",
-            border: "1px solid rgba(249, 115, 22, 0.3)",
-            "& .MuiAlert-icon": { color: ACCENT_COLOR },
           }}
-          action={
-            <Button
-              color='inherit'
-              size='small'
-              onClick={() => navigate("/referee/pending")}
-              sx={{ color: ACCENT_COLOR }}
-            >
-              View All
-            </Button>
-          }
         >
-          You have {pendingDelegations.length} pending delegation
-          {pendingDelegations.length > 1 ? "s" : ""} waiting for your response
-        </Alert>
-      )}
+          {stats.map((stat) => (
+            <StatCard key={stat.label} stat={stat} />
+          ))}
+        </Box>
 
-      {/* Stats Cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[
-          {
-            label: "This Month",
-            value: currentMonthStats.thisMonth,
-            icon: CalendarIcon,
-            color: ACCENT_COLOR,
-          },
-          {
-            label: "Upcoming",
-            value: currentMonthStats.upcoming,
-            icon: TrendingIcon,
-            color: "#3b82f6",
-          },
-          {
-            label: "As Head Referee",
-            value: currentMonthStats.asHead,
-            icon: StarIcon,
-            color: "#22c55e",
-          },
-          {
-            label: "Season Total",
-            value: currentMonthStats.seasonTotal,
-            icon: TrophyIcon,
-            color: "#8b5cf6",
-          },
-        ].map((stat) => {
-          const IconComponent = stat.icon;
-          return (
-            <Grid size={{ xs: 6, md: 3 }} key={stat.label}>
-              <Paper
-                sx={{
-                  p: 2.5,
-                  bgcolor: "rgba(255,255,255,0.05)",
-                  borderRadius: 2,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  height: "100%",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Avatar
-                    sx={{ bgcolor: `${stat.color}20`, width: 48, height: 48 }}
-                  >
-                    <IconComponent sx={{ color: stat.color }} />
-                  </Avatar>
-                  <Box>
-                    <Typography variant='h4' color='white' fontWeight={600}>
-                      {stat.value}
-                    </Typography>
-                    <Typography variant='caption' color='grey.400'>
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-          );
-        })}
-      </Grid>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 2fr) 520px" },
+            gap: 3,
+            alignItems: "start",
+          }}
+        >
+          <UpcomingMatchesCard
+            assignments={upcomingMatches}
+            onViewAll={() => navigate("/referee/schedule")}
+            onPending={() => navigate("/referee/pending")}
+          />
 
-      <Grid container spacing={3}>
-        {/* Upcoming Matches */}
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Paper
-            sx={{
-              bgcolor: "rgba(255,255,255,0.05)",
-              borderRadius: 2,
-              border: "1px solid rgba(255,255,255,0.1)",
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: "1px solid rgba(255,255,255,0.1)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant='h6' color='white' fontWeight={600}>
-                Upcoming Matches
-              </Typography>
-              <Button
-                size='small'
-                onClick={() => navigate("/referee/schedule")}
-                sx={{ color: ACCENT_COLOR }}
-              >
-                View All
-              </Button>
-            </Box>
-
-            {upcomingMatches.length === 0 ? (
-              <Box sx={{ p: 4, textAlign: "center" }}>
-                <SoccerIcon sx={{ fontSize: 48, color: "grey.600", mb: 2 }} />
-                <Typography color='grey.400'>No upcoming matches</Typography>
-              </Box>
-            ) : (
-              <Stack spacing={0}>
-                {upcomingMatches.map((assignment) => {
-                  const match = assignment.match;
-                  const dateInfo = formatDate(match?.scheduledAt);
-                  const roleBadge = getRoleBadge(assignment.role);
-                  const statusBadge = getStatusBadge(assignment.status);
-
-                  return (
-                    <Box
-                      key={assignment.id}
-                      sx={{
-                        display: "flex",
-                        gap: 2,
-                        p: 2,
-                        borderBottom: "1px solid rgba(255,255,255,0.05)",
-                        "&:hover": { bgcolor: "rgba(255,255,255,0.03)" },
-                        flexDirection: { xs: "column", sm: "row" },
-                        alignItems: { xs: "flex-start", sm: "center" },
-                      }}
-                    >
-                      {/* Date Box */}
-                      <Box
-                        sx={{
-                          minWidth: 60,
-                          textAlign: "center",
-                          bgcolor: "rgba(249, 115, 22, 0.1)",
-                          borderRadius: 1.5,
-                          p: 1,
-                        }}
-                      >
-                        <Typography
-                          variant='caption'
-                          color={ACCENT_COLOR}
-                          fontWeight={500}
-                        >
-                          {dateInfo.month}
-                        </Typography>
-                        <Typography variant='h5' color='white' fontWeight={600}>
-                          {dateInfo.day}
-                        </Typography>
-                        <Typography variant='caption' color='grey.500'>
-                          {dateInfo.weekday}
-                        </Typography>
-                      </Box>
-
-                      {/* Match Info */}
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          variant='body1'
-                          color='white'
-                          fontWeight={500}
-                        >
-                          {match?.homeTeam?.name || "TBD"} vs{" "}
-                          {match?.awayTeam?.name || "TBD"}
-                        </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mt: 0.5,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <TimeIcon
-                              sx={{ fontSize: 14, color: "grey.500" }}
-                            />
-                            <Typography variant='caption' color='grey.400'>
-                              {dateInfo.time}
-                            </Typography>
-                          </Box>
-                          {match?.venue && (
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <LocationIcon
-                                sx={{ fontSize: 14, color: "grey.500" }}
-                              />
-                              <Typography variant='caption' color='grey.400'>
-                                {match.venue.name}
-                              </Typography>
-                            </Box>
-                          )}
-                        </Box>
-                        {match?.competition && (
-                          <Typography
-                            variant='caption'
-                            color='grey.500'
-                            sx={{ display: "block", mt: 0.5 }}
-                          >
-                            {match.competition.name}
-                          </Typography>
-                        )}
-                      </Box>
-
-                      {/* Badges */}
-                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        <Chip
-                          size='small'
-                          label={roleBadge.label}
-                          sx={{
-                            bgcolor: `${roleBadge.color}20`,
-                            color: roleBadge.color,
-                            fontWeight: 500,
-                          }}
-                        />
-                        <Chip
-                          size='small'
-                          label={statusBadge.label}
-                          sx={{
-                            bgcolor: `${statusBadge.color}20`,
-                            color: statusBadge.color,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Stack>
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Calendar */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Paper
-            sx={{
-              bgcolor: "rgba(255,255,255,0.05)",
-              borderRadius: 2,
-              border: "1px solid rgba(255,255,255,0.1)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Calendar Header */}
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: "1px solid rgba(255,255,255,0.1)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography variant='h6' color='white' fontWeight={600}>
-                {monthNames[calendarMonth.getMonth()]}{" "}
-                {calendarMonth.getFullYear()}
-              </Typography>
-              <Box>
-                <IconButton
-                  onClick={handlePrevMonth}
-                  sx={{ color: "grey.400" }}
-                  size='small'
-                >
-                  <ChevronLeftIcon />
-                </IconButton>
-                <IconButton
-                  onClick={handleNextMonth}
-                  sx={{ color: "grey.400" }}
-                  size='small'
-                >
-                  <ChevronRightIcon />
-                </IconButton>
-              </Box>
-            </Box>
-
-            {/* Calendar Grid */}
-            <Box sx={{ p: 2 }}>
-              {/* Day Names */}
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(7, 1fr)",
-                  gap: 0.5,
-                  mb: 1,
-                }}
-              >
-                {dayNames.map((day) => (
-                  <Box key={day} sx={{ textAlign: "center", py: 0.5 }}>
-                    <Typography
-                      variant='caption'
-                      color='grey.500'
-                      fontWeight={500}
-                    >
-                      {isSmall ? day.charAt(0) : day}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-
-              {/* Calendar Days */}
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(7, 1fr)",
-                  gap: 0.5,
-                }}
-              >
-                {calendarData.map((dayData, index) => {
-                  if (dayData.type === "empty") {
-                    return <Box key={`empty-${index}`} />;
-                  }
-
-                  const isToday = (() => {
-                    const today = new Date();
-                    return (
-                      dayData.day === today.getDate() &&
-                      calendarMonth.getMonth() === today.getMonth() &&
-                      calendarMonth.getFullYear() === today.getFullYear()
-                    );
-                  })();
-
-                  return (
-                    <Tooltip
-                      key={dayData.day}
-                      title={dayData.type === "match" ? "Match scheduled" : ""}
-                      arrow
-                    >
-                      <Box
-                        sx={{
-                          aspectRatio: "1",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: 1,
-                          bgcolor:
-                            dayData.type === "match"
-                              ? "rgba(249, 115, 22, 0.2)"
-                              : "transparent",
-                          border: isToday
-                            ? "2px solid white"
-                            : dayData.type === "match"
-                            ? `1px solid ${ACCENT_COLOR}40`
-                            : "1px solid transparent",
-                          cursor:
-                            dayData.type === "match" ? "pointer" : "default",
-                          position: "relative",
-                          "&:hover": {
-                            bgcolor:
-                              dayData.type === "match"
-                                ? "rgba(249, 115, 22, 0.3)"
-                                : "rgba(255,255,255,0.05)",
-                          },
-                        }}
-                      >
-                        <Typography
-                          variant='body2'
-                          sx={{
-                            color:
-                              dayData.type === "match"
-                                ? ACCENT_COLOR
-                                : isToday
-                                ? "white"
-                                : "grey.400",
-                            fontWeight:
-                              isToday || dayData.type === "match" ? 600 : 400,
-                          }}
-                        >
-                          {dayData.day}
-                        </Typography>
-                        {dayData.type === "match" && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              bottom: 2,
-                              width: 4,
-                              height: 4,
-                              borderRadius: "50%",
-                              bgcolor: ACCENT_COLOR,
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Tooltip>
-                  );
-                })}
-              </Box>
-
-              {/* Legend */}
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  mt: 2,
-                  pt: 2,
-                  borderTop: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 0.5,
-                      bgcolor: "rgba(249, 115, 22, 0.2)",
-                      border: `1px solid ${ACCENT_COLOR}40`,
-                    }}
-                  />
-                  <Typography variant='caption' color='grey.400'>
-                    Match
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 0.5,
-                      border: "2px solid white",
-                    }}
-                  />
-                  <Typography variant='caption' color='grey.400'>
-                    Today
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-
-          {/* Quick Stats */}
-          <Paper
-            sx={{
-              mt: 2,
-              p: 2,
-              bgcolor: "rgba(255,255,255,0.05)",
-              borderRadius: 2,
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            <Typography
-              variant='subtitle2'
-              color='white'
-              fontWeight={600}
-              gutterBottom
-            >
-              Assignment Status
-            </Typography>
-            <Stack spacing={1.5}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <CheckIcon sx={{ fontSize: 18, color: "#22c55e" }} />
-                  <Typography variant='body2' color='grey.300'>
-                    Accepted
-                  </Typography>
-                </Box>
-                <Typography variant='body2' color='white' fontWeight={600}>
-                  {statistics.accepted}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <WarningIcon sx={{ fontSize: 18, color: ACCENT_COLOR }} />
-                  <Typography variant='body2' color='grey.300'>
-                    Pending
-                  </Typography>
-                </Box>
-                <Typography variant='body2' color='white' fontWeight={600}>
-                  {statistics.pending}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box
-                    sx={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: "50%",
-                      bgcolor: "#ef4444",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Typography
-                      variant='caption'
-                      color='white'
-                      sx={{ fontSize: 10, fontWeight: 600 }}
-                    >
-                      ✕
-                    </Typography>
-                  </Box>
-                  <Typography variant='body2' color='grey.300'>
-                    Declined
-                  </Typography>
-                </Box>
-                <Typography variant='body2' color='white' fontWeight={600}>
-                  {statistics.declined}
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-        </Grid>
-      </Grid>
+          <Stack spacing={3}>
+            <CalendarCard
+              calendarData={calendarData}
+              calendarMonth={calendarMonth}
+              isSmall={isSmall}
+              onPrev={handlePrevMonth}
+              onNext={handleNextMonth}
+            />
+            <AssignmentStatusCard statistics={statistics} />
+          </Stack>
+        </Box>
+      </Box>
     </Box>
   );
 };
+
+const DashboardHeader = ({ user }) => (
+  <Box
+    sx={{
+      mb: 3.5,
+    }}
+  >
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        component='h1'
+        sx={{
+          fontSize: { xs: "1.6rem", md: "2rem" },
+          lineHeight: 1.08,
+          fontWeight: 700,
+          color: COLORS.text,
+        }}
+      >
+        Welcome, {user?.firstName || "Referee"}!
+      </Typography>
+      <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
+        Review your schedule and notifications
+      </Typography>
+    </Box>
+  </Box>
+);
+
+const PendingBanner = ({ count, onView }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      mb: 3,
+      p: { xs: 2, md: 2.5 },
+      borderRadius: "8px",
+      bgcolor: "rgba(234, 179, 8, 0.09)",
+      border: "1px solid rgba(234, 179, 8, 0.24)",
+      display: "flex",
+      alignItems: { xs: "flex-start", sm: "center" },
+      gap: 2,
+      flexDirection: { xs: "column", sm: "row" },
+    }}
+  >
+    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+      <Box
+        sx={{
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          flexShrink: 0,
+          bgcolor: "rgba(234, 179, 8, 0.16)",
+          color: COLORS.warning,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <WarningIcon />
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ color: COLORS.warning, fontWeight: 800 }}>
+          You have {count} pending assignment{count === 1 ? "" : "s"}
+        </Typography>
+        <Typography sx={{ color: COLORS.mutedStrong, fontSize: 14, mt: 0.25 }}>
+          Please confirm or decline within 24 hours.
+        </Typography>
+      </Box>
+    </Box>
+
+    <Button
+      onClick={onView}
+      sx={{
+        px: 2.5,
+        py: 1,
+        borderRadius: "8px",
+        color: COLORS.warning,
+        bgcolor: "rgba(234, 179, 8, 0.14)",
+        textTransform: "none",
+        fontWeight: 800,
+        width: { xs: "100%", sm: "auto" },
+        "&:hover": { bgcolor: "rgba(234, 179, 8, 0.22)" },
+      }}
+    >
+      View
+    </Button>
+  </Paper>
+);
+
+const StatCard = ({ stat }) => {
+  const Icon = stat.icon;
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 2.5, md: 3 },
+        minHeight: 142,
+        borderRadius: "16px",
+        bgcolor: COLORS.card,
+        border: `1px solid ${COLORS.border}`,
+      }}
+    >
+      <Box
+        sx={{
+          width: 46,
+          height: 46,
+          borderRadius: "12px",
+          bgcolor: stat.bg,
+          color: stat.color,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Icon sx={{ fontSize: 24 }} />
+      </Box>
+      <Box sx={{ mt: 2.75 }}>
+        <Typography sx={{ fontSize: 34, lineHeight: 1, fontWeight: 800 }}>
+          {stat.value}
+        </Typography>
+        <Typography
+          sx={{
+            color: COLORS.mutedStrong,
+            mt: 1.25,
+            fontSize: 15,
+            fontWeight: 600,
+          }}
+        >
+          {stat.label}
+        </Typography>
+      </Box>
+    </Paper>
+  );
+};
+
+const UpcomingMatchesCard = ({ assignments, onViewAll, onPending }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      borderRadius: "16px",
+      bgcolor: COLORS.card,
+      border: `1px solid ${COLORS.border}`,
+      overflow: "hidden",
+      minHeight: 410,
+    }}
+  >
+    <Box
+      sx={{
+        px: { xs: 2.25, md: 3 },
+        py: 2.25,
+        borderBottom: `1px solid ${COLORS.border}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+      }}
+    >
+      <Typography sx={{ fontSize: 18, fontWeight: 700 }}>
+        Upcoming Matches
+      </Typography>
+      <Button
+        onClick={onViewAll}
+        sx={{
+          color: COLORS.orange,
+          textTransform: "none",
+          fontWeight: 800,
+          whiteSpace: "nowrap",
+          "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
+        }}
+      >
+        View all {">"}
+      </Button>
+    </Box>
+
+    {assignments.length === 0 ? (
+      <Box
+        sx={{
+          minHeight: 300,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          p: 4,
+        }}
+      >
+        <BasketballIcon sx={{ fontSize: 54, color: COLORS.muted, mb: 1.5 }} />
+        <Typography sx={{ color: COLORS.text, fontWeight: 700 }}>
+          No upcoming matches
+        </Typography>
+        <Typography sx={{ color: COLORS.mutedStrong, fontSize: 14, mt: 0.5 }}>
+          New assignments will appear here when they are delegated.
+        </Typography>
+      </Box>
+    ) : (
+      <Box>
+        {assignments.map((assignment, index) => (
+          <MatchRow
+            key={assignment.id || index}
+            assignment={assignment}
+            isLast={index === assignments.length - 1}
+            onPending={onPending}
+          />
+        ))}
+      </Box>
+    )}
+  </Paper>
+);
+
+const MatchRow = ({ assignment, isLast, onPending }) => {
+  const match = getMatch(assignment);
+  const matchDate = getMatchDateValue(match);
+  const dateInfo = formatDateBadge(matchDate);
+  const role = getRoleBadge(assignment.role);
+  const status = getStatusBadge(assignment.status);
+  const isPending = assignment.status === "pending";
+
+  return (
+    <Box
+      onClick={isPending ? onPending : undefined}
+      sx={{
+        px: { xs: 2.25, md: 3 },
+        py: 2.25,
+        borderBottom: isLast ? "none" : `1px solid ${COLORS.borderSoft}`,
+        cursor: isPending ? "pointer" : "default",
+        transition: "background-color 0.16s ease",
+        "&:hover": { bgcolor: COLORS.cardHover },
+      }}
+    >
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "72px minmax(0, 1fr)",
+            md: "76px 1px minmax(0, 1fr) auto",
+          },
+          alignItems: "center",
+          gap: { xs: 2, md: 2.5 },
+        }}
+      >
+        <DateBlock dateInfo={dateInfo} />
+
+        <Box
+          sx={{
+            display: { xs: "none", md: "block" },
+            width: 1,
+            height: 58,
+            bgcolor: COLORS.border,
+          }}
+        />
+
+        <Box sx={{ minWidth: 0 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 0.75,
+              flexWrap: "wrap",
+            }}
+          >
+            <TinyBadge
+              label={getCompetitionName(match)}
+              color={COLORS.orange}
+            />
+            <TinyBadge label={role.label} color={role.color} />
+          </Box>
+
+          <Typography
+            sx={{
+              fontWeight: 700,
+              color: COLORS.text,
+              fontSize: { xs: "0.95rem", md: "1rem" },
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: { xs: "normal", sm: "nowrap" },
+            }}
+          >
+            {getTeamName(match, "home")} vs {getTeamName(match, "away")}
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              flexWrap: "wrap",
+              mt: 0.75,
+              color: COLORS.mutedStrong,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <LocationIcon sx={{ fontSize: 15, color: COLORS.muted }} />
+              <Typography sx={{ fontSize: 13 }}>
+                {getVenueText(match)}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <TimeIcon sx={{ fontSize: 15, color: COLORS.muted }} />
+              <Typography sx={{ fontSize: 13 }}>{dateInfo.time}</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            gridColumn: { xs: "2 / 3", md: "auto" },
+            justifySelf: { xs: "start", md: "end" },
+          }}
+        >
+          <StatusPill status={status} />
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+const DateBlock = ({ dateInfo }) => (
+  <Box
+    sx={{
+      textAlign: "center",
+      minWidth: 72,
+    }}
+  >
+    <Typography
+      sx={{
+        color: COLORS.mutedStrong,
+        fontSize: 12,
+        textTransform: "uppercase",
+        fontWeight: 800,
+      }}
+    >
+      {dateInfo.weekday}
+    </Typography>
+    <Typography sx={{ color: COLORS.text, fontSize: 23, fontWeight: 800 }}>
+      {dateInfo.day}
+    </Typography>
+    <Typography sx={{ color: COLORS.mutedStrong, fontSize: 13 }}>
+      {dateInfo.month}
+    </Typography>
+  </Box>
+);
+
+const TinyBadge = ({ label, color }) => (
+  <Chip
+    label={label}
+    size='small'
+    sx={{
+      height: 24,
+      borderRadius: "6px",
+      bgcolor: `${color}1f`,
+      color,
+      fontWeight: 800,
+      fontSize: 12,
+      maxWidth: 180,
+      "& .MuiChip-label": {
+        px: 1,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      },
+    }}
+  />
+);
+
+const StatusPill = ({ status }) => (
+  <Box
+    sx={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 1,
+      px: 1.75,
+      py: 0.75,
+      borderRadius: "999px",
+      bgcolor: `${status.color}1f`,
+      color: status.color,
+      fontSize: 13,
+      fontWeight: 800,
+      whiteSpace: "nowrap",
+    }}
+  >
+    <Box
+      sx={{
+        width: 6,
+        height: 6,
+        borderRadius: "50%",
+        bgcolor: status.color,
+      }}
+    />
+    {status.label}
+  </Box>
+);
+
+const CalendarCard = ({
+  calendarData,
+  calendarMonth,
+  isSmall,
+  onPrev,
+  onNext,
+}) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: { xs: 2.25, md: 3 },
+      borderRadius: "16px",
+      bgcolor: COLORS.card,
+      border: `1px solid ${COLORS.border}`,
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+        mb: 3,
+      }}
+    >
+      <Typography sx={{ fontSize: 18, fontWeight: 700 }}>
+        {monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+      </Typography>
+      <Box sx={{ display: "flex", gap: 0.5 }}>
+        <IconButton size='small' onClick={onPrev} sx={calendarButtonSx}>
+          <ChevronLeftIcon />
+        </IconButton>
+        <IconButton size='small' onClick={onNext} sx={calendarButtonSx}>
+          <ChevronRightIcon />
+        </IconButton>
+      </Box>
+    </Box>
+
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: 0.75,
+        mb: 1,
+      }}
+    >
+      {dayNames.map((day) => (
+        <Box key={day} sx={{ textAlign: "center", py: 0.75 }}>
+          <Typography
+            sx={{ color: COLORS.muted, fontSize: 12, fontWeight: 700 }}
+          >
+            {isSmall ? day.charAt(0) : day}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: 0.75,
+      }}
+    >
+      {calendarData.map((dayData, index) => (
+        <CalendarDay
+          key={`${dayData.day || "empty"}-${index}`}
+          dayData={dayData}
+        />
+      ))}
+    </Box>
+
+    <Box
+      sx={{
+        mt: 3,
+        pt: 2.25,
+        borderTop: `1px solid ${COLORS.border}`,
+        display: "flex",
+        alignItems: "center",
+        gap: 3,
+        flexWrap: "wrap",
+      }}
+    >
+      <LegendDot color={COLORS.orange} label='Match' />
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box
+          sx={{
+            width: 17,
+            height: 17,
+            borderRadius: "5px",
+            border: `2px solid ${COLORS.green}`,
+          }}
+        />
+        <Typography sx={{ color: COLORS.mutedStrong, fontSize: 13 }}>
+          Today
+        </Typography>
+      </Box>
+    </Box>
+  </Paper>
+);
+
+const calendarButtonSx = {
+  color: COLORS.mutedStrong,
+  borderRadius: "8px",
+  "&:hover": {
+    color: COLORS.text,
+    bgcolor: "rgba(255, 255, 255, 0.06)",
+  },
+};
+
+const CalendarDay = ({ dayData }) => {
+  if (dayData.type === "empty") {
+    return <Box sx={{ minHeight: { xs: 34, sm: 42 } }} />;
+  }
+
+  const isMatch = dayData.type === "match";
+
+  return (
+    <Tooltip title={isMatch ? "Match scheduled" : ""} arrow disableInteractive>
+      <Box
+        sx={{
+          minHeight: { xs: 34, sm: 42 },
+          borderRadius: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          color: isMatch ? COLORS.orange : COLORS.text,
+          bgcolor: isMatch ? "rgba(249, 115, 22, 0.14)" : "transparent",
+          border: dayData.isToday
+            ? `2px solid ${COLORS.green}`
+            : isMatch
+              ? "1px solid rgba(249, 115, 22, 0.28)"
+              : "1px solid transparent",
+          fontWeight: dayData.isToday || isMatch ? 800 : 600,
+          cursor: isMatch ? "pointer" : "default",
+          transition: "background-color 0.16s ease, border-color 0.16s ease",
+          "&:hover": {
+            bgcolor: isMatch
+              ? "rgba(249, 115, 22, 0.2)"
+              : "rgba(255, 255, 255, 0.05)",
+          },
+        }}
+      >
+        <Typography sx={{ fontSize: 14, fontWeight: "inherit" }}>
+          {dayData.day}
+        </Typography>
+        {isMatch && (
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 5,
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              bgcolor: COLORS.orange,
+            }}
+          />
+        )}
+      </Box>
+    </Tooltip>
+  );
+};
+
+const AssignmentStatusCard = ({ statistics }) => {
+  const statusRows = [
+    {
+      label: "Accepted",
+      value: statistics.accepted || 0,
+      color: COLORS.green,
+      icon: CheckIcon,
+    },
+    {
+      label: "Pending",
+      value: statistics.pending || 0,
+      color: COLORS.warning,
+      icon: WarningIcon,
+    },
+    {
+      label: "Declined",
+      value: statistics.declined || 0,
+      color: COLORS.red,
+      icon: null,
+    },
+  ];
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 2.25, md: 3 },
+        borderRadius: "16px",
+        bgcolor: COLORS.card,
+        border: `1px solid ${COLORS.border}`,
+      }}
+    >
+      <Typography sx={{ fontSize: 17, fontWeight: 700, mb: 2 }}>
+        Assignment Status
+      </Typography>
+      <Stack spacing={1.75}>
+        {statusRows.map((row) => {
+          const Icon = row.icon;
+          return (
+            <Box
+              key={row.label}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                {Icon ? (
+                  <Icon sx={{ color: row.color, fontSize: 21 }} />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      bgcolor: `${row.color}24`,
+                      color: row.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 14,
+                      fontWeight: 900,
+                    }}
+                  >
+                    x
+                  </Box>
+                )}
+                <Typography sx={{ color: COLORS.mutedStrong, fontWeight: 600 }}>
+                  {row.label}
+                </Typography>
+              </Box>
+              <Typography sx={{ color: COLORS.text, fontWeight: 800 }}>
+                {row.value}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Stack>
+    </Paper>
+  );
+};
+
+const LegendDot = ({ color, label }) => (
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Box
+      sx={{
+        width: 10,
+        height: 10,
+        borderRadius: "50%",
+        bgcolor: color,
+      }}
+    />
+    <Typography sx={{ color: COLORS.mutedStrong, fontSize: 13 }}>
+      {label}
+    </Typography>
+  </Box>
+);
 
 export default DashboardPage;

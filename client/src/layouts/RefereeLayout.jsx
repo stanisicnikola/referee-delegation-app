@@ -10,6 +10,8 @@ import {
   ListItemIcon,
   ListItemText,
   Drawer,
+  AppBar,
+  Toolbar,
   useMediaQuery,
   ThemeProvider,
 } from "@mui/material";
@@ -88,6 +90,18 @@ const RefereeLayout = () => {
     if (isMobile) setMobileOpen(false);
   };
 
+  const shouldPadSharedPage = ["/referee/profile", "/referee/settings"].some(
+    (path) => location.pathname.startsWith(path),
+  );
+
+  const getCurrentDate = () => {
+    const date = new Date();
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = date.toLocaleString("en-US", { month: "short" });
+    const year = date.getFullYear();
+    return `${day}. ${month} ${year}`;
+  };
+
   const isActive = (path) => location.pathname === path;
 
   const sidebarContent = (
@@ -102,7 +116,15 @@ const RefereeLayout = () => {
       }}
     >
       {/* Logo */}
-      <Box sx={{ p: 3, borderBottom: "1px solid #242428" }}>
+      <Box
+        sx={{
+          height: 97,
+          px: 3,
+          borderBottom: "1px solid #242428",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
@@ -302,36 +324,14 @@ const RefereeLayout = () => {
 
   return (
     <ThemeProvider theme={refereeTheme}>
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0a0a0b" }}>
-        {/* Mobile Header */}
-        {isMobile && (
-          <Box
-            sx={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 56,
-              bgcolor: "#121214",
-              borderBottom: "1px solid #242428",
-              display: "flex",
-              alignItems: "center",
-              px: 2,
-              zIndex: 1200,
-            }}
-          >
-            <IconButton
-              onClick={() => setMobileOpen(true)}
-              sx={{ color: "#fff" }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography sx={{ ml: 2, fontWeight: 600, color: "#fff" }}>
-              RefDelegate
-            </Typography>
-          </Box>
-        )}
-
+      <Box
+        sx={{
+          display: "flex",
+          height: "100vh",
+          overflow: "hidden",
+          bgcolor: "#0a0a0b",
+        }}
+      >
         {/* Sidebar - Desktop */}
         {!isMobile && (
           <Box
@@ -381,11 +381,72 @@ const RefereeLayout = () => {
           sx={{
             flexGrow: 1,
             ml: { xs: 0, md: `${SIDEBAR_WIDTH}px` },
-            mt: { xs: "56px", md: 0 },
-            minHeight: { xs: "calc(100vh - 56px)", md: "100vh" },
+            minHeight: 0,
+            minWidth: 0,
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <Outlet />
+          <AppBar
+            position='sticky'
+            elevation={0}
+            sx={{
+              bgcolor: "#0a0a0b",
+              borderBottom: "1px solid #242428",
+              flexShrink: 0,
+            }}
+          >
+            <Toolbar
+              sx={{
+                height: { xs: 56, md: 96 },
+                minHeight: { xs: "56px", md: "96px" },
+                px: { xs: 2, md: 4 },
+                justifyContent: "space-between",
+              }}
+            >
+              <IconButton
+                onClick={() => setMobileOpen(true)}
+                sx={{
+                  color: "#fff",
+                  mr: 2,
+                  display: { md: "none" },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+
+              <Box sx={{ flexGrow: 1 }} />
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CalendarIcon sx={{ color: "#9ca3af", fontSize: 24 }} />
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 500,
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                  }}
+                >
+                  {getCurrentDate()}
+                </Typography>
+              </Box>
+            </Toolbar>
+          </AppBar>
+
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              minWidth: 0,
+              p: shouldPadSharedPage ? { xs: 2, md: 4 } : 0,
+              overflowY: "auto",
+              overflowX: "hidden",
+              scrollbarGutter: "stable",
+            }}
+          >
+            <Outlet />
+          </Box>
         </Box>
         <Menu
           anchorEl={anchorEl}
