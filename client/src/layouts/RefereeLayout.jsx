@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -31,8 +31,19 @@ import {
 import { useAuth } from "../context";
 import SidebarUserMenu from "../components/ui/SidebarUserMenu";
 import { refereeTheme } from "../theme";
+import { useMyAssignments } from "../hooks/useReferees";
 
 const SIDEBAR_WIDTH = 256;
+
+const getMatch = (assignment) => assignment?.match || assignment?.Match || null;
+
+const getScheduledDate = (match) => {
+  const value = match?.scheduledAt || match?.matchDate || match?.date;
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 const RefereeLayout = () => {
   const location = useLocation();
@@ -41,6 +52,18 @@ const RefereeLayout = () => {
   const isMobile = useMediaQuery(refereeTheme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const { data: assignmentsData } = useMyAssignments();
+
+  const scheduleBadgeCount = useMemo(() => {
+    const now = new Date();
+
+    return (assignmentsData?.data || []).filter((assignment) => {
+      if (assignment.status === "declined") return false;
+
+      const scheduledDate = getScheduledDate(getMatch(assignment));
+      return scheduledDate && scheduledDate >= now;
+    }).length;
+  }, [assignmentsData?.data]);
 
   const navItems = [
     { path: "/referee/dashboard", label: "Dashboard", icon: HomeIcon },
@@ -48,7 +71,7 @@ const RefereeLayout = () => {
       path: "/referee/schedule",
       label: "My Schedule",
       icon: CalendarIcon,
-      badge: 3,
+      badge: scheduleBadgeCount,
     },
     {
       path: "/referee/pending",

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { delegationsApi } from "../api";
 import { toast } from "react-toastify";
 import { matchKeys } from "./useMatches";
+import { refereeKeys } from "./useReferees";
 
 export const delegationKeys = {
   all: ["delegations"],
@@ -142,6 +143,12 @@ export const useConfirmAssignment = () => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.myDelegations(),
       });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myAssignments(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myStatistics(),
+      });
       toast.success(data?.message || "Assignment confirmed successfully!", {
         toastId: "delegation-confirm",
       });
@@ -167,6 +174,12 @@ export const useRejectAssignment = () => {
       });
       queryClient.invalidateQueries({
         queryKey: delegationKeys.myDelegations(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myAssignments(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myStatistics(),
       });
       toast.success(data?.message || "Assignment rejected successfully!", {
         toastId: "delegation-reject",

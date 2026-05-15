@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -9,7 +8,6 @@ import {
   MenuItem,
   Paper,
   Select,
-  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -293,11 +291,6 @@ const SchedulePage = () => {
   const [selectedCompetition, setSelectedCompetition] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState("upcoming");
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
 
   const {
     data: assignmentsData,
@@ -388,17 +381,8 @@ const SchedulePage = () => {
     try {
       await confirmAssignment.mutateAsync(matchId);
       await refetch();
-      setSnackbar({
-        open: true,
-        message: "Assignment confirmed.",
-        severity: "success",
-      });
     } catch {
-      setSnackbar({
-        open: true,
-        message: "Could not confirm the assignment.",
-        severity: "error",
-      });
+      // Toast is handled by useConfirmAssignment.
     }
   };
 
@@ -412,17 +396,8 @@ const SchedulePage = () => {
         data: { reason: "Declined from schedule" },
       });
       await refetch();
-      setSnackbar({
-        open: true,
-        message: "Assignment declined.",
-        severity: "info",
-      });
     } catch {
-      setSnackbar({
-        open: true,
-        message: "Could not decline the assignment.",
-        severity: "error",
-      });
+      console.error("Failed to decline assignment");
     }
   };
 
@@ -571,23 +546,6 @@ const SchedulePage = () => {
           </Stack>
         )}
       </Box>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3600}
-        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() =>
-            setSnackbar((current) => ({ ...current, open: false }))
-          }
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
