@@ -131,11 +131,11 @@ export const useRemoveRefereeFromMatch = () => {
   });
 };
 
-export const useConfirmAssignment = () => {
+export const useAcceptAssignment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (matchId) => delegationsApi.confirmAssignment(matchId),
+    mutationFn: (matchId) => delegationsApi.acceptAssignment(matchId),
     onSuccess: (data, matchId) => {
       queryClient.invalidateQueries({
         queryKey: delegationKeys.matchDelegation(matchId),
@@ -149,18 +149,20 @@ export const useConfirmAssignment = () => {
       queryClient.invalidateQueries({
         queryKey: refereeKeys.myStatistics(),
       });
-      toast.success(data?.message || "Assignment confirmed successfully!", {
-        toastId: "delegation-confirm",
+      toast.success(data?.message || "Assignment accepted successfully!", {
+        toastId: "delegation-accept",
       });
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.message || "Failed to confirm assignment.",
-        { toastId: "delegation-confirm-error" },
+        error.response?.data?.message || "Failed to accept assignment.",
+        { toastId: "delegation-accept-error" },
       );
     },
   });
 };
+
+export const useConfirmAssignment = useAcceptAssignment;
 
 export const useRejectAssignment = () => {
   const queryClient = useQueryClient();

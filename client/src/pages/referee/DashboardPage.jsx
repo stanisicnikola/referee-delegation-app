@@ -30,6 +30,10 @@ import {
 import { useAuth } from "../../context";
 import { useMyAssignments, useMyStatistics } from "../../hooks";
 import { matchesApi } from "../../api";
+import {
+  getRefereeAssignmentStatusBadge,
+  getRefereeRoleBadge,
+} from "../../utils/refereeAssignmentBadges";
 
 const COLORS = {
   bg: "#0a0a0b",
@@ -121,55 +125,6 @@ const formatDateBadge = (value) => {
       hour12: false,
     }),
   };
-};
-
-const getRoleBadge = (role) => {
-  const roles = {
-    first_referee: { label: "1st Referee", color: COLORS.green },
-    second_referee: { label: "2nd Referee", color: COLORS.blue },
-    third_referee: { label: "3rd Referee", color: COLORS.purple },
-    head: { label: "Lead Referee", color: COLORS.green },
-    main: { label: "Lead Referee", color: COLORS.green },
-    assistant: { label: "Assistant", color: COLORS.blue },
-    second: { label: "2nd Referee", color: COLORS.blue },
-    third: { label: "3rd Referee", color: COLORS.purple },
-    fourth: { label: "4th Official", color: "#ec4899" },
-  };
-
-  return roles[role] || { label: role || "Referee", color: COLORS.muted };
-};
-
-const getStatusBadge = (status) => {
-  const statuses = {
-    pending: {
-      label: "Awaiting confirmation",
-      shortLabel: "Pending",
-      color: COLORS.warning,
-    },
-    accepted: {
-      label: "Confirmed",
-      shortLabel: "Confirmed",
-      color: COLORS.green,
-    },
-    confirmed: {
-      label: "Confirmed",
-      shortLabel: "Confirmed",
-      color: COLORS.green,
-    },
-    declined: {
-      label: "Declined",
-      shortLabel: "Declined",
-      color: COLORS.red,
-    },
-  };
-
-  return (
-    statuses[status] || {
-      label: status || "Unknown",
-      shortLabel: status || "Unknown",
-      color: COLORS.muted,
-    }
-  );
 };
 
 const isLeadRole = (role) =>
@@ -521,7 +476,7 @@ const PendingBanner = ({ count, onView }) => (
           You have {count} pending assignment{count === 1 ? "" : "s"}
         </Typography>
         <Typography sx={{ color: COLORS.mutedStrong, fontSize: 14, mt: 0.25 }}>
-          Please confirm or decline within 24 hours.
+          Please accept or decline within 24 hours.
         </Typography>
       </Box>
     </Box>
@@ -670,8 +625,8 @@ const MatchRow = ({ assignment, isLast, onPending }) => {
   const match = getMatch(assignment);
   const matchDate = getMatchDateValue(match);
   const dateInfo = formatDateBadge(matchDate);
-  const role = getRoleBadge(assignment.role);
-  const status = getStatusBadge(assignment.status);
+  const role = getRefereeRoleBadge(assignment.role);
+  const status = getRefereeAssignmentStatusBadge(assignment.status);
   const isPending = assignment.status === "pending";
 
   return (

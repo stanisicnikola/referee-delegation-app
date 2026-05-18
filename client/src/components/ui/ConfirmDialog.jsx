@@ -6,6 +6,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import CustomButton from "./CustomButton";
 
 const ConfirmDialog = ({
   open,
@@ -54,22 +55,23 @@ const ConfirmDialog = ({
           },
         }}
       >
-        <Button
+        <CustomButton
+          variant='secondary'
           onClick={onClose}
           disabled={loading}
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           {cancelText}
-        </Button>
-        <Button
+        </CustomButton>
+        <CustomButton
           onClick={onConfirm}
           color={confirmColor}
-          variant='contained'
+          variant='danger'
           disabled={loading}
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           {loading ? "Processing..." : confirmText}
-        </Button>
+        </CustomButton>
       </DialogActions>
     </Dialog>
   );

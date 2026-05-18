@@ -65,6 +65,14 @@ const RefereeLayout = () => {
     }).length;
   }, [assignmentsData?.data]);
 
+  const pendingDelegationCount = useMemo(
+    () =>
+      (assignmentsData?.data || []).filter(
+        (assignment) => assignment.status === "pending",
+      ).length,
+    [assignmentsData?.data],
+  );
+
   const navItems = [
     { path: "/referee/dashboard", label: "Dashboard", icon: HomeIcon },
     {
@@ -77,7 +85,7 @@ const RefereeLayout = () => {
       path: "/referee/pending",
       label: "Pending",
       icon: AssignmentIcon,
-      pulse: true,
+      pulse: pendingDelegationCount > 0,
     },
     { path: "/referee/availability", label: "Availability", icon: ClockIcon },
     {

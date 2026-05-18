@@ -20,10 +20,15 @@ import {
 } from "@mui/icons-material";
 import {
   useCompetitions,
-  useConfirmAssignment,
+  useAcceptAssignment,
   useMyAssignments,
   useRejectAssignment,
 } from "../../hooks";
+import {
+  getRefereeAssignmentStatusBadge,
+  getRefereeRoleBadge,
+  isAcceptedAssignmentStatus,
+} from "../../utils/refereeAssignmentBadges";
 
 const COLORS = {
   bg: "#0a0a0b",
@@ -123,9 +128,6 @@ const getInitials = (name) => {
     .toUpperCase();
 };
 
-const isConfirmedStatus = (status) =>
-  ["accepted", "confirmed"].includes(status);
-
 const formatDate = (match) => {
   const date = getScheduledDate(match);
 
@@ -163,106 +165,10 @@ const formatDate = (match) => {
   };
 };
 
-const getRoleBadge = (role) => {
-  const roles = {
-    first_referee: {
-      label: "1st Referee",
-      color: COLORS.purple,
-      bg: "rgba(192, 132, 252, 0.18)",
-    },
-    second_referee: {
-      label: "2nd Referee",
-      color: COLORS.blue,
-      bg: "rgba(40, 87, 245, 0.34)",
-    },
-    third_referee: {
-      label: "3rd Referee",
-      color: COLORS.green,
-      bg: "rgba(7, 118, 22, 0.2)",
-    },
-    head: {
-      label: "Head Referee",
-      color: COLORS.purple,
-      bg: "rgba(192, 132, 252, 0.18)",
-    },
-    main: {
-      label: "Main Referee",
-      color: COLORS.purple,
-      bg: "rgba(192, 132, 252, 0.18)",
-    },
-    assistant: {
-      label: "Assistant",
-      color: COLORS.blue,
-      bg: "rgba(96, 165, 250, 0.16)",
-    },
-    second: {
-      label: "2nd Referee",
-      color: COLORS.mutedStrong,
-      bg: "rgba(255, 255, 255, 0.1)",
-    },
-    third: {
-      label: "3rd Referee",
-      color: COLORS.mutedStrong,
-      bg: "rgba(255, 255, 255, 0.1)",
-    },
-    fourth: {
-      label: "4th Official",
-      color: "#f472b6",
-      bg: "rgba(244, 114, 182, 0.16)",
-    },
-  };
-
-  return (
-    roles[role] || {
-      label: role || "Referee",
-      color: COLORS.mutedStrong,
-      bg: "rgba(255, 255, 255, 0.1)",
-    }
-  );
-};
-
-const getStatusBadge = (status) => {
-  const statuses = {
-    pending: {
-      label: "Pending",
-      color: COLORS.orange,
-      bg: "rgba(249, 115, 22, 0.16)",
-    },
-    accepted: {
-      label: "Confirmed",
-      color: COLORS.green,
-      bg: "rgba(34, 197, 94, 0.45)",
-    },
-    confirmed: {
-      label: "Confirmed",
-      color: COLORS.green,
-      bg: "rgba(34, 197, 94, 0.14)",
-    },
-    declined: {
-      label: "Declined",
-      color: COLORS.red,
-      bg: "rgba(239, 68, 68, 0.15)",
-    },
-    completed: {
-      label: "Completed",
-      color: COLORS.mutedStrong,
-      bg: "rgba(255, 255, 255, 0.1)",
-    },
-  };
-
-  return (
-    statuses[status] || {
-      label: status || "Unknown",
-      color: COLORS.mutedStrong,
-      bg: "rgba(255, 255, 255, 0.1)",
-    }
-  );
-};
-
 const pluralizeMatches = (count) => `${count} match${count === 1 ? "" : "es"}`;
 
-const getConfirmedColleagues = (assignment) => {
-  if (!isConfirmedStatus(assignment.status)) return [];
+const getAcceptedColleagues = (assignment) => {
+  if (!isAcceptedAssignmentStatus(assignment.status)) return [];
 
   const currentRefereeId = assignment.refereeId || assignment.referee_id;
   const match = getMatch(assignment);
@@ -274,7 +180,7 @@ const getConfirmedColleagues = (assignment) => {
       return (
         refereeId &&
         refereeId !== currentRefereeId &&
-        isConfirmedStatus(matchAssignment.status)
+        isAcceptedAssignmentStatus(matchAssignment.status)
       );
     })
     .map((matchAssignment, index) => ({
@@ -298,7 +204,7 @@ const SchedulePage = () => {
     refetch,
   } = useMyAssignments();
   const { data: competitionsData } = useCompetitions();
-  const confirmAssignment = useConfirmAssignment();
+  const acceptAssignment = useAcceptAssignment();
   const rejectAssignment = useRejectAssignment();
 
   const assignments = useMemo(
@@ -374,15 +280,15 @@ const SchedulePage = () => {
     );
   }, [filteredAssignments, selectedPeriod]);
 
-  const handleConfirm = async (assignment) => {
+  const handleAccept = async (assignment) => {
     const matchId = getAssignmentMatchId(assignment);
     if (!matchId) return;
 
     try {
-      await confirmAssignment.mutateAsync(matchId);
+      await acceptAssignment.mutateAsync(matchId);
       await refetch();
     } catch {
-      // Toast is handled by useConfirmAssignment.
+      // Toast is handled by useAcceptAssignment.
     }
   };
 
@@ -402,7 +308,7 @@ const SchedulePage = () => {
   };
 
   const isActionPending =
-    confirmAssignment.isPending || rejectAssignment.isPending;
+    acceptAssignment.isPending || rejectAssignment.isPending;
 
   if (assignmentsLoading) {
     return (
@@ -536,7 +442,7 @@ const SchedulePage = () => {
                       key={assignment.id || getAssignmentMatchId(assignment)}
                       assignment={assignment}
                       isActionPending={isActionPending}
-                      onConfirm={handleConfirm}
+                      onAccept={handleAccept}
                       onDecline={handleDecline}
                     />
                   ))}
@@ -634,14 +540,14 @@ const EmptyState = () => (
   </Paper>
 );
 
-const MatchCard = ({ assignment, isActionPending, onConfirm, onDecline }) => {
+const MatchCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
   const match = getMatch(assignment);
   const dateInfo = formatDate(match);
-  const role = getRoleBadge(assignment.role);
-  const status = getStatusBadge(assignment.status);
+  const role = getRefereeRoleBadge(assignment.role);
+  const status = getRefereeAssignmentStatusBadge(assignment.status);
   const isPending = assignment.status === "pending";
-  const showColleagues = isConfirmedStatus(assignment.status);
-  const colleagues = getConfirmedColleagues(assignment);
+  const showColleagues = isAcceptedAssignmentStatus(assignment.status);
+  const colleagues = getAcceptedColleagues(assignment);
   const roundLabel = match?.round ? `Round ${match.round}` : null;
   const matchNumberLabel = match?.matchNumber
     ? `Match ${match.matchNumber}`
@@ -804,10 +710,10 @@ const MatchCard = ({ assignment, isActionPending, onConfirm, onDecline }) => {
                 variant='contained'
                 startIcon={<CheckIcon />}
                 disabled={isActionPending}
-                onClick={() => onConfirm(assignment)}
-                sx={confirmButtonSx}
+                onClick={() => onAccept(assignment)}
+                sx={acceptButtonSx}
               >
-                Confirm
+                Accept
               </Button>
             </Box>
           ) : (
@@ -969,7 +875,7 @@ const StatusPill = ({ status }) => (
       whiteSpace: "nowrap",
     }}
   >
-    {status.label === "Confirmed" ? (
+    {status.key === "accepted" ? (
       <CheckIcon sx={{ fontSize: 17 }} />
     ) : (
       <Box
@@ -985,7 +891,7 @@ const StatusPill = ({ status }) => (
   </Box>
 );
 
-const confirmButtonSx = {
+const acceptButtonSx = {
   px: 1.85,
   py: 0.95,
   borderRadius: "10px",

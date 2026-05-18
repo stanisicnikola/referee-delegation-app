@@ -48,8 +48,13 @@ export const delegationsApi = {
     return response.data;
   },
 
+  acceptAssignment: async (matchId) => {
+    const response = await api.put(`/delegations/matches/${matchId}/accept`);
+    return response.data;
+  },
+
   confirmAssignment: async (matchId) => {
-    const response = await api.put(`/delegations/matches/${matchId}/confirm`);
+    const response = await api.put(`/delegations/matches/${matchId}/accept`);
     return response.data;
   },
 
