@@ -70,7 +70,15 @@ router.delete(
   delegationController.removeRefereeFromMatch
 );
 
-// Referee confirms/rejects delegation
+// Referee accepts/rejects delegation
+router.put(
+  "/matches/:matchId/accept",
+  authorize("referee"),
+  validate(delegationSchemas.matchParams, "params"),
+  delegationController.confirmAssignment
+);
+
+// Legacy alias kept for older clients.
 router.put(
   "/matches/:matchId/confirm",
   authorize("referee"),

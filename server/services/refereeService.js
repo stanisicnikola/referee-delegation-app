@@ -183,6 +183,11 @@ class RefereeService {
             { model: Team, as: "homeTeam" },
             { model: Team, as: "awayTeam" },
             { model: Venue, as: "venue" },
+            {
+              model: User,
+              as: "delegate",
+              attributes: ["id", "firstName", "lastName"],
+            },
           ],
         },
       ],
@@ -196,10 +201,10 @@ class RefereeService {
     ];
 
     if (matchIds.length > 0) {
-      const acceptedAssignments = await MatchReferee.findAll({
+      const activeAssignments = await MatchReferee.findAll({
         where: {
           matchId: { [Op.in]: matchIds },
-          status: "accepted",
+          status: { [Op.ne]: "declined" },
         },
         include: [
           {
@@ -217,7 +222,7 @@ class RefereeService {
         order: [["role", "ASC"]],
       });
 
-      const assignmentsByMatchId = acceptedAssignments.reduce(
+      const assignmentsByMatchId = activeAssignments.reduce(
         (acc, assignment) => {
           if (!acc[assignment.matchId]) acc[assignment.matchId] = [];
           acc[assignment.matchId].push(assignment);
