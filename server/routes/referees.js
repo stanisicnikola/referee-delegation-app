@@ -14,6 +14,17 @@ router.get(
   refereeController.getMyAssignments,
 );
 router.get(
+  "/my-history",
+  authorize("referee"),
+  validate(refereeSchemas.historyQuery, "query"),
+  refereeController.getMyHistory,
+);
+router.get(
+  "/my-history-statistics",
+  authorize("referee"),
+  refereeController.getMyHistoryStatistics,
+);
+router.get(
   "/my-statistics",
   authorize("referee"),
   refereeController.getMyStatistics,

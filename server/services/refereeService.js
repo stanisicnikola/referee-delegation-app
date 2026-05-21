@@ -151,8 +151,19 @@ class RefereeService {
   }
 
   async getAssignments(refereeId, query = {}) {
-    const { page = 1, limit = 10, status, dateFrom, dateTo } = query;
-    const offset = (page - 1) * limit;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      dateFrom,
+      dateTo,
+      competitionId,
+      role,
+      period,
+    } = query;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * limitNum;
 
     const referee = await Referee.findByPk(refereeId);
     if (!referee) {
@@ -163,6 +174,19 @@ class RefereeService {
     const matchWhere = {};
 
     if (status) where.status = status;
+    if (role && role !== "all") where.role = role;
+    if (competitionId && competitionId !== "all") {
+      matchWhere.competitionId = competitionId;
+    }
+
+    if (period === "upcoming") {
+      matchWhere.scheduledAt = { [Op.gte]: new Date() };
+    }
+
+    if (period === "past") {
+      matchWhere.scheduledAt = { [Op.lt]: new Date() };
+    }
+
     if (dateFrom) matchWhere.scheduledAt = { [Op.gte]: new Date(dateFrom) };
     if (dateTo) {
       matchWhere.scheduledAt = {
@@ -191,7 +215,7 @@ class RefereeService {
           ],
         },
       ],
-      limit,
+      limit: limitNum,
       offset,
       order: [[{ model: Match, as: "match" }, "scheduledAt", "DESC"]],
     });
@@ -243,11 +267,146 @@ class RefereeService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
       },
     };
+  }
+
+  matchesCompletedHistorySearch(assignment, normalizedSearch) {
+    const match = assignment.match;
+    const competition = match?.competition;
+    const homeTeam = match?.homeTeam;
+    const awayTeam = match?.awayTeam;
+    const venue = match?.venue;
+
+    const searchText = [
+      homeTeam?.name,
+      homeTeam?.shortName,
+      homeTeam?.city,
+      awayTeam?.name,
+      awayTeam?.shortName,
+      awayTeam?.city,
+      competition?.name,
+      competition?.shortName,
+      venue?.name,
+      venue?.city,
+      match?.round,
+      match?.matchNumber,
+      assignment.role,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return searchText.includes(normalizedSearch);
+  }
+
+  async getCompletedHistory(refereeId, query = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      competitionId,
+      role,
+    } = query;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * limitNum;
+
+    const referee = await Referee.findByPk(refereeId);
+    if (!referee) {
+      throw new AppError("Referee not found.", 404);
+    }
+
+    const where = { refereeId, status: "accepted" };
+    const matchWhere = { status: "completed" };
+    const normalizedSearch = String(search).trim().toLowerCase();
+
+    if (role && role !== "all") where.role = role;
+    if (competitionId && competitionId !== "all") {
+      matchWhere.competitionId = competitionId;
+    }
+
+    const rows = await MatchReferee.findAll({
+      where,
+      include: [
+        {
+          model: Match,
+          as: "match",
+          where: matchWhere,
+          required: true,
+          include: [
+            { model: Competition, as: "competition" },
+            { model: Team, as: "homeTeam" },
+            { model: Team, as: "awayTeam" },
+            { model: Venue, as: "venue" },
+            {
+              model: User,
+              as: "delegate",
+              attributes: ["id", "firstName", "lastName"],
+            },
+          ],
+        },
+      ],
+      order: [[{ model: Match, as: "match" }, "scheduledAt", "DESC"]],
+    });
+
+    const filteredRows = normalizedSearch
+      ? rows.filter((assignment) =>
+          this.matchesCompletedHistorySearch(assignment, normalizedSearch),
+        )
+      : rows;
+
+    return {
+      data: filteredRows.slice(offset, offset + limitNum),
+      pagination: {
+        total: filteredRows.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredRows.length / limitNum),
+      },
+    };
+  }
+
+  async getCompletedHistoryStatistics(refereeId) {
+    const referee = await Referee.findByPk(refereeId);
+    if (!referee) {
+      throw new AppError("Referee not found.", 404);
+    }
+
+    const includeCompletedMatch = () => [
+      {
+        model: Match,
+        as: "match",
+        where: { status: "completed" },
+        required: true,
+        attributes: [],
+      },
+    ];
+    const baseWhere = { refereeId, status: "accepted" };
+
+    const [total, first, second, third] = await Promise.all([
+      MatchReferee.count({
+        where: baseWhere,
+        include: includeCompletedMatch(),
+      }),
+      MatchReferee.count({
+        where: { ...baseWhere, role: "first_referee" },
+        include: includeCompletedMatch(),
+      }),
+      MatchReferee.count({
+        where: { ...baseWhere, role: "second_referee" },
+        include: includeCompletedMatch(),
+      }),
+      MatchReferee.count({
+        where: { ...baseWhere, role: "third_referee" },
+        include: includeCompletedMatch(),
+      }),
+    ]);
+
+    return { total, first, second, third };
   }
 
   async getStatistics(refereeId) {

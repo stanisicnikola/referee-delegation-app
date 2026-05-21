@@ -145,6 +145,41 @@ const getMyAssignments = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get completed match history (for logged in referee)
+ * @route   GET /api/referees/my-history
+ * @access  Private/Referee
+ */
+const getMyHistory = asyncHandler(async (req, res) => {
+  const referee = await refereeService.findByUserId(req.user.id);
+  const result = await refereeService.getCompletedHistory(
+    referee.id,
+    req.query,
+  );
+
+  res.json({
+    success: true,
+    ...result,
+  });
+});
+
+/**
+ * @desc    Get completed match history statistics (for logged in referee)
+ * @route   GET /api/referees/my-history-statistics
+ * @access  Private/Referee
+ */
+const getMyHistoryStatistics = asyncHandler(async (req, res) => {
+  const referee = await refereeService.findByUserId(req.user.id);
+  const statistics = await refereeService.getCompletedHistoryStatistics(
+    referee.id,
+  );
+
+  res.json({
+    success: true,
+    data: statistics,
+  });
+});
+
+/**
  * @desc    Get my statistics (for logged in referee)
  * @route   GET /api/referees/my-statistics
  * @access  Private/Referee
@@ -170,5 +205,7 @@ module.exports = {
   getRefereesStatistics,
   getAvailableReferees,
   getMyAssignments,
+  getMyHistory,
+  getMyHistoryStatistics,
   getMyStatistics,
 };

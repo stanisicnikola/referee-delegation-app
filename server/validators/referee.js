@@ -39,10 +39,19 @@ const availableQuery = z.object({
   date: z.string({ required_error: "Date is required." }),
 });
 
+const historyQuery = z.object({
+  page: z.string().transform(Number).optional(),
+  limit: z.string().transform(Number).optional(),
+  search: z.string().optional(),
+  competitionId: z.string().uuid("Invalid ID format.").optional(),
+  role: z.enum(["first_referee", "second_referee", "third_referee"]).optional(),
+});
+
 module.exports = {
   create,
   update,
   query,
   params,
   availableQuery,
+  historyQuery,
 };
