@@ -4,7 +4,11 @@ import { toast } from "react-toastify";
 
 export const availabilityKeys = {
   all: ["availability"],
-  myAvailability: () => [...availabilityKeys.all, "my-availability"],
+  myAvailability: (params) => [
+    ...availabilityKeys.all,
+    "my-availability",
+    params,
+  ],
   myCalendar: (params) => [...availabilityKeys.all, "my-calendar", params],
   refereeAvailability: (refereeId) => [
     ...availabilityKeys.all,
@@ -19,12 +23,13 @@ export const availabilityKeys = {
   ],
   availableReferees: (date) => [...availabilityKeys.all, "available", date],
   unavailableReferees: (date) => [...availabilityKeys.all, "unavailable", date],
+  requests: (params) => [...availabilityKeys.all, "requests", params],
 };
 
 // Get my availability (for logged in referee)
 export const useMyAvailability = (params = {}) => {
   return useQuery({
-    queryKey: availabilityKeys.myAvailability(),
+    queryKey: availabilityKeys.myAvailability(params),
     queryFn: () => availabilityApi.getMyAvailability(params),
   });
 };
@@ -57,6 +62,51 @@ export const useSetMyAvailability = () => {
       toast.error(
         error.response?.data?.message || "Failed to update availability.",
         { toastId: "availability-set-my-error" },
+      );
+    },
+  });
+};
+
+// Set my availability range
+export const useSetMyAvailabilityRange = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => availabilityApi.setMyAvailabilityRange(data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      toast.success(data?.message || "Unavailability request submitted!", {
+        toastId: "availability-set-my-range",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to submit unavailability request.",
+        { toastId: "availability-set-my-range-error" },
+      );
+    },
+  });
+};
+
+// Delete my availability records
+export const useDeleteMyAvailability = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids) =>
+      Promise.all(ids.map((id) => availabilityApi.deleteMyAvailability(id))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      toast.success("Availability request deleted.", {
+        toastId: "availability-delete-my",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to delete availability request.",
+        { toastId: "availability-delete-my-error" },
       );
     },
   });
@@ -149,6 +199,36 @@ export const useUnavailableRefereesForDate = (date) => {
     queryKey: availabilityKeys.unavailableReferees(date),
     queryFn: () => availabilityApi.getUnavailableReferees(date),
     enabled: !!date,
+  });
+};
+
+// Get availability requests for delegate/admin review
+export const useAvailabilityRequests = (params = {}) => {
+  return useQuery({
+    queryKey: availabilityKeys.requests(params),
+    queryFn: () => availabilityApi.getAvailabilityRequests(params),
+  });
+};
+
+// Approve/reject availability requests
+export const useReviewAvailabilityRequests = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => availabilityApi.reviewAvailabilityRequests(data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      toast.success(data?.message || "Availability request reviewed.", {
+        toastId: "availability-review",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to review availability request.",
+        { toastId: "availability-review-error" },
+      );
+    },
   });
 };
 

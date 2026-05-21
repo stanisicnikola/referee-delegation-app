@@ -27,6 +27,7 @@ import {
   Logout as LogoutIcon,
   Menu as MenuIcon,
   CalendarMonth as CalendarIcon,
+  EventBusy as AvailabilityIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import SidebarUserMenu from "../components/ui/SidebarUserMenu";
@@ -74,6 +75,11 @@ const DelegateLayout = () => {
       label: "Matches",
     },
     { path: "/delegate/referees", icon: RefereesIcon, label: "Referees" },
+    {
+      path: "/delegate/availability",
+      icon: AvailabilityIcon,
+      label: "Availability",
+    },
     {
       path: "/delegate/competitions",
       icon: CompetitionsIcon,

@@ -32,6 +32,7 @@ import {
   MatchesPage as DelegateMatches,
   DelegationPage,
   RefereesPage as DelegateReferees,
+  AvailabilityRequestsPage as DelegateAvailabilityRequests,
   CompetitionsPage as DelegateCompetitions,
   TeamsPage as DelegateTeams,
 } from "../pages/delegate";
@@ -145,6 +146,10 @@ const AppRoutes = () => {
           <Route path='matches' element={<DelegateMatches />} />
           <Route path='delegation/:matchId' element={<DelegationPage />} />
           <Route path='referees' element={<DelegateReferees />} />
+          <Route
+            path='availability'
+            element={<DelegateAvailabilityRequests />}
+          />
           <Route path='competitions' element={<DelegateCompetitions />} />
           <Route path='teams' element={<DelegateTeams />} />
           <Route path='settings' element={<SettingsPage />} />

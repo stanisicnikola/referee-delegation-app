@@ -13,6 +13,21 @@ export const availabilityApi = {
     return response.data;
   },
 
+  // Set my availability range
+  setMyAvailabilityRange: async (data) => {
+    const response = await api.post(
+      "/availability/my-availability/range",
+      data
+    );
+    return response.data;
+  },
+
+  // Delete my availability record
+  deleteMyAvailability: async (id) => {
+    const response = await api.delete(`/availability/my-availability/${id}`);
+    return response.data;
+  },
+
   // Get my calendar
   getMyCalendar: async (params = {}) => {
     const response = await api.get("/availability/my-calendar", { params });
@@ -63,6 +78,18 @@ export const availabilityApi = {
   // Get unavailable referees for date
   getUnavailableReferees: async (date) => {
     const response = await api.get(`/availability/unavailable/${date}`);
+    return response.data;
+  },
+
+  // Get availability requests for delegate/admin review
+  getAvailabilityRequests: async (params = {}) => {
+    const response = await api.get("/availability/requests", { params });
+    return response.data;
+  },
+
+  // Approve/reject availability requests
+  reviewAvailabilityRequests: async (data) => {
+    const response = await api.patch("/availability/requests/review", data);
     return response.data;
   },
 

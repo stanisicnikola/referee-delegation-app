@@ -115,6 +115,10 @@ const CustomButton = ({
             transform: "translateY(-1px)",
             boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
           },
+          "&.Mui-disabled": {
+            bgcolor: "#ef444450",
+            color: "#ffffff60",
+          },
         };
       case "admin-outline":
         return {

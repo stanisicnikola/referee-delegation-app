@@ -31,6 +31,7 @@ import {
   useRejectAssignment,
 } from "../../hooks";
 import { getRefereeRoleBadge } from "../../utils/refereeAssignmentBadges";
+import CustomButton from "../../components/ui/CustomButton";
 
 const COLORS = {
   bg: "#0a0a0b",
@@ -324,23 +325,8 @@ const PendingPage = () => {
             >
               Pending Delegations
             </Typography>
-            {pendingDelegations.length > 0 && (
-              <Chip
-                label={pendingDelegations.length}
-                sx={{
-                  height: 34,
-                  minWidth: 34,
-                  borderRadius: "10px",
-                  bgcolor: COLORS.orange,
-                  color: "#fff",
-                  fontSize: 16,
-                  fontWeight: 850,
-                  "& .MuiChip-label": { px: 1.25 },
-                }}
-              />
-            )}
           </Box>
-          <Typography sx={{ fontSize: "14px", color: COLORS.mutedStrong }}>
+          <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
             Review and respond to your pending match assignments
           </Typography>
         </Box>
@@ -891,7 +877,7 @@ const DeclineDialog = ({
       </DialogTitle>
       <DialogContent sx={{ pt: 3 }}>
         {assignment && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3, mt: 2 }}>
             <Typography sx={{ color: COLORS.mutedStrong, fontSize: 14, mb: 1 }}>
               You are declining this assignment:
             </Typography>
@@ -906,7 +892,12 @@ const DeclineDialog = ({
 
         <Stack spacing={3}>
           <FormControl fullWidth required>
-            <InputLabel sx={{ color: COLORS.mutedStrong }}>
+            <InputLabel
+              sx={{
+                color: COLORS.mutedStrong,
+                "&.Mui-focused": { color: COLORS.mutedStrong },
+              }}
+            >
               Reason for declining
             </InputLabel>
             <Select
@@ -953,14 +944,13 @@ const DeclineDialog = ({
         <Button onClick={onClose} sx={dialogCancelButtonSx}>
           Cancel
         </Button>
-        <Button
+        <CustomButton
           onClick={onSubmit}
-          variant='contained'
+          variant='danger'
           disabled={!declineReason || isSubmitting}
-          sx={dialogDeclineButtonSx}
         >
           {isSubmitting ? "Declining..." : "Decline Assignment"}
-        </Button>
+        </CustomButton>
       </DialogActions>
     </Dialog>
   );
@@ -1017,6 +1007,7 @@ const pendingActionButtonSx = {
 const selectSx = {
   color: COLORS.text,
   borderRadius: "12px",
+  backgroundColor: COLORS.panel,
   "& .MuiOutlinedInput-notchedOutline": {
     borderColor: "rgba(255, 255, 255, 0.14)",
   },
@@ -1024,7 +1015,8 @@ const selectSx = {
     borderColor: "rgba(255, 255, 255, 0.24)",
   },
   "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-    borderColor: COLORS.orange,
+    borderColor: "rgba(255, 255, 255, 0.34)",
+    borderWidth: "1px",
   },
   "& .MuiSvgIcon-root": { color: COLORS.mutedStrong },
 };
@@ -1033,29 +1025,23 @@ const textFieldSx = {
   "& .MuiOutlinedInput-root": {
     color: COLORS.text,
     borderRadius: "12px",
+    backgroundColor: COLORS.panel,
     "& fieldset": { borderColor: "rgba(255, 255, 255, 0.14)" },
     "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.24)" },
-    "&.Mui-focused fieldset": { borderColor: COLORS.orange },
+    "&.Mui-focused": { boxShadow: "none" },
+    "&.Mui-focused fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.34)",
+      borderWidth: "1px",
+    },
   },
   "& .MuiInputLabel-root": { color: COLORS.mutedStrong },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.mutedStrong },
 };
 
 const dialogCancelButtonSx = {
   color: COLORS.mutedStrong,
   fontWeight: 800,
   "&:hover": { bgcolor: COLORS.panelSoft },
-};
-
-const dialogDeclineButtonSx = {
-  bgcolor: COLORS.red,
-  color: "#fff",
-  boxShadow: "none",
-  fontWeight: 850,
-  "&:hover": { bgcolor: "#dc2626", boxShadow: "none" },
-  "&.Mui-disabled": {
-    bgcolor: "rgba(255, 255, 255, 0.08)",
-    color: COLORS.muted,
-  },
 };
 
 export default PendingPage;

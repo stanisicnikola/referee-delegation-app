@@ -1,119 +1,424 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Alert,
-  CircularProgress,
+  Box,
+  Button,
   Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  IconButton,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
   Tooltip,
-  useTheme,
+  Typography,
   alpha,
+  useTheme,
 } from "@mui/material";
 import {
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Today as TodayIcon,
-  EventBusy as EventBusyIcon,
-  Check as CheckIcon,
+  AccessTime as AccessTimeIcon,
+  Add as AddIcon,
+  CalendarMonth as CalendarMonthIcon,
+  CheckCircle as CheckCircleIcon,
   Close as CloseIcon,
+  EventAvailable as EventAvailableIcon,
+  EventBusy as EventBusyIcon,
+  KeyboardArrowLeft as KeyboardArrowLeftIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
+  SportsBasketball as SportsBasketballIcon,
+  WarningAmber as WarningAmberIcon,
 } from "@mui/icons-material";
 import {
+  useDeleteMyAvailability,
+  useMyAvailability,
   useMyCalendar,
-  useSetMyAvailability,
+  useSetMyAvailabilityRange,
 } from "../../hooks/useAvailability";
-import { useSnackbar } from "notistack";
+import { useMyAssignments } from "../../hooks/useReferees";
+import {
+  ConfirmDialog,
+  DeleteButton,
+  FormValidationError,
+} from "../../components/ui";
 
-const DAYS_OF_WEEK = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
+const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = [
-  "Siječanj",
-  "Veljača",
-  "Ožujak",
-  "Travanj",
-  "Svibanj",
-  "Lipanj",
-  "Srpanj",
-  "Kolovoz",
-  "Rujan",
-  "Listopad",
-  "Studeni",
-  "Prosinac",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
+
+const UNAVAILABILITY_REASONS = [
+  "Annual leave",
+  "Illness",
+  "Injury",
+  "Personal reasons",
+  "Business commitments",
+  "Other",
+];
+
+const STATUS_META = {
+  approved: {
+    label: "Approved",
+    color: "#22c55e",
+    icon: CheckCircleIcon,
+  },
+  pending: {
+    label: "Pending approval",
+    color: "#f59e0b",
+    icon: AccessTimeIcon,
+  },
+  rejected: {
+    label: "Rejected",
+    color: "#ef4444",
+    icon: WarningAmberIcon,
+  },
+};
+
+const fieldLabelSx = {
+  mb: 1,
+  color: "#c5cad3",
+  fontSize: "14px",
+  fontWeight: 700,
+};
+
+const createAvailabilityRequestSchema = (todayKey) =>
+  z
+    .object({
+      dateFrom: z.string().min(1, "From date is required."),
+      dateTo: z.string().min(1, "To date is required."),
+      reason: z.string().min(1, "Reason is required."),
+      description: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.dateFrom && data.dateFrom < todayKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dateFrom"],
+          message: "Choose today or a future date.",
+        });
+      }
+
+      if (data.dateTo && data.dateTo < todayKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dateTo"],
+          message: "Choose today or a future date.",
+        });
+      }
+
+      if (data.dateFrom && data.dateTo && data.dateFrom > data.dateTo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dateTo"],
+          message: "The end date must be on or after the start date.",
+        });
+      }
+    });
+
+const getDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const normalizeDateKey = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value.split("T")[0];
+  return getDateKey(new Date(value));
+};
+
+const parseDateKey = (dateKey) => {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const addDays = (date, amount) => {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + amount);
+  return copy;
+};
+
+const isNextDate = (previousDateKey, nextDateKey) =>
+  getDateKey(addDays(parseDateKey(previousDateKey), 1)) === nextDateKey;
+
+const formatDisplayDate = (dateKey) =>
+  parseDateKey(dateKey).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const formatDateRange = (startDate, endDate) =>
+  startDate === endDate
+    ? formatDisplayDate(startDate)
+    : `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
+
+const getMatchDateKey = (assignment) => {
+  const match = assignment?.match || assignment?.Match;
+  const scheduledAt = match?.scheduledAt || match?.matchDate || match?.date;
+  if (!scheduledAt || assignment?.status === "declined") return null;
+
+  const date = new Date(scheduledAt);
+  return Number.isNaN(date.getTime()) ? null : getDateKey(date);
+};
+
+const groupAvailabilityPeriods = (rows = []) => {
+  const unavailableRows = rows
+    .filter((row) => row && row.isAvailable === false)
+    .map((row) => ({
+      ...row,
+      dateKey: normalizeDateKey(row.date),
+      approvalStatus: row.approvalStatus || "approved",
+      reason: row.reason || "Unavailable",
+      description: row.description || "",
+    }))
+    .filter((row) => row.dateKey)
+    .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+
+  return unavailableRows.reduce((periods, row) => {
+    const previous = periods[periods.length - 1];
+    const canExtend =
+      previous &&
+      previous.refereeId === row.refereeId &&
+      previous.reason === row.reason &&
+      previous.description === row.description &&
+      previous.approvalStatus === row.approvalStatus &&
+      isNextDate(previous.endDate, row.dateKey);
+
+    if (canExtend) {
+      previous.endDate = row.dateKey;
+      previous.ids.push(row.id);
+      previous.items.push(row);
+      return periods;
+    }
+
+    periods.push({
+      key: `${row.id}-${row.dateKey}`,
+      refereeId: row.refereeId,
+      reason: row.reason,
+      description: row.description,
+      approvalStatus: row.approvalStatus,
+      startDate: row.dateKey,
+      endDate: row.dateKey,
+      ids: [row.id],
+      items: [row],
+    });
+
+    return periods;
+  }, []);
+};
 
 const AvailabilityPage = () => {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
-
-  // Calendar state
+  const todayKey = useMemo(() => getDateKey(new Date()), []);
+  const availabilityRequestSchema = useMemo(
+    () => createAvailabilityRequestSchema(todayKey),
+    [todayKey],
+  );
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [reason, setReason] = useState("");
+  const [periodToDelete, setPeriodToDelete] = useState(null);
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(availabilityRequestSchema),
+    defaultValues: {
+      dateFrom: "",
+      dateTo: "",
+      reason: "",
+      description: "",
+    },
+  });
+  const dateFromValue = watch("dateFrom");
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
 
-  // API hooks
   const {
     data: calendarData,
-    isLoading,
-    error,
+    isLoading: isCalendarLoading,
+    error: calendarError,
   } = useMyCalendar({ year, month });
+  const {
+    data: availabilityData,
+    isLoading: isAvailabilityLoading,
+    error: availabilityError,
+  } = useMyAvailability({ limit: 365, dateFrom: todayKey });
+  const { data: assignmentsData } = useMyAssignments();
+  const setAvailabilityRange = useSetMyAvailabilityRange();
+  const deleteAvailability = useDeleteMyAvailability();
 
-  const setAvailabilityMutation = useSetMyAvailability();
+  const calendar = useMemo(
+    () => calendarData?.data?.calendar || calendarData?.calendar || [],
+    [calendarData],
+  );
+  const availabilityRows = useMemo(
+    () => availabilityData?.data || [],
+    [availabilityData],
+  );
+  const periods = useMemo(
+    () => groupAvailabilityPeriods(availabilityRows),
+    [availabilityRows],
+  );
 
-  // Create calendar grid
+  const calendarByDate = useMemo(() => {
+    const map = new Map();
+    calendar.forEach((item) => {
+      map.set(normalizeDateKey(item.date), item);
+    });
+    return map;
+  }, [calendar]);
+
+  const matchDateSet = useMemo(() => {
+    const dates = new Set();
+    (assignmentsData?.data || []).forEach((assignment) => {
+      const dateKey = getMatchDateKey(assignment);
+      if (dateKey) dates.add(dateKey);
+    });
+    return dates;
+  }, [assignmentsData?.data]);
+
   const calendarGrid = useMemo(() => {
     const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay(); // 0 = Sunday
+    const mondayOffset = (firstDay.getDay() + 6) % 7;
+    const gridStart = addDays(firstDay, -mondayOffset);
 
-    const grid = [];
-    let day = 1;
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = addDays(gridStart, index);
+      const dateKey = getDateKey(date);
+      const availability = calendarByDate.get(dateKey);
+      const isCurrentMonth = date.getMonth() === month - 1;
+      const hasMatch = matchDateSet.has(dateKey);
+      const isApprovedUnavailable =
+        availability?.isAvailable === false &&
+        availability?.approvalStatus === "approved";
 
-    // Create 6 rows for the calendar
-    for (let i = 0; i < 6; i++) {
-      const week = [];
-      for (let j = 0; j < 7; j++) {
-        if ((i === 0 && j < startingDay) || day > daysInMonth) {
-          week.push(null);
-        } else {
-          const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
-            day
-          ).padStart(2, "0")}`;
-          const calendarItem = calendarData?.calendar?.find(
-            (c) => c.date === dateStr
-          );
+      const status = !isCurrentMonth
+        ? "outside"
+        : hasMatch
+          ? "match"
+          : isApprovedUnavailable
+            ? "unavailable"
+            : "available";
 
-          week.push({
-            day,
-            date: dateStr,
-            isAvailable: calendarItem?.isAvailable ?? true,
-            reason: calendarItem?.reason || null,
-            isToday: dateStr === new Date().toISOString().split("T")[0],
-            isPast:
-              new Date(dateStr) <
-              new Date(new Date().toISOString().split("T")[0]),
-          });
-          day++;
-        }
-      }
-      grid.push(week);
-      if (day > daysInMonth) break;
+      return {
+        dateKey,
+        day: date.getDate(),
+        isCurrentMonth,
+        isToday: dateKey === todayKey,
+        status,
+        reason: availability?.reason,
+      };
+    });
+  }, [calendarByDate, matchDateSet, month, todayKey, year]);
+
+  const approvedUnavailableDays = useMemo(
+    () =>
+      calendar.filter(
+        (item) =>
+          item.isAvailable === false && item.approvalStatus === "approved",
+      ).length,
+    [calendar],
+  );
+
+  const matchDaysThisMonth = useMemo(
+    () =>
+      Array.from(matchDateSet).filter((dateKey) => {
+        const date = parseDateKey(dateKey);
+        return date.getFullYear() === year && date.getMonth() === month - 1;
+      }).length,
+    [matchDateSet, month, year],
+  );
+
+  const handleOpenDialog = () => {
+    reset({
+      dateFrom: "",
+      dateTo: "",
+      reason: "",
+      description: "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    if (setAvailabilityRange.isPending) return;
+    setDialogOpen(false);
+  };
+
+  const handleDateFromChange = (value) => {
+    setValue("dateFrom", value, { shouldDirty: true, shouldValidate: true });
+    const currentDateTo = watch("dateTo");
+    if (currentDateTo && value && currentDateTo < value) {
+      setValue("dateTo", value, { shouldDirty: true, shouldValidate: true });
     }
+  };
 
-    return grid;
-  }, [year, month, calendarData]);
+  const handleFormSubmit = async (values) => {
+    try {
+      await setAvailabilityRange.mutateAsync({
+        dateFrom: values.dateFrom,
+        dateTo: values.dateTo,
+        isAvailable: false,
+        reason: values.reason,
+        description: values.description?.trim() || null,
+      });
+      setDialogOpen(false);
+      reset({
+        dateFrom: "",
+        dateTo: "",
+        reason: "",
+        description: "",
+      });
+    } catch {
+      // React Query hook handles the API error toast.
+    }
+  };
 
-  // Navigation
+  const handleOpenDeleteConfirm = (period) => {
+    setPeriodToDelete(period);
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    if (deleteAvailability.isPending) return;
+    setPeriodToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!periodToDelete) return;
+
+    try {
+      await deleteAvailability.mutateAsync(periodToDelete.ids);
+    } catch {
+      // The mutation hook shows the API error toast.
+    } finally {
+      setPeriodToDelete(null);
+    }
+  };
+
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(year, month - 2, 1));
   };
@@ -126,362 +431,601 @@ const AvailabilityPage = () => {
     setCurrentDate(new Date());
   };
 
-  // Handle day click
-  const handleDayClick = (dayInfo) => {
-    if (!dayInfo || dayInfo.isPast) return;
-
-    setSelectedDate(dayInfo);
-    setReason(dayInfo.reason || "");
-    setDialogOpen(true);
-  };
-
-  // Handle availability toggle
-  const handleToggleAvailability = async (makeAvailable) => {
-    if (!selectedDate) return;
-
-    try {
-      await setAvailabilityMutation.mutateAsync({
-        date: selectedDate.date,
-        isAvailable: makeAvailable,
-        reason: makeAvailable ? null : reason || null,
-      });
-
-      enqueueSnackbar(
-        makeAvailable
-          ? "Označeni ste kao dostupni za taj datum"
-          : "Označeni ste kao nedostupni za taj datum",
-        { variant: "success" }
-      );
-      setDialogOpen(false);
-      setSelectedDate(null);
-      setReason("");
-    } catch (error) {
-      enqueueSnackbar(
-        error.response?.data?.message || "Greška pri ažuriranju dostupnosti",
-        { variant: "error" }
-      );
-    }
-  };
-
-  // Count unavailable days this month
-  const unavailableDays = useMemo(() => {
-    if (!calendarData?.calendar) return 0;
-    return calendarData.calendar.filter((d) => !d.isAvailable).length;
-  }, [calendarData]);
+  const isLoading = isCalendarLoading || isAvailabilityLoading;
+  const error = calendarError || availabilityError;
 
   if (isLoading) {
     return (
       <Box
         sx={{
+          minHeight: 420,
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          minHeight: 400,
+          justifyContent: "center",
         }}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: "#22c55e" }} />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 2, md: 4 } }}>
         <Alert severity='error'>
-          Greška pri učitavanju kalendara: {error.message}
+          Failed to load availability data: {error.message}
         </Alert>
       </Box>
     );
   }
 
+  const cellStyles = {
+    available: {
+      color: "#22c55e",
+      bgcolor: alpha(theme.palette.success.main, 0.11),
+      borderColor: alpha(theme.palette.success.main, 0.38),
+    },
+    unavailable: {
+      color: "#ef4444",
+      bgcolor: alpha(theme.palette.error.main, 0.18),
+      borderColor: alpha(theme.palette.error.main, 0.48),
+    },
+    match: {
+      color: "#fb923c",
+      bgcolor: alpha(theme.palette.warning.main, 0.2),
+      borderColor: alpha(theme.palette.warning.main, 0.5),
+    },
+    outside: {
+      color: "#4b5563",
+      bgcolor: "transparent",
+      borderColor: "transparent",
+    },
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' sx={{ mb: 1, fontWeight: 600 }}>
-          Moja dostupnost
-        </Typography>
-        <Typography variant='body1' color='text.secondary'>
-          Označite dane kada niste dostupni za suđenje
-        </Typography>
+    <Box sx={{ p: { xs: 2, md: 4 }, width: "100%" }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          alignItems: { xs: "stretch", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontSize: { xs: "34px", sm: "40px", md: "48px" },
+              fontWeight: 700,
+              color: "#fff",
+              lineHeight: 1.05,
+            }}
+          >
+            My availability
+          </Typography>
+          <Typography sx={{ mt: 1, fontSize: "14px", color: "#6b7280" }}>
+            Review your unavailable periods and monthly match calendar.
+          </Typography>
+        </Box>
+
+        <Button
+          startIcon={<AddIcon />}
+          onClick={handleOpenDialog}
+          sx={{
+            px: 2.5,
+            py: 1.35,
+            borderRadius: "12px",
+            bgcolor: "#22c55e",
+            color: "#fff",
+            fontSize: "14px",
+            fontWeight: 700,
+            textTransform: "none",
+            width: { xs: "100%", sm: "auto" },
+            "&:hover": { bgcolor: "#16a34a" },
+          }}
+        >
+          Report unavailability
+        </Button>
       </Box>
 
-      {/* Summary */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box
+      <Box sx={{ mb: 4 }}>
+        <Typography
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: "wrap",
+            mb: 2,
+            color: "#fff",
+            fontSize: { xs: "22px", md: "26px" },
+            fontWeight: 700,
           }}
         >
-          <Chip
-            icon={<EventBusyIcon />}
-            label={`${unavailableDays} nedostupnih dana ovaj mjesec`}
-            color={unavailableDays > 0 ? "warning" : "default"}
-            variant='outlined'
-          />
-          <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box
-                sx={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 0.5,
-                  bgcolor: alpha(theme.palette.success.main, 0.2),
-                  border: `1px solid ${theme.palette.success.main}`,
-                }}
-              />
-              <Typography variant='caption'>Dostupan</Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box
-                sx={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 0.5,
-                  bgcolor: alpha(theme.palette.error.main, 0.2),
-                  border: `1px solid ${theme.palette.error.main}`,
-                }}
-              />
-              <Typography variant='caption'>Nedostupan</Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Paper>
+          Reported unavailable periods
+        </Typography>
 
-      {/* Calendar */}
-      <Paper sx={{ p: 3 }}>
-        {/* Calendar Header */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 3,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <IconButton onClick={goToPreviousMonth} size='small'>
-              <ChevronLeftIcon />
-            </IconButton>
-            <Typography
-              variant='h5'
-              sx={{ minWidth: 200, textAlign: "center", fontWeight: 500 }}
-            >
-              {MONTHS[month - 1]} {year}
-            </Typography>
-            <IconButton onClick={goToNextMonth} size='small'>
-              <ChevronRightIcon />
-            </IconButton>
-          </Box>
-          <Button
-            startIcon={<TodayIcon />}
-            onClick={goToToday}
-            variant='outlined'
-            size='small'
+        {periods.length === 0 ? (
+          <Paper
+            sx={{
+              p: { xs: 3, md: 4 },
+              borderRadius: "16px",
+              bgcolor: "#121214",
+              border: "1px solid #242428",
+              textAlign: "center",
+            }}
           >
-            Danas
-          </Button>
+            <EventAvailableIcon sx={{ color: "#22c55e", fontSize: 36 }} />
+            <Typography sx={{ mt: 1, color: "#fff", fontWeight: 600 }}>
+              No unavailable periods reported.
+            </Typography>
+          </Paper>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {periods.map((period) => {
+              const meta =
+                STATUS_META[period.approvalStatus] || STATUS_META.pending;
+              const StatusIcon = meta.icon;
+
+              return (
+                <Paper
+                  key={period.key}
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: "16px",
+                    bgcolor: "#121214",
+                    border: "1px solid #242428",
+                    display: "flex",
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    gap: 2,
+                    flexDirection: { xs: "column", sm: "row" },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: "14px",
+                      bgcolor: alpha(meta.color, 0.15),
+                      color: meta.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <StatusIcon />
+                  </Box>
+
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography
+                      sx={{ color: "#fff", fontSize: "18px", fontWeight: 700 }}
+                    >
+                      {period.reason}
+                    </Typography>
+                    <Typography
+                      sx={{ mt: 0.25, color: "#6b7280", fontSize: "15px" }}
+                    >
+                      {formatDateRange(period.startDate, period.endDate)}
+                    </Typography>
+                    {period.description && (
+                      <Typography
+                        sx={{
+                          mt: 1,
+                          color: "#9ca3af",
+                          fontSize: "14px",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {period.description}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      alignSelf: { xs: "stretch", sm: "center" },
+                      justifyContent: { xs: "space-between", sm: "flex-end" },
+                    }}
+                  >
+                    <Chip
+                      label={meta.label}
+                      sx={{
+                        bgcolor: alpha(meta.color, 0.15),
+                        color: meta.color,
+                        fontWeight: 700,
+                        borderRadius: "999px",
+                      }}
+                    />
+                    <DeleteButton
+                      tooltip='Delete request'
+                      onClick={() => handleOpenDeleteConfirm(period)}
+                    />
+                  </Box>
+                </Paper>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      <Paper
+        sx={{
+          p: { xs: 2, sm: 3, md: 4 },
+          borderRadius: "16px",
+          bgcolor: "#121214",
+          border: "1px solid #242428",
+        }}
+      >
+        <Box
+          sx={{
+            mb: 3,
+            display: "flex",
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+            flexDirection: { xs: "column", sm: "row" },
+          }}
+        >
+          <Box>
+            <Typography
+              sx={{ color: "#fff", fontSize: "24px", fontWeight: 700 }}
+            >
+              Availability Calendar - {MONTHS[month - 1]} {year}
+            </Typography>
+            <Typography sx={{ mt: 0.5, color: "#6b7280", fontSize: "14px" }}>
+              {approvedUnavailableDays} unavailable days, {matchDaysThisMonth}{" "}
+              match days
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton onClick={goToPreviousMonth} sx={{ color: "#fff" }}>
+              <KeyboardArrowLeftIcon />
+            </IconButton>
+            <Button
+              startIcon={<CalendarMonthIcon />}
+              onClick={goToToday}
+              variant='outlined'
+              sx={{
+                borderColor: "#3f3f46",
+                color: "#22c55e",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Today
+            </Button>
+            <IconButton onClick={goToNextMonth} sx={{ color: "#fff" }}>
+              <KeyboardArrowRightIcon />
+            </IconButton>
+          </Box>
         </Box>
 
-        {/* Days of Week Header */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            mb: 1,
+            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+            gap: { xs: 0.75, sm: 1.25 },
           }}
         >
-          {DAYS_OF_WEEK.map((day, index) => (
-            <Box
+          {DAYS_OF_WEEK.map((day) => (
+            <Typography
               key={day}
               sx={{
-                textAlign: "center",
                 py: 1,
-                fontWeight: 600,
-                color: index === 0 ? "error.main" : "text.secondary",
+                color: "#6b7280",
+                textAlign: "center",
+                fontWeight: 700,
+                fontSize: { xs: "12px", sm: "14px" },
               }}
             >
               {day}
-            </Box>
+            </Typography>
           ))}
-        </Box>
 
-        {/* Calendar Grid */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 0.5,
-          }}
-        >
-          {calendarGrid.map((week, weekIndex) =>
-            week.map((dayInfo, dayIndex) => (
+          {calendarGrid.map((dayInfo) => {
+            const styles = cellStyles[dayInfo.status];
+            const tooltip =
+              dayInfo.status === "match"
+                ? "Match day"
+                : dayInfo.status === "unavailable"
+                  ? dayInfo.reason || "Unavailable"
+                  : dayInfo.status === "available"
+                    ? "Available"
+                    : "";
+
+            return (
               <Tooltip
-                key={`${weekIndex}-${dayIndex}`}
-                title={
-                  dayInfo?.reason
-                    ? `Razlog: ${dayInfo.reason}`
-                    : dayInfo?.isPast
-                    ? "Prošli datum"
-                    : dayInfo?.isAvailable
-                    ? "Dostupan - kliknite za promjenu"
-                    : "Nedostupan - kliknite za promjenu"
-                }
+                key={dayInfo.dateKey}
+                title={tooltip}
                 arrow
-                disableHoverListener={!dayInfo}
+                disableHoverListener={!tooltip}
               >
                 <Box
-                  onClick={() => handleDayClick(dayInfo)}
                   sx={{
-                    aspectRatio: "1",
+                    minHeight: { xs: 48, sm: 64, md: 72 },
+                    borderRadius: "10px",
+                    border: "1px solid",
+                    borderColor: styles.borderColor,
+                    bgcolor: styles.bgcolor,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    borderRadius: 1,
-                    cursor: dayInfo && !dayInfo.isPast ? "pointer" : "default",
-                    transition: "all 0.2s",
-                    position: "relative",
-                    bgcolor: dayInfo
-                      ? dayInfo.isPast
-                        ? "action.disabledBackground"
-                        : dayInfo.isAvailable
-                        ? alpha(theme.palette.success.main, 0.1)
-                        : alpha(theme.palette.error.main, 0.15)
-                      : "transparent",
-                    border: dayInfo?.isToday
-                      ? `2px solid ${theme.palette.primary.main}`
-                      : "1px solid",
-                    borderColor: dayInfo
-                      ? dayInfo.isPast
-                        ? "divider"
-                        : dayInfo.isAvailable
-                        ? alpha(theme.palette.success.main, 0.3)
-                        : alpha(theme.palette.error.main, 0.4)
-                      : "transparent",
-                    "&:hover":
-                      dayInfo && !dayInfo.isPast
-                        ? {
-                            bgcolor: dayInfo.isAvailable
-                              ? alpha(theme.palette.success.main, 0.2)
-                              : alpha(theme.palette.error.main, 0.25),
-                            transform: "scale(1.02)",
-                          }
-                        : {},
-                    opacity: dayInfo?.isPast ? 0.5 : 1,
+                    color: styles.color,
+                    fontSize: { xs: "15px", sm: "18px" },
+                    fontWeight: 800,
+                    outline: dayInfo.isToday
+                      ? `2px solid ${alpha("#22c55e", 0.75)}`
+                      : "none",
+                    outlineOffset: "-2px",
                   }}
                 >
-                  {dayInfo && (
-                    <>
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          fontWeight: dayInfo.isToday ? 700 : 400,
-                          color: dayInfo.isPast
-                            ? "text.disabled"
-                            : dayInfo.isAvailable
-                            ? "success.dark"
-                            : "error.dark",
-                        }}
-                      >
-                        {dayInfo.day}
-                      </Typography>
-                      {!dayInfo.isAvailable && !dayInfo.isPast && (
-                        <CloseIcon
-                          sx={{
-                            position: "absolute",
-                            top: 2,
-                            right: 2,
-                            fontSize: 12,
-                            color: "error.main",
-                          }}
-                        />
-                      )}
-                    </>
-                  )}
+                  {dayInfo.day}
                 </Box>
               </Tooltip>
-            ))
-          )}
+            );
+          })}
+        </Box>
+
+        <Box
+          sx={{
+            mt: 3,
+            pt: 2.5,
+            borderTop: "1px solid #242428",
+            display: "flex",
+            gap: { xs: 2, sm: 3 },
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            { label: "Available", color: "#22c55e", icon: EventAvailableIcon },
+            { label: "Unavailable", color: "#ef4444", icon: EventBusyIcon },
+            { label: "Match", color: "#fb923c", icon: SportsBasketballIcon },
+          ].map((item) => (
+            <Box
+              key={item.label}
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <Box
+                sx={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "6px",
+                  bgcolor: alpha(item.color, 0.18),
+                  border: `1px solid ${alpha(item.color, 0.55)}`,
+                  color: item.color,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <item.icon sx={{ fontSize: 14 }} />
+              </Box>
+              <Typography sx={{ color: "#9ca3af", fontWeight: 600 }}>
+                {item.label}
+              </Typography>
+            </Box>
+          ))}
         </Box>
       </Paper>
 
-      {/* Edit Dialog */}
       <Dialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        maxWidth='xs'
+        onClose={handleCloseDialog}
         fullWidth
+        maxWidth='sm'
+        PaperProps={{
+          sx: {
+            bgcolor: "#121214",
+            border: "1px solid #242428",
+            borderRadius: "18px",
+            overflow: "hidden",
+          },
+        }}
       >
-        <DialogTitle>
-          Uredi dostupnost za {selectedDate?.day}. {MONTHS[month - 1]}
+        <DialogTitle
+          sx={{
+            px: { xs: 2.5, sm: 4 },
+            py: { xs: 2.5, sm: 3 },
+            borderBottom: "1px solid #242428",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Typography
+            component='span'
+            sx={{
+              color: "#fff",
+              fontSize: { xs: "18px", sm: "28px" },
+              fontWeight: 600,
+            }}
+          >
+            Report unavailability
+          </Typography>
+          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff" }}>
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-              Trenutno ste označeni kao:{" "}
-              <strong
-                style={{
-                  color: selectedDate?.isAvailable
-                    ? theme.palette.success.main
-                    : theme.palette.error.main,
-                }}
-              >
-                {selectedDate?.isAvailable ? "DOSTUPAN" : "NEDOSTUPAN"}
-              </strong>
-            </Typography>
 
-            {!selectedDate?.isAvailable && selectedDate?.reason && (
-              <Alert severity='info' sx={{ mb: 2 }}>
-                Razlog: {selectedDate.reason}
-              </Alert>
-            )}
+        <DialogContent
+          sx={{
+            mt: 3,
+            px: { xs: 2.5, sm: 4 },
+            pb: { xs: 3, sm: 4 },
+          }}
+        >
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: { xs: 3.25, sm: 3 },
+            }}
+          >
+            <Box>
+              <Typography sx={fieldLabelSx}>From date *</Typography>
+              <Controller
+                name='dateFrom'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type='date'
+                    fullWidth
+                    error={!!errors.dateFrom}
+                    onChange={(event) =>
+                      handleDateFromChange(event.target.value)
+                    }
+                    slotProps={{ htmlInput: { min: todayKey } }}
+                  />
+                )}
+              />
+              <FormValidationError>
+                {errors.dateFrom?.message}
+              </FormValidationError>
+            </Box>
+            <Box>
+              <Typography sx={fieldLabelSx}>To date *</Typography>
+              <Controller
+                name='dateTo'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type='date'
+                    fullWidth
+                    error={!!errors.dateTo}
+                    slotProps={{
+                      htmlInput: { min: dateFromValue || todayKey },
+                    }}
+                  />
+                )}
+              />
+              <FormValidationError>
+                {errors.dateTo?.message}
+              </FormValidationError>
+            </Box>
+          </Box>
 
-            <TextField
-              fullWidth
-              label='Razlog nedostupnosti (opcionalno)'
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder='npr. Godišnji odmor, Posao...'
-              multiline
-              rows={2}
-              sx={{ mt: 1 }}
+          <Box sx={{ mt: 3 }}>
+            <Typography sx={fieldLabelSx}>Reason *</Typography>
+            <Controller
+              name='reason'
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.reason}>
+                  <Select
+                    {...field}
+                    displayEmpty
+                    renderValue={(selected) =>
+                      selected ? (
+                        selected
+                      ) : (
+                        <Typography sx={{ color: "#6b7280" }}>
+                          Select reason...
+                        </Typography>
+                      )
+                    }
+                  >
+                    <MenuItem value='' disabled>
+                      Select reason...
+                    </MenuItem>
+                    {UNAVAILABILITY_REASONS.map((reason) => (
+                      <MenuItem key={reason} value={reason}>
+                        {reason}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
             />
+            <FormValidationError>{errors.reason?.message}</FormValidationError>
+          </Box>
+
+          <Box sx={{ mt: 3 }}>
+            <Typography sx={fieldLabelSx}>Description</Typography>
+            <Controller
+              name='description'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  placeholder='Additional information...'
+                  multiline
+                  minRows={4}
+                  fullWidth
+                  error={!!errors.description}
+                />
+              )}
+            />
+            <FormValidationError>
+              {errors.description?.message}
+            </FormValidationError>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={() => setDialogOpen(false)} color='inherit'>
-            Odustani
+
+        <DialogActions
+          sx={{
+            px: { xs: 2.5, sm: 4 },
+            py: { xs: 2.5, sm: 3 },
+            borderTop: "1px solid #242428",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: { xs: 1.5, sm: 2 },
+            "& > :not(style)": {
+              width: "100%",
+              m: 0,
+            },
+            "& > :not(style) ~ :not(style)": {
+              ml: "0 !important",
+            },
+          }}
+        >
+          <Button
+            onClick={handleCloseDialog}
+            disabled={setAvailabilityRange.isPending}
+            sx={{
+              py: { xs: 1.25, sm: 1.35 },
+              minHeight: { xs: 48, sm: 52 },
+              borderRadius: "12px",
+              bgcolor: "#242428",
+              color: "#fff",
+              fontSize: { xs: "14px", sm: "16px" },
+              fontWeight: 600,
+              "&:hover": { bgcolor: "#2e2e33" },
+            }}
+          >
+            Cancel
           </Button>
-          {selectedDate?.isAvailable ? (
-            <Button
-              onClick={() => handleToggleAvailability(false)}
-              variant='contained'
-              color='error'
-              startIcon={<CloseIcon />}
-              disabled={setAvailabilityMutation.isPending}
-            >
-              {setAvailabilityMutation.isPending
-                ? "Spremanje..."
-                : "Označi nedostupnim"}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleToggleAvailability(true)}
-              variant='contained'
-              color='success'
-              startIcon={<CheckIcon />}
-              disabled={setAvailabilityMutation.isPending}
-            >
-              {setAvailabilityMutation.isPending
-                ? "Spremanje..."
-                : "Označi dostupnim"}
-            </Button>
-          )}
+          <Button
+            onClick={handleSubmit(handleFormSubmit)}
+            disabled={setAvailabilityRange.isPending}
+            sx={{
+              py: { xs: 1.25, sm: 1.35 },
+              minHeight: { xs: 48, sm: 52 },
+              borderRadius: "12px",
+              bgcolor: "#22c55e",
+              color: "#fff",
+              fontSize: { xs: "14px", sm: "16px" },
+              fontWeight: 600,
+              "&:hover": { bgcolor: "#16a34a" },
+            }}
+          >
+            {setAvailabilityRange.isPending ? "Submitting..." : "Report"}
+          </Button>
         </DialogActions>
       </Dialog>
+      <ConfirmDialog
+        open={!!periodToDelete}
+        onClose={handleCloseDeleteConfirm}
+        onConfirm={handleConfirmDelete}
+        title='Delete Availability Request'
+        message={"Are you sure you want to delete this availability request?"}
+        confirmText='Delete'
+        loading={deleteAvailability.isPending}
+      />
     </Box>
   );
 };
