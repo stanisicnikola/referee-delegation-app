@@ -6,6 +6,11 @@ const setAvailability = z.object({
     required_error: "Availability status is required.",
   }),
   reason: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  approvalStatus: z
+    .enum(["pending", "approved", "rejected"])
+    .optional()
+    .nullable(),
 });
 
 const setAvailabilityRange = z.object({
@@ -15,6 +20,11 @@ const setAvailabilityRange = z.object({
     required_error: "Availability status is required.",
   }),
   reason: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  approvalStatus: z
+    .enum(["pending", "approved", "rejected"])
+    .optional()
+    .nullable(),
 });
 
 const calendarQuery = z.object({
@@ -31,10 +41,35 @@ const refereeParams = z.object({
   refereeId: z.string().uuid("Invalid referee ID format."),
 });
 
+const availabilityIdParams = z.object({
+  id: z.string().uuid("Invalid availability ID format."),
+});
+
+const requestsQuery = z.object({
+  status: z
+    .enum(["all", "pending", "approved", "rejected"])
+    .optional()
+    .default("pending"),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
+});
+
+const reviewRequests = z.object({
+  ids: z
+    .array(z.string().uuid("Invalid availability ID format."))
+    .min(1, "At least one request is required."),
+  approvalStatus: z.enum(["approved", "rejected"]),
+});
+
 module.exports = {
   setAvailability,
   setAvailabilityRange,
   calendarQuery,
   copyPrevious,
   refereeParams,
+  availabilityIdParams,
+  requestsQuery,
+  reviewRequests,
 };

@@ -277,7 +277,7 @@ class RefereeService {
 
   async getAvailableForDate(date) {
     const unavailableRefereeIds = await RefereeAvailability.findAll({
-      where: { date, isAvailable: false },
+      where: { date, isAvailable: false, approvalStatus: "approved" },
       attributes: ["refereeId"],
     }).then((results) => results.map((r) => r.refereeId));
 
@@ -338,7 +338,7 @@ class RefereeService {
           attributes: ["id"],
         }),
         RefereeAvailability.findAll({
-          where: { date: todayKey, isAvailable: false },
+          where: { date: todayKey, isAvailable: false, approvalStatus: "approved" },
           attributes: ["refereeId"],
           raw: true,
         }),

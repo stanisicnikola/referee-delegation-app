@@ -19,11 +19,37 @@ router.post(
   validate(availabilitySchemas.setAvailability),
   availabilityController.setMyAvailability
 );
+router.post(
+  "/my-availability/range",
+  authorize("referee"),
+  validate(availabilitySchemas.setAvailabilityRange),
+  availabilityController.setMyAvailabilityRange
+);
+router.delete(
+  "/my-availability/:id",
+  authorize("referee"),
+  validate(availabilitySchemas.availabilityIdParams, "params"),
+  availabilityController.deleteMyAvailability
+);
 router.get(
   "/my-calendar",
   authorize("referee"),
   validate(availabilitySchemas.calendarQuery, "query"),
   availabilityController.getMyCalendar
+);
+
+// Availability requests for delegate/admin review
+router.get(
+  "/requests",
+  authorize("admin", "delegate"),
+  validate(availabilitySchemas.requestsQuery, "query"),
+  availabilityController.getAvailabilityRequests
+);
+router.patch(
+  "/requests/review",
+  authorize("admin", "delegate"),
+  validate(availabilitySchemas.reviewRequests),
+  availabilityController.reviewAvailabilityRequests
 );
 
 // Dostupni/nedostupni sudije za datum

@@ -318,6 +318,7 @@ class DelegationService {
             refereeId: assignment.refereeId,
             date: matchDate,
             isAvailable: false,
+            approvalStatus: "approved",
           },
           transaction,
         });
@@ -502,7 +503,7 @@ class DelegationService {
 
     // Get referees who are unavailable on that date
     const unavailableReferees = await RefereeAvailability.findAll({
-      where: { date: matchDate, isAvailable: false },
+      where: { date: matchDate, isAvailable: false, approvalStatus: "approved" },
       attributes: ["refereeId"],
     });
 
@@ -778,7 +779,7 @@ class DelegationService {
       });
 
       const unavailableIds = await RefereeAvailability.findAll({
-        where: { date: dateKey, isAvailable: false },
+        where: { date: dateKey, isAvailable: false, approvalStatus: "approved" },
         attributes: ["refereeId"],
         raw: true,
       });

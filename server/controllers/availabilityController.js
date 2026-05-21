@@ -53,6 +53,38 @@ const setAvailabilityRange = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get availability requests for review
+ * @route   GET /api/availability/requests
+ * @access  Private/Admin,Delegate
+ */
+const getAvailabilityRequests = asyncHandler(async (req, res) => {
+  const result = await availabilityService.getRequests(req.query);
+
+  res.json({
+    success: true,
+    ...result,
+  });
+});
+
+/**
+ * @desc    Approve/reject availability requests
+ * @route   PATCH /api/availability/requests/review
+ * @access  Private/Admin,Delegate
+ */
+const reviewAvailabilityRequests = asyncHandler(async (req, res) => {
+  const result = await availabilityService.reviewRequests(
+    req.body.ids,
+    req.body.approvalStatus,
+    req.user.id
+  );
+
+  res.json({
+    success: true,
+    ...result,
+  });
+});
+
+/**
  * @desc    Delete availability
  * @route   DELETE /api/availability/:id
  * @access  Private/Admin,Referee (own)
@@ -174,12 +206,53 @@ const setMyAvailability = asyncHandler(async (req, res) => {
   const referee = await refereeService.findByUserId(req.user.id);
   const availability = await availabilityService.setAvailability(
     referee.id,
-    req.body
+    req.body,
+    {
+      defaultApprovalStatus: req.body.isAvailable ? "approved" : "pending",
+      disallowPast: true,
+    }
   );
 
   res.json({
     success: true,
     data: availability,
+  });
+});
+
+/**
+ * @desc    Set my availability range (for logged in referee)
+ * @route   POST /api/availability/my-availability/range
+ * @access  Private/Referee
+ */
+const setMyAvailabilityRange = asyncHandler(async (req, res) => {
+  const referee = await refereeService.findByUserId(req.user.id);
+  const result = await availabilityService.setAvailabilityRange(
+    referee.id,
+    req.body,
+    {
+      defaultApprovalStatus: req.body.isAvailable ? "approved" : "pending",
+      disallowPast: true,
+    }
+  );
+
+  res.json({
+    success: true,
+    ...result,
+  });
+});
+
+/**
+ * @desc    Delete my availability record
+ * @route   DELETE /api/availability/my-availability/:id
+ * @access  Private/Referee
+ */
+const deleteMyAvailability = asyncHandler(async (req, res) => {
+  const referee = await refereeService.findByUserId(req.user.id);
+  await availabilityService.delete(req.params.id, { refereeId: referee.id });
+
+  res.json({
+    success: true,
+    message: "Availability deleted.",
   });
 });
 
@@ -207,6 +280,8 @@ module.exports = {
   getRefereeAvailability,
   setAvailability,
   setAvailabilityRange,
+  getAvailabilityRequests,
+  reviewAvailabilityRequests,
   deleteAvailability,
   deleteAvailabilityByDate,
   getUnavailableReferees,
@@ -215,5 +290,7 @@ module.exports = {
   copyFromPreviousMonth,
   getMyAvailability,
   setMyAvailability,
+  setMyAvailabilityRange,
+  deleteMyAvailability,
   getMyCalendar,
 };

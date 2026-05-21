@@ -3,6 +3,30 @@ const { RefereeAvailability, Referee, User, sequelize } = require("../models");
 const { AppError } = require("../middlewares");
 
 class AvailabilityService {
+  toDateKey(value) {
+    if (!value) return null;
+    if (typeof value === "string") return value.split("T")[0];
+    return value.toISOString().split("T")[0];
+  }
+
+  toLocalDateKey(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  getApprovalStatus(isAvailable, approvalStatus, defaultApprovalStatus) {
+    if (isAvailable) return "approved";
+    return approvalStatus || defaultApprovalStatus || "approved";
+  }
+
+  parsePositiveInt(value, fallback) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
   /**
    * Get referee availability
    * @param {string} refereeId - Referee ID
@@ -10,7 +34,9 @@ class AvailabilityService {
    */
   async getByReferee(refereeId, query = {}) {
     const { page = 1, limit = 30, dateFrom, dateTo, month, year } = query;
-    const offset = (page - 1) * limit;
+    const pageNumber = this.parsePositiveInt(page, 1);
+    const limitNumber = this.parsePositiveInt(limit, 30);
+    const offset = (pageNumber - 1) * limitNumber;
 
     const where = { refereeId };
 
@@ -31,7 +57,7 @@ class AvailabilityService {
 
     const { count, rows } = await RefereeAvailability.findAndCountAll({
       where,
-      limit,
+      limit: limitNumber,
       offset,
       order: [["date", "ASC"]],
     });
@@ -40,9 +66,9 @@ class AvailabilityService {
       data: rows,
       pagination: {
         total: count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(count / limitNumber),
       },
     };
   }
@@ -52,8 +78,17 @@ class AvailabilityService {
    * @param {string} refereeId - Referee ID
    * @param {object} data - Availability data
    */
-  async setAvailability(refereeId, data) {
-    const { date, isAvailable, reason } = data;
+  async setAvailability(refereeId, data, options = {}) {
+    const { date, isAvailable, reason, description, approvalStatus } = data;
+    const status = this.getApprovalStatus(
+      isAvailable,
+      approvalStatus,
+      options.defaultApprovalStatus
+    );
+
+    if (options.disallowPast && date < this.toLocalDateKey()) {
+      throw new AppError("Past dates cannot be selected.", 400);
+    }
 
     const referee = await Referee.findByPk(refereeId);
     if (!referee) {
@@ -63,11 +98,25 @@ class AvailabilityService {
     // Upsert - create or update
     const [availability, created] = await RefereeAvailability.findOrCreate({
       where: { refereeId, date },
-      defaults: { isAvailable, reason },
+      defaults: {
+        isAvailable,
+        reason: isAvailable ? null : reason || null,
+        description: isAvailable ? null : description || null,
+        approvalStatus: status,
+        reviewedBy: status === "pending" ? null : options.reviewedBy || null,
+        reviewedAt: status === "pending" ? null : options.reviewedAt || null,
+      },
     });
 
     if (!created) {
-      await availability.update({ isAvailable, reason });
+      await availability.update({
+        isAvailable,
+        reason: isAvailable ? null : reason || null,
+        description: isAvailable ? null : description || null,
+        approvalStatus: status,
+        reviewedBy: status === "pending" ? null : options.reviewedBy || null,
+        reviewedAt: status === "pending" ? null : options.reviewedAt || null,
+      });
     }
 
     return availability;
@@ -78,8 +127,14 @@ class AvailabilityService {
    * @param {string} refereeId - Referee ID
    * @param {object} data - Availability data
    */
-  async setAvailabilityRange(refereeId, data) {
-    const { dateFrom, dateTo, isAvailable, reason } = data;
+  async setAvailabilityRange(refereeId, data, options = {}) {
+    const { dateFrom, dateTo, isAvailable, reason, description, approvalStatus } =
+      data;
+    const status = this.getApprovalStatus(
+      isAvailable,
+      approvalStatus,
+      options.defaultApprovalStatus
+    );
 
     const referee = await Referee.findByPk(refereeId);
     if (!referee) {
@@ -88,6 +143,10 @@ class AvailabilityService {
 
     const startDate = new Date(dateFrom);
     const endDate = new Date(dateTo);
+
+    if (options.disallowPast && dateFrom < this.toLocalDateKey()) {
+      throw new AppError("Past dates cannot be selected.", 400);
+    }
 
     if (startDate > endDate) {
       throw new AppError("Start date must be before end date.", 400);
@@ -118,7 +177,11 @@ class AvailabilityService {
         refereeId,
         date,
         isAvailable,
-        reason,
+        reason: isAvailable ? null : reason || null,
+        description: isAvailable ? null : description || null,
+        approvalStatus: status,
+        reviewedBy: status === "pending" ? null : options.reviewedBy || null,
+        reviewedAt: status === "pending" ? null : options.reviewedAt || null,
       }));
 
       await RefereeAvailability.bulkCreate(availabilities, { transaction });
@@ -139,8 +202,13 @@ class AvailabilityService {
    * Delete availability
    * @param {string} id - Availability record ID
    */
-  async delete(id) {
-    const availability = await RefereeAvailability.findByPk(id);
+  async delete(id, options = {}) {
+    const where = { id };
+    if (options.refereeId) {
+      where.refereeId = options.refereeId;
+    }
+
+    const availability = await RefereeAvailability.findOne({ where });
 
     if (!availability) {
       throw new AppError("Availability record not found.", 404);
@@ -176,7 +244,7 @@ class AvailabilityService {
    */
   async getUnavailableReferees(date) {
     const unavailable = await RefereeAvailability.findAll({
-      where: { date, isAvailable: false },
+      where: { date, isAvailable: false, approvalStatus: "approved" },
       include: [
         {
           model: Referee,
@@ -196,7 +264,7 @@ class AvailabilityService {
   async getAvailableReferees(date) {
     // Get referees who are explicitly unavailable
     const unavailableReferees = await RefereeAvailability.findAll({
-      where: { date, isAvailable: false },
+      where: { date, isAvailable: false, approvalStatus: "approved" },
       attributes: ["refereeId"],
     });
 
@@ -253,14 +321,17 @@ class AvailabilityService {
     while (currentDate <= endDate) {
       const dateStr = currentDate.toISOString().split("T")[0];
       const availability = availabilities.find(
-        (a) => a.date.toISOString().split("T")[0] === dateStr
+        (a) => this.toDateKey(a.date) === dateStr
       );
 
       calendar.push({
+        id: availability?.id || null,
         date: dateStr,
         dayOfWeek: currentDate.getDay(),
         isAvailable: availability ? availability.isAvailable : true, // Po defaultu dostupan
         reason: availability?.reason || null,
+        description: availability?.description || null,
+        approvalStatus: availability?.approvalStatus || null,
       });
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -302,6 +373,7 @@ class AvailabilityService {
         refereeId,
         date: { [Op.between]: [prevStartDate, prevEndDate] },
         isAvailable: false,
+        approvalStatus: "approved",
       },
     });
 
@@ -330,6 +402,8 @@ class AvailabilityService {
             date: newDate,
             isAvailable: prev.isAvailable,
             reason: prev.reason,
+            description: prev.description,
+            approvalStatus: "approved",
           });
         }
       }
@@ -359,6 +433,123 @@ class AvailabilityService {
       await transaction.rollback();
       throw error;
     }
+  }
+
+  /**
+   * Get submitted unavailable periods for delegate/admin review.
+   */
+  async getRequests(query = {}) {
+    const {
+      page = 1,
+      limit = 100,
+      status = "pending",
+      dateFrom,
+      dateTo,
+    } = query;
+    const pageNumber = this.parsePositiveInt(page, 1);
+    const limitNumber = this.parsePositiveInt(limit, 100);
+    const offset = (pageNumber - 1) * limitNumber;
+
+    const where = { isAvailable: false };
+    const minimumDate = dateFrom || this.toLocalDateKey();
+    where.date = { [Op.gte]: minimumDate };
+    if (dateTo) {
+      where.date = { ...where.date, [Op.lte]: dateTo };
+    }
+    if (status === "all") {
+      where[Op.or] = [
+        { approvalStatus: "pending" },
+        {
+          approvalStatus: { [Op.in]: ["approved", "rejected"] },
+          reviewedAt: { [Op.ne]: null },
+        },
+      ];
+    } else if (status === "pending") {
+      where.approvalStatus = "pending";
+    } else {
+      where.approvalStatus = status;
+      where.reviewedAt = { [Op.ne]: null };
+    }
+
+    const { count, rows } = await RefereeAvailability.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Referee,
+          as: "referee",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["id", "firstName", "lastName", "email", "avatarUrl"],
+            },
+          ],
+        },
+        {
+          model: User,
+          as: "reviewer",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
+      limit: limitNumber,
+      offset,
+      order: [
+        ["date", "ASC"],
+        ["created_at", "ASC"],
+      ],
+    });
+
+    return {
+      data: rows,
+      pagination: {
+        total: count,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(count / limitNumber),
+      },
+    };
+  }
+
+  /**
+   * Approve or reject submitted unavailable dates.
+   */
+  async reviewRequests(ids, approvalStatus, reviewedBy) {
+    if (!["approved", "rejected"].includes(approvalStatus)) {
+      throw new AppError("Invalid approval status.", 400);
+    }
+
+    const requests = await RefereeAvailability.findAll({
+      where: {
+        id: { [Op.in]: ids },
+        isAvailable: false,
+      },
+    });
+
+    if (requests.length === 0) {
+      throw new AppError("Availability request not found.", 404);
+    }
+
+    await RefereeAvailability.update(
+      {
+        approvalStatus,
+        reviewedBy,
+        reviewedAt: new Date(),
+      },
+      {
+        where: {
+          id: { [Op.in]: ids },
+          isAvailable: false,
+        },
+      }
+    );
+
+    return {
+      message:
+        approvalStatus === "approved"
+          ? "Availability request approved."
+          : "Availability request rejected.",
+      count: requests.length,
+    };
   }
 }
 

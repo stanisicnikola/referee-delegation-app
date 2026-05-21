@@ -8,6 +8,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "refereeId",
         as: "referee",
       });
+      RefereeAvailability.belongsTo(models.User, {
+        foreignKey: "reviewedBy",
+        as: "reviewer",
+      });
     }
   }
 
@@ -34,8 +38,28 @@ module.exports = (sequelize, DataTypes) => {
         field: "is_available",
       },
       reason: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      description: {
         type: DataTypes.TEXT,
         allowNull: true,
+      },
+      approvalStatus: {
+        type: DataTypes.ENUM("pending", "approved", "rejected"),
+        allowNull: false,
+        defaultValue: "approved",
+        field: "approval_status",
+      },
+      reviewedBy: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: "reviewed_by",
+      },
+      reviewedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "reviewed_at",
       },
     },
     {
