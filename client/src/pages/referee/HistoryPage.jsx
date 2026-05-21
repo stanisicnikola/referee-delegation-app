@@ -1,506 +1,427 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Alert, Box, Chip, Typography } from "@mui/material";
 import {
-  Box,
-  Typography,
-  Paper,
-  Chip,
-  CircularProgress,
-  Alert,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Stack,
-  useTheme,
-  useMediaQuery,
-  Card,
-  CardContent,
-  Avatar,
-} from "@mui/material";
-import {
-  Search as SearchIcon,
-  SportsSoccer as SoccerIcon,
-  EmojiEvents as TrophyIcon,
-  CalendarMonth as CalendarIcon,
-  LocationOn as LocationIcon,
-} from "@mui/icons-material";
-import {
-  useMyAssignments,
   useCompetitions,
-  useMyStatistics,
+  useMyHistory,
+  useMyHistoryStatistics,
 } from "../../hooks";
-import { format, parseISO, isBefore, startOfDay } from "date-fns";
-import { hr } from "date-fns/locale";
+import { DataTable, FilterSearch, FilterSelect } from "../../components/ui";
+import { getRefereeRoleBadge } from "../../utils/refereeAssignmentBadges";
 
-// Orange accent for referee panel
-const ACCENT_COLOR = "#f97316";
+const COMPETITIONS_QUERY = { limit: 1000 };
+
+const ROLE_OPTIONS = [
+  { value: "first_referee", label: "1st Referee" },
+  { value: "second_referee", label: "2nd Referee" },
+  { value: "third_referee", label: "3rd Referee" },
+];
+
+const COLORS = {
+  card: "#121214",
+  panel: "#1a1a1d",
+  border: "#242428",
+  text: "#f8fafc",
+  muted: "#6b7280",
+  mutedStrong: "#9ca3af",
+  orange: "#f97316",
+  purple: "#c084fc",
+  blue: "#60a5fa",
+  green: "#22c55e",
+};
+
+const getMatch = (assignment) => assignment?.match || assignment?.Match || null;
+
+const getScheduledDate = (match) => {
+  const value = match?.scheduledAt || match?.matchDate || match?.date;
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getTeamName = (match, side) => {
+  const key = side === "home" ? "homeTeam" : "awayTeam";
+  const fallbackKey = side === "home" ? "HomeTeam" : "AwayTeam";
+
+  return (
+    match?.[key]?.name ||
+    match?.[fallbackKey]?.name ||
+    (side === "home" ? "Home Team" : "Away Team")
+  );
+};
+
+const getCompetition = (match) =>
+  match?.competition || match?.Competition || null;
+
+const getCompetitionId = (match) =>
+  match?.competitionId || match?.competition_id || getCompetition(match)?.id;
+
+const getCompetitionName = (match) =>
+  getCompetition(match)?.name || "Competition";
+
+const getVenueText = (match) => {
+  const venue = match?.venue || match?.Venue;
+  if (!venue) return "";
+
+  return [venue.name, venue.city].filter(Boolean).join(", ");
+};
+
+const getScoreValue = (match, camelKey, snakeKey) =>
+  match?.[camelKey] ?? match?.[snakeKey] ?? null;
+
+const getResultText = (match) => {
+  const homeScore = getScoreValue(match, "homeScore", "home_score");
+  const awayScore = getScoreValue(match, "awayScore", "away_score");
+
+  if (homeScore === null || awayScore === null) return "-";
+  return `${homeScore} : ${awayScore}`;
+};
+
+const formatDate = (date) => {
+  if (!date) return "-";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}.${month}.${date.getFullYear()}`;
+};
+
+const toHistoryRow = (assignment, index) => {
+  const match = getMatch(assignment);
+  const scheduledDate = getScheduledDate(match);
+  const role = getRefereeRoleBadge(assignment.role);
+
+  return {
+    id: assignment.id || assignment.matchId || match?.id || `history-${index}`,
+    date: scheduledDate,
+    dateLabel: formatDate(scheduledDate),
+    matchLabel: `${getTeamName(match, "home")} vs ${getTeamName(
+      match,
+      "away",
+    )}`,
+    competitionId: getCompetitionId(match),
+    competitionLabel: getCompetitionName(match),
+    venueLabel: getVenueText(match),
+    roleKey: assignment.role,
+    role,
+    resultLabel: getResultText(match),
+  };
+};
 
 const HistoryPage = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
-  // Filters
   const [search, setSearch] = useState("");
   const [competitionFilter, setCompetitionFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // API hooks
   const {
-    data: assignmentsData,
-    isLoading: assignmentsLoading,
-    error: assignmentsError,
-  } = useMyAssignments();
+    data: historyData,
+    isLoading: historyLoading,
+    isFetching: historyFetching,
+    error: historyError,
+  } = useMyHistory({
+    page: page + 1,
+    limit: rowsPerPage,
+    search: search.trim() || undefined,
+    competitionId:
+      competitionFilter !== "all" ? competitionFilter : undefined,
+    role: roleFilter !== "all" ? roleFilter : undefined,
+  });
+  const { data: historyStatisticsData, isLoading: historyStatisticsLoading } =
+    useMyHistoryStatistics();
+  const { data: competitionsData } = useCompetitions(COMPETITIONS_QUERY);
 
-  const { data: competitionsData } = useCompetitions();
-  const { data: statisticsData } = useMyStatistics();
+  const historyRows = useMemo(
+    () => (historyData?.data || []).map(toHistoryRow),
+    [historyData?.data],
+  );
 
-  // Filter for past matches only
-  const pastMatches = useMemo(() => {
-    if (!assignmentsData?.data) return [];
+  const stats = historyStatisticsData?.data || {
+    total: 0,
+    first: 0,
+    second: 0,
+    third: 0,
+  };
 
-    const today = startOfDay(new Date());
+  const competitionOptions = useMemo(() => {
+    const options = new Map();
 
-    return assignmentsData.data.filter((assignment) => {
-      const match = assignment.match || assignment.Match;
-      if (!match) return false;
-
-      const matchDate = match.matchDate || match.date;
-      if (!matchDate) return false;
-
-      const matchDateTime = parseISO(matchDate);
-      return isBefore(matchDateTime, today);
-    });
-  }, [assignmentsData]);
-
-  // Apply filters
-  const filteredMatches = useMemo(() => {
-    return pastMatches.filter((assignment) => {
-      const match = assignment.match || assignment.Match;
-      const homeTeam = match?.homeTeam?.name || match?.HomeTeam?.name || "";
-      const awayTeam = match?.awayTeam?.name || match?.AwayTeam?.name || "";
-      const competition = match?.competition || match?.Competition;
-      const venue = match?.venue?.name || match?.Venue?.name || "";
-
-      // Search filter
-      if (search) {
-        const searchLower = search.toLowerCase();
-        const matchesSearch =
-          homeTeam.toLowerCase().includes(searchLower) ||
-          awayTeam.toLowerCase().includes(searchLower) ||
-          venue.toLowerCase().includes(searchLower) ||
-          (competition?.name || "").toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
+    (competitionsData?.data || []).forEach((competition) => {
+      if (competition?.id) {
+        options.set(String(competition.id), {
+          value: competition.id,
+          label: competition.name,
+        });
       }
-
-      // Competition filter
-      if (competitionFilter !== "all") {
-        if (competition?.id !== competitionFilter) return false;
-      }
-
-      // Role filter
-      if (roleFilter !== "all") {
-        if (assignment.role !== roleFilter) return false;
-      }
-
-      return true;
     });
-  }, [pastMatches, search, competitionFilter, roleFilter]);
 
-  // Paginated data
-  const paginatedMatches = useMemo(() => {
-    const start = page * rowsPerPage;
-    return filteredMatches.slice(start, start + rowsPerPage);
-  }, [filteredMatches, page, rowsPerPage]);
-
-  // Get unique roles from data
-  const uniqueRoles = useMemo(() => {
-    const roles = new Set();
-    pastMatches.forEach((a) => {
-      if (a.role) roles.add(a.role);
-    });
-    return Array.from(roles);
-  }, [pastMatches]);
-
-  const isLoading = assignmentsLoading;
-  const error = assignmentsError;
-
-  if (isLoading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress />
-      </Box>
+    return Array.from(options.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
     );
-  }
+  }, [competitionsData?.data]);
 
-  if (error) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity='error'>
-          Greška pri učitavanju povijesti: {error.message}
-        </Alert>
-      </Box>
-    );
-  }
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setPage(0);
+  };
+
+  const handleCompetitionChange = (event) => {
+    setCompetitionFilter(event.target.value);
+    setPage(0);
+  };
+
+  const handleRoleChange = (event) => {
+    setRoleFilter(event.target.value);
+    setPage(0);
+  };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' sx={{ mb: 1, fontWeight: 600 }}>
-          Povijest suđenja
-        </Typography>
-        <Typography variant='body1' color='text.secondary'>
-          Pregled svih odrađenih utakmica
-        </Typography>
+    <Box
+      sx={{
+        p: { xs: 2, md: 4 },
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
+      <Box
+        sx={{
+          mb: { xs: 2.5, md: 3.5 },
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: { md: "flex-end" },
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              color: COLORS.text,
+              fontSize: { xs: "34px", sm: "40px", md: "48px" },
+              fontWeight: 700,
+              lineHeight: 1.05,
+            }}
+          >
+            History
+          </Typography>
+          <Typography sx={{ color: COLORS.muted, fontSize: "14px", mt: 0.75 }}>
+            Completed matches you officiated
+          </Typography>
+        </Box>
       </Box>
 
-      {/* Statistics Summary */}
-      {statisticsData?.data && (
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{ mb: 3 }}
-        >
-          <StatCard
-            icon={<SoccerIcon />}
-            label='Ukupno utakmica'
-            value={statisticsData.data.totalMatches || pastMatches.length}
-            color={ACCENT_COLOR}
-          />
-          <StatCard
-            icon={<TrophyIcon />}
-            label='Ova sezona'
-            value={statisticsData.data.matchesThisSeason || 0}
-            color='#22c55e'
-          />
-          <StatCard
-            icon={<CalendarIcon />}
-            label='Ovaj mjesec'
-            value={statisticsData.data.matchesThisMonth || 0}
-            color='#3b82f6'
-          />
-        </Stack>
+      <HistoryStats stats={stats} loading={historyStatisticsLoading} />
+
+      <Box
+        sx={{
+          p: 2,
+          mb: 3,
+          bgcolor: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: "16px",
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          flexWrap: { sm: "wrap" },
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <FilterSearch
+          variant='referee'
+          placeholder='Search matches...'
+          value={search}
+          onChange={handleSearchChange}
+        />
+
+        <FilterSelect
+          variant='referee'
+          value={competitionFilter}
+          onChange={handleCompetitionChange}
+          placeholder='All Competitions'
+          minWidth={240}
+          options={competitionOptions}
+        />
+
+        <FilterSelect
+          variant='referee'
+          value={roleFilter}
+          onChange={handleRoleChange}
+          placeholder='All Roles'
+          minWidth={180}
+          options={ROLE_OPTIONS}
+        />
+      </Box>
+
+      {historyError && (
+        <Alert severity='error' sx={{ mb: 3 }}>
+          Failed to load match history: {historyError.message}
+        </Alert>
       )}
 
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems={{ md: "center" }}
-        >
-          <TextField
-            placeholder='Pretraži timove, lokacije...'
-            size='small'
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon color='action' />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ minWidth: 250 }}
-          />
-
-          <FormControl size='small' sx={{ minWidth: 180 }}>
-            <InputLabel>Natjecanje</InputLabel>
-            <Select
-              value={competitionFilter}
-              label='Natjecanje'
-              onChange={(e) => {
-                setCompetitionFilter(e.target.value);
-                setPage(0);
-              }}
-            >
-              <MenuItem value='all'>Sva natjecanja</MenuItem>
-              {competitionsData?.data?.map((comp) => (
-                <MenuItem key={comp.id} value={comp.id}>
-                  {comp.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl size='small' sx={{ minWidth: 150 }}>
-            <InputLabel>Uloga</InputLabel>
-            <Select
-              value={roleFilter}
-              label='Uloga'
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setPage(0);
-              }}
-            >
-              <MenuItem value='all'>Sve uloge</MenuItem>
-              {uniqueRoles.map((role) => (
-                <MenuItem key={role} value={role}>
-                  {getRoleName(role)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Chip
-            label={`${filteredMatches.length} utakmica`}
-            size='small'
-            sx={{ ml: "auto" }}
-          />
-        </Stack>
-      </Paper>
-
-      {/* Empty State */}
-      {filteredMatches.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <SoccerIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
-          <Typography variant='h6' color='text.secondary' gutterBottom>
-            {pastMatches.length === 0
-              ? "Nema odrađenih utakmica"
-              : "Nema rezultata za odabrane filtere"}
-          </Typography>
-          <Typography variant='body2' color='text.disabled'>
-            {pastMatches.length === 0
-              ? "Vaše odrađene utakmice će se pojaviti ovdje"
-              : "Pokušajte promijeniti filtere pretrage"}
-          </Typography>
-        </Paper>
-      )}
-
-      {/* Results Table */}
-      {filteredMatches.length > 0 && (
-        <Paper>
-          {isMobile ? (
-            // Mobile card view
-            <Box sx={{ p: 2 }}>
-              <Stack spacing={2}>
-                {paginatedMatches.map((assignment) => (
-                  <MatchCard key={assignment.id} assignment={assignment} />
-                ))}
-              </Stack>
-            </Box>
-          ) : (
-            // Desktop table view
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Datum</TableCell>
-                    <TableCell>Utakmica</TableCell>
-                    <TableCell>Natjecanje</TableCell>
-                    <TableCell>Mjesto</TableCell>
-                    <TableCell>Uloga</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedMatches.map((assignment) => {
-                    const match = assignment.match || assignment.Match;
-                    const matchDate = match?.matchDate || match?.date;
-                    const homeTeam =
-                      match?.homeTeam?.name || match?.HomeTeam?.name || "N/A";
-                    const awayTeam =
-                      match?.awayTeam?.name || match?.AwayTeam?.name || "N/A";
-                    const competition =
-                      match?.competition?.name ||
-                      match?.Competition?.name ||
-                      "-";
-                    const venue =
-                      match?.venue?.name || match?.Venue?.name || "-";
-
-                    return (
-                      <TableRow key={assignment.id} hover>
-                        <TableCell>
-                          {matchDate
-                            ? format(parseISO(matchDate), "dd.MM.yyyy", {
-                                locale: hr,
-                              })
-                            : "-"}
-                          <Typography
-                            variant='caption'
-                            display='block'
-                            color='text.secondary'
-                          >
-                            {matchDate
-                              ? format(parseISO(matchDate), "HH:mm")
-                              : ""}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant='body2' fontWeight={500}>
-                            {homeTeam} - {awayTeam}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{competition}</TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <LocationIcon
-                              sx={{ fontSize: 16, color: "text.secondary" }}
-                            />
-                            {venue}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getRoleName(assignment.role)}
-                            size='small'
-                            sx={{
-                              bgcolor: getRoleColor(assignment.role),
-                              color: "white",
-                              fontWeight: 500,
-                            }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-
-          <TablePagination
-            component='div'
-            count={filteredMatches.length}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
-            }}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            labelRowsPerPage='Redaka po stranici:'
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} od ${count !== -1 ? count : `više od ${to}`}`
-            }
-          />
-        </Paper>
-      )}
+      <DataTable
+        columns={[
+          {
+            id: "dateLabel",
+            label: "Date",
+            width: 150,
+            render: (value) => (
+              <Typography
+                sx={{
+                  color: COLORS.text,
+                  fontWeight: 700,
+                  fontSize: "15px",
+                  letterSpacing: 0,
+                }}
+              >
+                {value}
+              </Typography>
+            ),
+          },
+          {
+            id: "matchLabel",
+            label: "Match",
+            minWidth: 280,
+            render: (value) => (
+              <Typography
+                sx={{ color: COLORS.text, fontWeight: 700, fontSize: "15px" }}
+              >
+                {value}
+              </Typography>
+            ),
+          },
+          {
+            id: "competitionLabel",
+            label: "Competition",
+            width: 190,
+            render: (value) => (
+              <Chip
+                label={value}
+                size='small'
+                sx={{
+                  height: 26,
+                  borderRadius: "7px",
+                  bgcolor: "rgba(249, 115, 22, 0.13)",
+                  color: COLORS.orange,
+                  fontWeight: 800,
+                  fontSize: "12px",
+                }}
+              />
+            ),
+          },
+          {
+            id: "role",
+            label: "Role",
+            width: 160,
+            render: (_, row) => (
+              <Chip
+                label={row.role.label}
+                size='small'
+                sx={{
+                  height: 26,
+                  borderRadius: "7px",
+                  bgcolor: row.role.bg,
+                  color: row.role.color,
+                  fontWeight: 800,
+                  fontSize: "12px",
+                }}
+              />
+            ),
+          },
+          {
+            id: "resultLabel",
+            label: "Result",
+            width: 150,
+            render: (value) => (
+              <Typography
+                sx={{
+                  color: COLORS.text,
+                  fontWeight: 800,
+                  fontSize: "16px",
+                  letterSpacing: 0,
+                }}
+              >
+                {value}
+              </Typography>
+            ),
+          },
+        ]}
+        data={historyRows}
+        loading={historyLoading || historyFetching}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={historyData?.pagination?.total || 0}
+        onPageChange={setPage}
+        onRowsPerPageChange={(newRowsPerPage) => {
+          setRowsPerPage(newRowsPerPage);
+          setPage(0);
+        }}
+        emptyMessage='No match history found'
+      />
     </Box>
   );
 };
 
-// Stat Card Component
-const StatCard = ({ icon, label, value, color }) => (
-  <Card sx={{ flex: 1 }}>
-    <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-      <Avatar sx={{ bgcolor: `${color}20`, color }}>{icon}</Avatar>
-      <Box>
-        <Typography variant='h5' fontWeight={600}>
-          {value}
-        </Typography>
-        <Typography variant='caption' color='text.secondary'>
-          {label}
-        </Typography>
-      </Box>
-    </CardContent>
-  </Card>
-);
-
-// Mobile Match Card
-const MatchCard = ({ assignment }) => {
-  const match = assignment.match || assignment.Match;
-  const matchDate = match?.matchDate || match?.date;
-  const homeTeam = match?.homeTeam?.name || match?.HomeTeam?.name || "N/A";
-  const awayTeam = match?.awayTeam?.name || match?.AwayTeam?.name || "N/A";
-  const competition =
-    match?.competition?.name || match?.Competition?.name || "";
-  const venue = match?.venue?.name || match?.Venue?.name || "";
+const HistoryStats = ({ stats }) => {
+  const items = [
+    { label: "Total", value: stats.total, color: COLORS.text },
+    { label: "1st Referee", value: stats.first, color: COLORS.purple },
+    { label: "2nd Referee", value: stats.second, color: COLORS.blue },
+    { label: "3rd Referee", value: stats.third, color: COLORS.green },
+  ];
 
   return (
-    <Paper variant='outlined' sx={{ p: 2 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-        <Typography variant='caption' color='text.secondary'>
-          {matchDate
-            ? format(parseISO(matchDate), "dd.MM.yyyy HH:mm", { locale: hr })
-            : "-"}
-        </Typography>
-        <Chip
-          label={getRoleName(assignment.role)}
-          size='small'
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(2, minmax(0, 1fr))",
+          lg: "repeat(4, minmax(0, 1fr))",
+        },
+        gap: { xs: 1.5, md: 2 },
+        mb: { xs: 3, md: 4 },
+      }}
+    >
+      {items.map((item) => (
+        <Box
+          key={item.label}
           sx={{
-            bgcolor: getRoleColor(assignment.role),
-            color: "white",
-            fontWeight: 500,
-            height: 22,
-            fontSize: "0.7rem",
+            minHeight: { xs: 120, md: 138 },
+            p: { xs: 2.5, md: 3 },
+            bgcolor: COLORS.card,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
           }}
-        />
-      </Box>
-      <Typography variant='subtitle2' fontWeight={600} gutterBottom>
-        {homeTeam} - {awayTeam}
-      </Typography>
-      {competition && (
-        <Typography variant='caption' color='text.secondary' display='block'>
-          {competition}
-        </Typography>
-      )}
-      {venue && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
-          <LocationIcon sx={{ fontSize: 14, color: "text.disabled" }} />
-          <Typography variant='caption' color='text.disabled'>
-            {venue}
+        >
+          <Typography
+            sx={{
+              color: item.color,
+              fontSize: { xs: "38px", md: "46px" },
+              fontWeight: 900,
+              lineHeight: 1,
+            }}
+          >
+            {item.value}
+          </Typography>
+          <Typography
+            sx={{
+              color: COLORS.muted,
+              fontSize: { xs: "15px", md: "16px" },
+              fontWeight: 800,
+              mt: 1.25,
+            }}
+          >
+            {item.label}
           </Typography>
         </Box>
-      )}
-    </Paper>
+      ))}
+    </Box>
   );
 };
-
-// Helper functions
-function getRoleName(role) {
-  const roles = {
-    head_referee: "Glavni sudac",
-    first_assistant: "1. pomoćni sudac",
-    second_assistant: "2. pomoćni sudac",
-    fourth_official: "4. službenik",
-    var_referee: "VAR sudac",
-    avar_referee: "AVAR sudac",
-    delegate: "Delegat",
-    observer: "Nadzornik",
-  };
-  return roles[role] || role;
-}
-
-function getRoleColor(role) {
-  const colors = {
-    head_referee: "#f97316",
-    first_assistant: "#22c55e",
-    second_assistant: "#3b82f6",
-    fourth_official: "#8b5cf6",
-    var_referee: "#ef4444",
-    avar_referee: "#ec4899",
-    delegate: "#06b6d4",
-    observer: "#64748b",
-  };
-  return colors[role] || "#64748b";
-}
 
 export default HistoryPage;

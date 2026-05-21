@@ -434,7 +434,7 @@ const DashboardHeader = ({ user }) => (
         Welcome, {user?.firstName || "Referee"}!
       </Typography>
       <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
-        Review your schedule and notifications
+        Review your schedule and assignments
       </Typography>
     </Box>
   </Box>

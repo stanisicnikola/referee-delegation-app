@@ -270,6 +270,7 @@ const RefereesPage = () => {
           }}
         >
           <FilterSearch
+            variant='delegate'
             placeholder='Search by name...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}

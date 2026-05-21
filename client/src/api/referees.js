@@ -46,8 +46,18 @@ export const refereesApi = {
     return response.data;
   },
 
-  getMyAssignments: async () => {
-    const response = await api.get("/referees/my-assignments");
+  getMyAssignments: async (params = {}) => {
+    const response = await api.get("/referees/my-assignments", { params });
+    return response.data;
+  },
+
+  getMyHistory: async (params = {}) => {
+    const response = await api.get("/referees/my-history", { params });
+    return response.data;
+  },
+
+  getMyHistoryStatistics: async () => {
+    const response = await api.get("/referees/my-history-statistics");
     return response.data;
   },
 

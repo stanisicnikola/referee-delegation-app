@@ -4,17 +4,13 @@ import {
   Button,
   Chip,
   CircularProgress,
-  FormControl,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   Typography,
 } from "@mui/material";
 import {
   Check as CheckIcon,
   Close as CloseIcon,
-  ExpandMore as ExpandMoreIcon,
   LocationOn as LocationIcon,
   SportsBasketball as BasketballIcon,
 } from "@mui/icons-material";
@@ -24,6 +20,7 @@ import {
   useMyAssignments,
   useRejectAssignment,
 } from "../../hooks";
+import { FilterSelect } from "../../components/ui";
 import {
   getRefereeAssignmentStatusBadge,
   getRefereeRoleBadge,
@@ -48,17 +45,15 @@ const COLORS = {
   purple: "#c084fc",
 };
 
-const roleOptions = [
-  { value: "all", label: "All Roles" },
+const ROLE_OPTIONS = [
   { value: "first_referee", label: "1st Referee" },
   { value: "second_referee", label: "2nd Referee" },
   { value: "third_referee", label: "3rd Referee" },
 ];
 
-const periodOptions = [
+const PERIOD_OPTIONS = [
   { value: "upcoming", label: "Upcoming" },
   { value: "past", label: "Past" },
-  { value: "all", label: "All Matches" },
 ];
 
 const getMatch = (assignment) => assignment?.match || assignment?.Match || null;
@@ -90,9 +85,6 @@ const getCompetition = (match) =>
 
 const getCompetitionName = (match) =>
   getCompetition(match)?.name || "Competition";
-
-const getCompetitionId = (match) =>
-  match?.competitionId || match?.competition_id || getCompetition(match)?.id;
 
 const getVenueText = (match) => {
   const venue = match?.venue || match?.Venue;
@@ -202,7 +194,13 @@ const SchedulePage = () => {
     data: assignmentsData,
     isLoading: assignmentsLoading,
     refetch,
-  } = useMyAssignments();
+  } = useMyAssignments({
+    competitionId:
+      selectedCompetition !== "all" ? selectedCompetition : undefined,
+    role: selectedRole !== "all" ? selectedRole : undefined,
+    period: selectedPeriod !== "all" ? selectedPeriod : undefined,
+    limit: 1000,
+  });
   const { data: competitionsData } = useCompetitions();
   const acceptAssignment = useAcceptAssignment();
   const rejectAssignment = useRejectAssignment();
@@ -217,49 +215,22 @@ const SchedulePage = () => {
     [competitionsData?.data],
   );
 
-  const filteredAssignments = useMemo(() => {
-    const now = new Date();
-
+  const sortedAssignments = useMemo(() => {
     return assignments
-      .filter((assignment) => {
-        const match = getMatch(assignment);
-        const scheduledDate = getScheduledDate(match);
-
-        if (!match) return false;
-
-        if (selectedPeriod === "upcoming") {
-          if (!scheduledDate || scheduledDate < now) return false;
-        }
-
-        if (selectedPeriod === "past") {
-          if (!scheduledDate || scheduledDate >= now) return false;
-        }
-
-        if (
-          selectedCompetition !== "all" &&
-          String(getCompetitionId(match)) !== String(selectedCompetition)
-        ) {
-          return false;
-        }
-
-        if (selectedRole !== "all" && assignment.role !== selectedRole) {
-          return false;
-        }
-
-        return true;
-      })
+      .slice()
+      .filter((assignment) => getMatch(assignment))
       .sort((a, b) => {
         const dateA = getScheduledDate(getMatch(a))?.getTime() || 0;
         const dateB = getScheduledDate(getMatch(b))?.getTime() || 0;
 
         return selectedPeriod === "past" ? dateB - dateA : dateA - dateB;
       });
-  }, [assignments, selectedCompetition, selectedPeriod, selectedRole]);
+  }, [assignments, selectedPeriod]);
 
   const groupedByMonth = useMemo(() => {
     const groups = new Map();
 
-    filteredAssignments.forEach((assignment) => {
+    sortedAssignments.forEach((assignment) => {
       const match = getMatch(assignment);
       const dateInfo = formatDate(match);
 
@@ -278,7 +249,7 @@ const SchedulePage = () => {
         ? keyB.localeCompare(keyA)
         : keyA.localeCompare(keyB),
     );
-  }, [filteredAssignments, selectedPeriod]);
+  }, [sortedAssignments, selectedPeriod]);
 
   const handleAccept = async (assignment) => {
     const matchId = getAssignmentMatchId(assignment);
@@ -364,45 +335,44 @@ const SchedulePage = () => {
 
           <Box
             sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(3, minmax(0, 1fr))",
-                lg: "260px 220px 220px",
-              },
-              gap: { xs: 1.25, md: 1.5 },
-              width: { xs: "100%", lg: "auto" },
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              flexWrap: { sm: "wrap" },
+              gap: 2,
+              width: "100%",
             }}
           >
             <FilterSelect
-              ariaLabel='Competition'
+              variant='referee'
               value={selectedCompetition}
-              onChange={setSelectedCompetition}
-              options={[
-                { value: "all", label: "All Competitions" },
-                ...competitions.map((competition) => ({
-                  value: competition.id,
-                  label: competition.name,
-                })),
-              ]}
+              onChange={(event) => setSelectedCompetition(event.target.value)}
+              placeholder='All Competitions'
+              minWidth={260}
+              options={competitions.map((competition) => ({
+                value: competition.id,
+                label: competition.name,
+              }))}
             />
             <FilterSelect
-              ariaLabel='Role'
+              variant='referee'
               value={selectedRole}
-              onChange={setSelectedRole}
-              options={roleOptions}
+              onChange={(event) => setSelectedRole(event.target.value)}
+              placeholder='All Roles'
+              minWidth={220}
+              options={ROLE_OPTIONS}
             />
             <FilterSelect
-              active
-              ariaLabel='Period'
+              variant='referee'
               value={selectedPeriod}
-              onChange={setSelectedPeriod}
-              options={periodOptions}
+              onChange={(event) => setSelectedPeriod(event.target.value)}
+              placeholder='All Matches'
+              minWidth={220}
+              options={PERIOD_OPTIONS}
             />
           </Box>
         </Box>
 
-        {filteredAssignments.length === 0 ? (
+        {sortedAssignments.length === 0 ? (
           <EmptyState />
         ) : (
           <Stack spacing={4.25}>
@@ -455,69 +425,6 @@ const SchedulePage = () => {
     </Box>
   );
 };
-
-const FilterSelect = ({
-  active = false,
-  ariaLabel,
-  value,
-  onChange,
-  options,
-}) => (
-  <FormControl fullWidth>
-    <Select
-      displayEmpty
-      IconComponent={ExpandMoreIcon}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      inputProps={{ "aria-label": ariaLabel }}
-      MenuProps={{
-        PaperProps: {
-          sx: {
-            mt: 1,
-            bgcolor: COLORS.panel,
-            border: `1px solid ${COLORS.border}`,
-            borderRadius: "12px",
-          },
-        },
-      }}
-      sx={{
-        height: 52,
-        borderRadius: "14px",
-        bgcolor: "#18181b",
-        color: COLORS.text,
-        fontWeight: 800,
-        fontSize: "0.9rem",
-        "& .MuiSelect-select": {
-          py: 0,
-          px: 2.25,
-          display: "flex",
-          alignItems: "center",
-        },
-        "& .MuiOutlinedInput-notchedOutline": {
-          borderColor: active ? COLORS.orange : COLORS.border,
-          borderWidth: active ? 2 : 1,
-        },
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-          borderColor: active ? COLORS.orange : "rgba(255, 255, 255, 0.18)",
-        },
-        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-          borderColor: COLORS.orange,
-          boxShadow: "0 0 0 3px rgba(249, 115, 22, 0.14)",
-        },
-        "& .MuiSvgIcon-root": {
-          color: COLORS.mutedStrong,
-          right: 16,
-        },
-      }}
-    >
-      {options.map((option) => (
-        <MenuItem key={option.value} value={option.value}>
-          {option.label}
-        </MenuItem>
-      ))}
-    </Select>
-  </FormControl>
-);
 
 const EmptyState = () => (
   <Paper

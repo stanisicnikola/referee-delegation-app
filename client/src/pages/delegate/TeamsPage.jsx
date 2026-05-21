@@ -303,6 +303,7 @@ const TeamsPage = () => {
           }}
         >
           <FilterSearch
+            variant='delegate'
             placeholder='Search teams...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}

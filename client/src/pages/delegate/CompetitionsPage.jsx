@@ -305,6 +305,7 @@ const CompetitionsPage = () => {
           }}
         >
           <FilterSearch
+            variant='delegate'
             placeholder='Search competitions...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}

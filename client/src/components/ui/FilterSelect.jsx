@@ -1,14 +1,23 @@
 import { FormControl, Select, MenuItem, Typography } from "@mui/material";
 
+const VARIANT_COLORS = {
+  admin: "#8b5cf6",
+  delegate: "#f97316",
+  referee: "#22c55e",
+};
+
 const FilterSelect = ({
   value,
   onChange,
   options = [],
   placeholder = "All Status",
   minWidth = 150,
+  variant = "admin",
   sx = {},
   ...props
 }) => {
+  const accentColor = VARIANT_COLORS[variant] || VARIANT_COLORS.admin;
+
   const inputStyles = {
     bgcolor: "#1a1a1d",
     borderRadius: "12px",
@@ -20,7 +29,7 @@ const FilterSelect = ({
       borderColor: "#3f3f46",
     },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#8b5cf6",
+      borderColor: accentColor,
     },
     "& .MuiSelect-select": {
       color: value === "all" ? "#6b7280ff" : "#fff",
@@ -62,10 +71,10 @@ const FilterSelect = ({
                   color: "#fff",
                 },
                 "&.Mui-selected": {
-                  bgcolor: "#8b5cf620",
-                  color: "#8b5cf6",
+                  bgcolor: `${accentColor}20`,
+                  color: accentColor,
                   "&:hover": {
-                    bgcolor: "#8b5cf630",
+                    bgcolor: `${accentColor}30`,
                   },
                 },
               },

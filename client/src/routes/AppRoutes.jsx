@@ -23,7 +23,6 @@ import {
   RefereeSchedulePage,
   RefereePendingPage,
   RefereeAvailabilityPage,
-  RefereeNotificationsPage,
   RefereeHistoryPage,
   ProfilePage,
 } from "../pages";
@@ -170,7 +169,6 @@ const AppRoutes = () => {
           <Route path='schedule' element={<RefereeSchedulePage />} />
           <Route path='pending' element={<RefereePendingPage />} />
           <Route path='availability' element={<RefereeAvailabilityPage />} />
-          <Route path='notifications' element={<RefereeNotificationsPage />} />
           <Route path='history' element={<RefereeHistoryPage />} />
           <Route path='settings' element={<SettingsPage />} />
           <Route path='profile' element={<ProfilePage />} />

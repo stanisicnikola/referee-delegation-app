@@ -13,6 +13,10 @@ export const refereeKeys = {
   statistics: (id) => [...refereeKeys.all, "statistics", id],
   overallStatistics: () => [...refereeKeys.all, "overall-statistics"],
   myAssignments: () => [...refereeKeys.all, "my-assignments"],
+  myAssignmentsList: (params) => [...refereeKeys.myAssignments(), params],
+  myHistory: () => [...refereeKeys.all, "my-history"],
+  myHistoryList: (params) => [...refereeKeys.myHistory(), params],
+  myHistoryStatistics: () => [...refereeKeys.all, "my-history-statistics"],
   myStatistics: () => [...refereeKeys.all, "my-statistics"],
 };
 
@@ -62,10 +66,24 @@ export const useRefereesStatistics = () => {
   });
 };
 
-export const useMyAssignments = () => {
+export const useMyAssignments = (params = {}) => {
   return useQuery({
-    queryKey: refereeKeys.myAssignments(),
-    queryFn: () => refereesApi.getMyAssignments(),
+    queryKey: refereeKeys.myAssignmentsList(params),
+    queryFn: () => refereesApi.getMyAssignments(params),
+  });
+};
+
+export const useMyHistory = (params = {}) => {
+  return useQuery({
+    queryKey: refereeKeys.myHistoryList(params),
+    queryFn: () => refereesApi.getMyHistory(params),
+  });
+};
+
+export const useMyHistoryStatistics = () => {
+  return useQuery({
+    queryKey: refereeKeys.myHistoryStatistics(),
+    queryFn: () => refereesApi.getMyHistoryStatistics(),
   });
 };
 

@@ -1,13 +1,22 @@
 import { TextField, InputAdornment } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 
+const VARIANT_COLORS = {
+  admin: "#8b5cf6",
+  delegate: "#f97316",
+  referee: "#22c55e",
+};
+
 const FilterSearch = ({
   placeholder = "Search...",
   value,
   onChange,
+  variant = "admin",
   sx = {},
   ...props
 }) => {
+  const accentColor = VARIANT_COLORS[variant] || VARIANT_COLORS.admin;
+
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#1a1a1d",
@@ -15,7 +24,8 @@ const FilterSearch = ({
       height: "50px",
       "& fieldset": { borderColor: "#242428" },
       "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+      "&.Mui-focused fieldset": { borderColor: accentColor },
+      "&.Mui-focused .MuiSvgIcon-root": { color: accentColor },
     },
     "& .MuiInputBase-input": {
       color: "#fff",

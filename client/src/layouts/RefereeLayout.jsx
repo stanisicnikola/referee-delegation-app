@@ -20,7 +20,6 @@ import {
   CalendarMonth as CalendarIcon,
   Assignment as AssignmentIcon,
   AccessTime as ClockIcon,
-  Notifications as NotificationsIcon,
   History as HistoryIcon,
   Person as PersonIcon,
   Settings as SettingsIcon,
@@ -88,13 +87,6 @@ const RefereeLayout = () => {
       pulse: pendingDelegationCount > 0,
     },
     { path: "/referee/availability", label: "Availability", icon: ClockIcon },
-    {
-      path: "/referee/notifications",
-      label: "Notifications",
-      icon: NotificationsIcon,
-      badge: 2,
-      badgeColor: "#ef4444",
-    },
   ];
 
   const bottomNavItems = [
