@@ -9,6 +9,12 @@ router.use(authenticate);
 
 // Routes for logged-in referee (must be before /:id)
 router.get(
+  "/my-dashboard",
+  authorize("referee"),
+  validate(refereeSchemas.dashboardQuery, "query"),
+  refereeController.getMyDashboard,
+);
+router.get(
   "/my-assignments",
   authorize("referee"),
   refereeController.getMyAssignments,

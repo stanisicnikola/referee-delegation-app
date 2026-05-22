@@ -129,6 +129,21 @@ const getAvailableReferees = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get my dashboard data (for logged in referee)
+ * @route   GET /api/referees/my-dashboard
+ * @access  Private/Referee
+ */
+const getMyDashboard = asyncHandler(async (req, res) => {
+  const referee = await refereeService.findByUserId(req.user.id);
+  const dashboard = await refereeService.getDashboard(referee.id, req.query);
+
+  res.json({
+    success: true,
+    data: dashboard,
+  });
+});
+
+/**
  * @desc    Get my assignments (for logged in referee)
  * @route   GET /api/referees/my-assignments
  * @access  Private/Referee
@@ -204,6 +219,7 @@ module.exports = {
   getRefereeStatistics,
   getRefereesStatistics,
   getAvailableReferees,
+  getMyDashboard,
   getMyAssignments,
   getMyHistory,
   getMyHistoryStatistics,

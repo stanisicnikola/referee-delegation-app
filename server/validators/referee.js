@@ -39,6 +39,13 @@ const availableQuery = z.object({
   date: z.string({ required_error: "Date is required." }),
 });
 
+const dashboardQuery = z.object({
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "Invalid month format. Use YYYY-MM.")
+    .optional(),
+});
+
 const historyQuery = z.object({
   page: z.string().transform(Number).optional(),
   limit: z.string().transform(Number).optional(),
@@ -53,5 +60,6 @@ module.exports = {
   query,
   params,
   availableQuery,
+  dashboardQuery,
   historyQuery,
 };

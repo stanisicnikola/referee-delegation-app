@@ -28,6 +28,85 @@ class RefereeService {
     return { start, end };
   }
 
+  getMonthRange(value = new Date()) {
+    const sourceDate =
+      typeof value === "string" && /^\d{4}-\d{2}$/.test(value)
+        ? new Date(`${value}-01T00:00:00`)
+        : new Date(value);
+    const date = Number.isNaN(sourceDate.getTime())
+      ? new Date()
+      : sourceDate;
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+
+    return { start, end };
+  }
+
+  formatMonthKey(date) {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${date.getFullYear()}-${month}`;
+  }
+
+  formatDashboardDate(dateValue) {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return { weekday: "-", day: "--", month: "---", time: "--:--" };
+    }
+
+    return {
+      weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+      day: String(date.getDate()).padStart(2, "0"),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+    };
+  }
+
+  getDashboardCalendar(monthStart, matchDateKeys) {
+    const firstDay = new Date(monthStart);
+    const lastDay = new Date(
+      monthStart.getFullYear(),
+      monthStart.getMonth() + 1,
+      0,
+    );
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const todayKey = this.toLocalDateKey(new Date());
+    const days = [];
+
+    for (let index = 0; index < startOffset; index += 1) {
+      days.push({ day: null, type: "empty" });
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day += 1) {
+      const date = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth(),
+        day,
+      );
+      const dateKey = this.toLocalDateKey(date);
+      const hasMatch = matchDateKeys.has(dateKey);
+
+      days.push({
+        day,
+        dateKey,
+        type: hasMatch ? "match" : "normal",
+        isToday: dateKey === todayKey,
+      });
+    }
+
+    return {
+      month: this.formatMonthKey(monthStart),
+      monthLabel: monthStart.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      days,
+    };
+  }
+
   async findAll(query = {}) {
     const { page = 1, limit = 10, licenseCategory, city, search } = query;
     const pageNum = parseInt(page, 10) || 1;
@@ -303,14 +382,58 @@ class RefereeService {
     return searchText.includes(normalizedSearch);
   }
 
+  formatHistoryDate(dateValue) {
+    if (!dateValue) return "-";
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${day}.${month}.${date.getFullYear()}`;
+  }
+
+  getHistoryRoleLabel(role) {
+    const labels = {
+      first_referee: "1st Referee",
+      second_referee: "2nd Referee",
+      third_referee: "3rd Referee",
+    };
+
+    return labels[role] || "Referee";
+  }
+
+  toCompletedHistoryRow(assignment, index) {
+    const match = assignment.match;
+    const homeTeam = match?.homeTeam?.name || "Home Team";
+    const awayTeam = match?.awayTeam?.name || "Away Team";
+    const homeScore = match?.homeScore ?? match?.home_score;
+    const awayScore = match?.awayScore ?? match?.away_score;
+
+    return {
+      id:
+        assignment.id || assignment.matchId || match?.id || `history-${index}`,
+      dateLabel: this.formatHistoryDate(match?.scheduledAt),
+      matchLabel: `${homeTeam} vs ${awayTeam}`,
+      competitionId: match?.competitionId || match?.competition_id,
+      competitionLabel: match?.competition?.name || "Competition",
+      venueLabel: [match?.venue?.name, match?.venue?.city]
+        .filter(Boolean)
+        .join(", "),
+      roleKey: assignment.role,
+      roleLabel: this.getHistoryRoleLabel(assignment.role),
+      resultLabel:
+        homeScore === null ||
+        homeScore === undefined ||
+        awayScore === null ||
+        awayScore === undefined
+          ? "-"
+          : `${homeScore} : ${awayScore}`,
+    };
+  }
+
   async getCompletedHistory(refereeId, query = {}) {
-    const {
-      page = 1,
-      limit = 10,
-      search = "",
-      competitionId,
-      role,
-    } = query;
+    const { page = 1, limit = 10, search = "", competitionId, role } = query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const offset = (pageNum - 1) * limitNum;
@@ -360,7 +483,11 @@ class RefereeService {
       : rows;
 
     return {
-      data: filteredRows.slice(offset, offset + limitNum),
+      data: filteredRows
+        .slice(offset, offset + limitNum)
+        .map((assignment, index) =>
+          this.toCompletedHistoryRow(assignment, offset + index),
+        ),
       pagination: {
         total: filteredRows.length,
         page: pageNum,
@@ -415,22 +542,160 @@ class RefereeService {
       throw new AppError("Referee not found.", 404);
     }
 
-    const totalAssignments = await MatchReferee.count({ where: { refereeId } });
-    const acceptedAssignments = await MatchReferee.count({
-      where: { refereeId, status: "accepted" },
-    });
-    const declinedAssignments = await MatchReferee.count({
-      where: { refereeId, status: "declined" },
-    });
-    const pendingAssignments = await MatchReferee.count({
-      where: { refereeId, status: "pending" },
-    });
+    const [
+      totalAssignments,
+      acceptedAssignments,
+      declinedAssignments,
+      pendingAssignments,
+      firstRefereeAssignments,
+    ] = await Promise.all([
+      MatchReferee.count({ where: { refereeId } }),
+      MatchReferee.count({
+        where: { refereeId, status: "accepted" },
+      }),
+      MatchReferee.count({
+        where: { refereeId, status: "declined" },
+      }),
+      MatchReferee.count({
+        where: { refereeId, status: "pending" },
+      }),
+      MatchReferee.count({
+        where: { refereeId, role: "first_referee" },
+      }),
+    ]);
 
     return {
       total: totalAssignments,
       accepted: acceptedAssignments,
       declined: declinedAssignments,
       pending: pendingAssignments,
+      firstRefereeCount: firstRefereeAssignments,
+    };
+  }
+
+  getDashboardMatchInclude(matchWhere = {}, withDetails = false) {
+    return [
+      {
+        model: Match,
+        as: "match",
+        where: matchWhere,
+        required: true,
+        include: withDetails
+          ? [
+              { model: Competition, as: "competition" },
+              { model: Team, as: "homeTeam" },
+              { model: Team, as: "awayTeam" },
+              { model: Venue, as: "venue" },
+            ]
+          : [],
+      },
+    ];
+  }
+
+  toDashboardMatchRow(assignment) {
+    const match = assignment.match;
+    const venue = match?.venue;
+
+    return {
+      id: assignment.id,
+      matchId: assignment.matchId,
+      status: assignment.status,
+      role: assignment.role,
+      dateInfo: this.formatDashboardDate(match?.scheduledAt),
+      competitionLabel: match?.competition?.name || "Competition",
+      matchLabel: `${match?.homeTeam?.name || "Home team"} vs ${
+        match?.awayTeam?.name || "Away team"
+      }`,
+      venueLabel: venue
+        ? [venue.name, venue.city].filter(Boolean).join(", ")
+        : "Venue not set",
+    };
+  }
+
+  async getDashboard(refereeId, query = {}) {
+    const referee = await Referee.findByPk(refereeId);
+    if (!referee) {
+      throw new AppError("Referee not found.", 404);
+    }
+
+    const now = new Date();
+    const { start: currentMonthStart, end: currentMonthEnd } =
+      this.getMonthRange(now);
+    const { start: selectedMonthStart, end: selectedMonthEnd } =
+      this.getMonthRange(query.month);
+
+    const matchInCurrentMonth = {
+      scheduledAt: {
+        [Op.gte]: currentMonthStart,
+        [Op.lt]: currentMonthEnd,
+      },
+    };
+    const futureMatch = { scheduledAt: { [Op.gte]: now } };
+    const selectedMonthMatch = {
+      scheduledAt: {
+        [Op.gte]: selectedMonthStart,
+        [Op.lt]: selectedMonthEnd,
+      },
+    };
+    const activeAssignmentWhere = {
+      refereeId,
+      status: { [Op.ne]: "declined" },
+    };
+
+    const [
+      statistics,
+      thisMonth,
+      upcoming,
+      upcomingRows,
+      calendarRows,
+    ] = await Promise.all([
+      this.getStatistics(refereeId),
+      MatchReferee.count({
+        where: activeAssignmentWhere,
+        include: this.getDashboardMatchInclude(matchInCurrentMonth),
+      }),
+      MatchReferee.count({
+        where: activeAssignmentWhere,
+        include: this.getDashboardMatchInclude(futureMatch),
+      }),
+      MatchReferee.findAll({
+        where: activeAssignmentWhere,
+        include: this.getDashboardMatchInclude(futureMatch, true),
+        order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
+        limit: 5,
+      }),
+      MatchReferee.findAll({
+        where: activeAssignmentWhere,
+        include: this.getDashboardMatchInclude(selectedMonthMatch),
+        order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
+      }),
+    ]);
+
+    const calendarDateKeys = new Set(
+      calendarRows
+        .map((assignment) => assignment.match?.scheduledAt)
+        .filter(Boolean)
+        .map((dateValue) => this.toLocalDateKey(new Date(dateValue))),
+    );
+
+    return {
+      summary: {
+        thisMonth,
+        upcoming,
+        firstRefereeCount: statistics.firstRefereeCount || 0,
+        seasonTotal: statistics.total || 0,
+      },
+      assignmentStatus: {
+        total: statistics.total || 0,
+        accepted: statistics.accepted || 0,
+        pending: statistics.pending || 0,
+        declined: statistics.declined || 0,
+      },
+      pendingCount: statistics.pending || 0,
+      upcomingMatches: upcomingRows.map((assignment) =>
+        this.toDashboardMatchRow(assignment),
+      ),
+      calendar: this.getDashboardCalendar(selectedMonthStart, calendarDateKeys),
     };
   }
 
@@ -497,7 +762,11 @@ class RefereeService {
           attributes: ["id"],
         }),
         RefereeAvailability.findAll({
-          where: { date: todayKey, isAvailable: false, approvalStatus: "approved" },
+          where: {
+            date: todayKey,
+            isAvailable: false,
+            approvalStatus: "approved",
+          },
           attributes: ["refereeId"],
           raw: true,
         }),
