@@ -150,6 +150,16 @@ const sharedPanelPalette = {
     light: "#f87171",
     dark: "#dc2626",
   },
+  refereeRoleColors: {
+    first: "#8b5cf6",
+    second: "#60a5fa",
+    third: "#22c55e",
+  },
+  refereeAssignmentStatusColors: {
+    pending: "#eab308",
+    accepted: "#22c55e",
+    declined: "#ef4444",
+  },
   background: {
     default: "#0a0a0b",
     paper: "#121214",

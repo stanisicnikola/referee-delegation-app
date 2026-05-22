@@ -1,7 +1,6 @@
 export { default as PageHeader } from "./PageHeader";
 export { default as StatCard } from "./StatCard";
 export { default as DataTable } from "./DataTable";
-export { default as StatusBadge } from "./StatusBadge";
 export { default as Modal } from "./Modal";
 export { default as Toast } from "./Toast";
 export { default as LoadingSpinner } from "./LoadingSpinner";
@@ -15,6 +14,8 @@ export { EditButton, DeleteButton } from "./TableActions";
 export { default as PasswordInput } from "./PasswordInput";
 export { default as FilterSearch } from "./FilterSearch";
 export { default as FilterSelect } from "./FilterSelect";
+export { default as RefereeRoleBadge } from "./RefereeRoleBadge";
+export { default as RefereeAssignmentStatusBadge } from "./RefereeAssignmentStatusBadge";
 export { default as ActivityFeed } from "./ActivityFeed";
 export { default as DistributionBar } from "./DistributionBar";
 export { default as MatchActivityChart } from "./MatchActivityChart";

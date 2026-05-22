@@ -12,6 +12,8 @@ export const refereeKeys = {
   assignments: (id) => [...refereeKeys.all, "assignments", id],
   statistics: (id) => [...refereeKeys.all, "statistics", id],
   overallStatistics: () => [...refereeKeys.all, "overall-statistics"],
+  myDashboard: () => [...refereeKeys.all, "my-dashboard"],
+  myDashboardData: (params) => [...refereeKeys.myDashboard(), params],
   myAssignments: () => [...refereeKeys.all, "my-assignments"],
   myAssignmentsList: (params) => [...refereeKeys.myAssignments(), params],
   myHistory: () => [...refereeKeys.all, "my-history"],
@@ -70,6 +72,13 @@ export const useMyAssignments = (params = {}) => {
   return useQuery({
     queryKey: refereeKeys.myAssignmentsList(params),
     queryFn: () => refereesApi.getMyAssignments(params),
+  });
+};
+
+export const useMyDashboard = (params = {}) => {
+  return useQuery({
+    queryKey: refereeKeys.myDashboardData(params),
+    queryFn: () => refereesApi.getMyDashboard(params),
   });
 };
 

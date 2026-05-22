@@ -30,8 +30,11 @@ import {
   useMyAssignments,
   useRejectAssignment,
 } from "../../hooks";
-import { getRefereeRoleBadge } from "../../utils/refereeAssignmentBadges";
-import CustomButton from "../../components/ui/CustomButton";
+import {
+  getRefereeRoleBadge,
+  getRefereeRoleNumber,
+} from "../../utils/refereeAssignmentBadges";
+import { CustomButton, RefereeRoleBadge } from "../../components/ui";
 
 const COLORS = {
   bg: "#0a0a0b",
@@ -128,22 +131,6 @@ const getDelegateName = (match) => {
     .join(" ");
 
   return name || null;
-};
-
-const getRoleNumber = (role) => {
-  const roleNumbers = {
-    first_referee: "1",
-    second_referee: "2",
-    third_referee: "3",
-    head: "1",
-    main: "1",
-    assistant: "A",
-    second: "2",
-    third: "3",
-    fourth: "4",
-  };
-
-  return roleNumbers[role] || "R";
 };
 
 const getOtherReferees = (assignment) => {
@@ -367,7 +354,6 @@ const PendingPage = () => {
 const PendingCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
   const match = getMatch(assignment);
   const dateInfo = formatDate(match);
-  const role = getRefereeRoleBadge(assignment.role);
   const delegateName = getDelegateName(match);
   const otherReferees = getOtherReferees(assignment);
   const competitionName = getCompetitionName(match);
@@ -424,8 +410,8 @@ const PendingCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
       </Box>
 
       <RolePanel
-        role={role}
-        roleNumber={getRoleNumber(assignment.role)}
+        role={assignment.role}
+        roleNumber={getRefereeRoleNumber(assignment.role)}
         delegateName={delegateName}
       />
 
@@ -604,7 +590,15 @@ const RolePanel = ({ role, roleNumber, delegateName }) => (
         {roleNumber}
       </Box>
       <Box sx={{ minWidth: 0 }}>
-        <TinyChip label={role.label} color={role.color} bg={role.bg} />
+        <RefereeRoleBadge
+          role={role}
+          sx={{
+            height: 28,
+            borderRadius: "8px",
+            fontWeight: 850,
+            maxWidth: { xs: "100%", sm: 220 },
+          }}
+        />
         {delegateName && (
           <Typography
             sx={{

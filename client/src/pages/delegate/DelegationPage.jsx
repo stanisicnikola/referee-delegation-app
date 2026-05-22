@@ -31,57 +31,54 @@ import {
   useAvailableRefereesForMatch,
   useUpdateMatchResult,
 } from "../../hooks";
+import { getRefereeRoleBadge } from "../../utils/refereeAssignmentBadges";
 
-const EMPTY_ASSIGNMENTS = {
-  main: null,
-  second: null,
-  third: null,
-};
-
-const EMPTY_ASSIGNMENT_META = {
-  main: null,
-  second: null,
-  third: null,
-};
-
-const ROLE_TO_SLOT = {
-  first_referee: "main",
-  second_referee: "second",
-  third_referee: "third",
-};
-
-const SLOT_TO_ROLE = {
-  main: "first_referee",
-  second: "second_referee",
-  third: "third_referee",
-};
-
-const SLOT_CONFIG = [
+const SLOT_DEFINITIONS = [
   {
     slot: "main",
     role: "first_referee",
-    label: "Main Referee",
     hint: "Leads game decisions and crew coordination",
     accent: "#f97316",
-    buttonLabel: "Main",
   },
   {
     slot: "second",
     role: "second_referee",
-    label: "Second Referee",
     hint: "Supports primary calls and transitions",
     accent: "#3b82f6",
-    buttonLabel: "Second",
   },
   {
     slot: "third",
     role: "third_referee",
-    label: "Third Referee",
     hint: "Covers opposite side and off-ball actions",
     accent: "#22c55e",
-    buttonLabel: "Third",
   },
 ];
+
+const SLOT_CONFIG = SLOT_DEFINITIONS.map((config) => {
+  const roleBadge = getRefereeRoleBadge(config.role);
+
+  return {
+    ...config,
+    label: roleBadge.delegationLabel,
+    buttonLabel: roleBadge.shortLabel,
+  };
+});
+
+const EMPTY_ASSIGNMENTS = Object.fromEntries(
+  SLOT_CONFIG.map((config) => [config.slot, null]),
+);
+
+const EMPTY_ASSIGNMENT_META = Object.fromEntries(
+  SLOT_CONFIG.map((config) => [config.slot, null]),
+);
+
+const ROLE_TO_SLOT = Object.fromEntries(
+  SLOT_CONFIG.map((config) => [config.role, config.slot]),
+);
+
+const SLOT_TO_ROLE = Object.fromEntries(
+  SLOT_CONFIG.map((config) => [config.slot, config.role]),
+);
 
 const DelegationPage = () => {
   const { matchId } = useParams();

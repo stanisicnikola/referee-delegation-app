@@ -20,11 +20,14 @@ import {
   useMyAssignments,
   useRejectAssignment,
 } from "../../hooks";
-import { FilterSelect } from "../../components/ui";
 import {
-  getRefereeAssignmentStatusBadge,
-  getRefereeRoleBadge,
+  FilterSelect,
+  RefereeAssignmentStatusBadge,
+  RefereeRoleBadge,
+} from "../../components/ui";
+import {
   isAcceptedAssignmentStatus,
+  REFEREE_ROLE_OPTIONS,
 } from "../../utils/refereeAssignmentBadges";
 
 const COLORS = {
@@ -44,12 +47,6 @@ const COLORS = {
   blue: "#60a5fa",
   purple: "#c084fc",
 };
-
-const ROLE_OPTIONS = [
-  { value: "first_referee", label: "1st Referee" },
-  { value: "second_referee", label: "2nd Referee" },
-  { value: "third_referee", label: "3rd Referee" },
-];
 
 const PERIOD_OPTIONS = [
   { value: "upcoming", label: "Upcoming" },
@@ -359,7 +356,7 @@ const SchedulePage = () => {
               onChange={(event) => setSelectedRole(event.target.value)}
               placeholder='All Roles'
               minWidth={220}
-              options={ROLE_OPTIONS}
+              options={REFEREE_ROLE_OPTIONS}
             />
             <FilterSelect
               variant='referee'
@@ -450,8 +447,6 @@ const EmptyState = () => (
 const MatchCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
   const match = getMatch(assignment);
   const dateInfo = formatDate(match);
-  const role = getRefereeRoleBadge(assignment.role);
-  const status = getRefereeAssignmentStatusBadge(assignment.status);
   const isPending = assignment.status === "pending";
   const showColleagues = isAcceptedAssignmentStatus(assignment.status);
   const colleagues = getAcceptedColleagues(assignment);
@@ -514,7 +509,14 @@ const MatchCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
             }}
           >
             <TinyBadge label={getCompetitionName(match)} tone='competition' />
-            <TinyBadge label={role.label} color={role.color} bg={role.bg} />
+            <RefereeRoleBadge
+              role={assignment.role}
+              sx={{
+                height: 25,
+                fontWeight: 900,
+                maxWidth: { xs: 180, md: 240 },
+              }}
+            />
           </Box>
 
           <Typography
@@ -624,7 +626,10 @@ const MatchCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
               </Button>
             </Box>
           ) : (
-            <StatusPill status={status} />
+            <RefereeAssignmentStatusBadge
+              status={assignment.status}
+              showAcceptedIcon
+            />
           )}
         </Box>
       </Box>
@@ -765,38 +770,6 @@ const TinyBadge = ({ label, tone, color, bg }) => {
     />
   );
 };
-
-const StatusPill = ({ status }) => (
-  <Box
-    sx={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 0.85,
-      px: 1.85,
-      py: 0.75,
-      borderRadius: "999px",
-      bgcolor: status.bg,
-      color: status.color,
-      fontSize: 13,
-      fontWeight: 900,
-      whiteSpace: "nowrap",
-    }}
-  >
-    {status.key === "accepted" ? (
-      <CheckIcon sx={{ fontSize: 17 }} />
-    ) : (
-      <Box
-        sx={{
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          bgcolor: status.color,
-        }}
-      />
-    )}
-    {status.label}
-  </Box>
-);
 
 const acceptButtonSx = {
   px: 1.85,

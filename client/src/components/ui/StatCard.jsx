@@ -6,6 +6,10 @@ const StatCard = ({
   icon: Icon,
   color = "#8b5cf6",
   loading = false,
+  centered = false,
+  cardSx = {},
+  valueSx = {},
+  labelSx = {},
 }) => {
   if (loading) {
     return (
@@ -17,16 +21,20 @@ const StatCard = ({
           borderRadius: "16px",
           display: "flex",
           alignItems: "center",
+          justifyContent: centered ? "center" : "flex-start",
           gap: { xs: 1.5, sm: 2 },
           minWidth: 0,
+          ...cardSx,
         }}
       >
-        <Skeleton
-          variant='rectangular'
-          width={44}
-          height={44}
-          sx={{ borderRadius: "12px" }}
-        />
+        {Icon && (
+          <Skeleton
+            variant='rectangular'
+            width={44}
+            height={44}
+            sx={{ borderRadius: "12px" }}
+          />
+        )}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Skeleton variant='text' width='60%' height={32} />
           <Skeleton variant='text' width='40%' height={20} />
@@ -43,7 +51,10 @@ const StatCard = ({
         border: "1px solid #242428",
         borderRadius: "16px",
         display: "flex",
+        flexDirection: centered ? "column" : "row",
         alignItems: "center",
+        justifyContent: centered ? "center" : "flex-start",
+        textAlign: centered ? "center" : "left",
         gap: { xs: 1.5, sm: 2 },
         minWidth: 0,
         transition: "all 0.2s ease",
@@ -53,6 +64,7 @@ const StatCard = ({
           bgcolor: "#161618",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
         },
+        ...cardSx,
       }}
     >
       {Icon && (
@@ -76,11 +88,12 @@ const StatCard = ({
           sx={{
             fontSize: { xs: "22px", sm: "24px" },
             fontWeight: 700,
-            color: "#fff",
+            color: centered ? color : "#fff",
             lineHeight: 1.2,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            ...valueSx,
           }}
         >
           {value}
@@ -93,6 +106,7 @@ const StatCard = ({
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            ...labelSx,
           }}
         >
           {label}

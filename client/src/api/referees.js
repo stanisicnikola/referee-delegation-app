@@ -51,6 +51,11 @@ export const refereesApi = {
     return response.data;
   },
 
+  getMyDashboard: async (params = {}) => {
+    const response = await api.get("/referees/my-dashboard", { params });
+    return response.data;
+  },
+
   getMyHistory: async (params = {}) => {
     const response = await api.get("/referees/my-history", { params });
     return response.data;

@@ -1,6 +1,3 @@
-const FALLBACK_BG = "rgba(255, 255, 255, 0.1)";
-const FALLBACK_COLOR = "#9ca3af";
-
 const titleize = (value, fallback) => {
   if (!value) return fallback;
 
@@ -11,94 +8,85 @@ const titleize = (value, fallback) => {
     .join(" ");
 };
 
-const ROLE_BADGES = {
+export const REFEREE_ASSIGNMENT_ROLES = {
   first_referee: {
     label: "1st Referee",
-    color: "#c084fc",
-    bg: "rgba(192, 132, 252, 0.18)",
+    delegationLabel: "Main Referee",
+    shortLabel: "Main",
+    number: "1",
+    tone: "first",
   },
   second_referee: {
     label: "2nd Referee",
-    color: "#60a5fa",
-    bg: "rgba(96, 165, 250, 0.16)",
+    delegationLabel: "Second Referee",
+    shortLabel: "Second",
+    number: "2",
+    tone: "second",
   },
   third_referee: {
     label: "3rd Referee",
-    color: "#22c55e",
-    bg: "rgba(34, 197, 94, 0.14)",
-  },
-  head: {
-    label: "Head Referee",
-    color: "#c084fc",
-    bg: "rgba(192, 132, 252, 0.18)",
-  },
-  main: {
-    label: "Main Referee",
-    color: "#c084fc",
-    bg: "rgba(192, 132, 252, 0.18)",
-  },
-  lead_referee: {
-    label: "Lead Referee",
-    color: "#c084fc",
-    bg: "rgba(192, 132, 252, 0.18)",
-  },
-  assistant: {
-    label: "Assistant",
-    color: "#60a5fa",
-    bg: "rgba(96, 165, 250, 0.16)",
-  },
-  second: {
-    label: "2nd Referee",
-    color: "#60a5fa",
-    bg: "rgba(96, 165, 250, 0.16)",
-  },
-  third: {
-    label: "3rd Referee",
-    color: "#22c55e",
-    bg: "rgba(34, 197, 94, 0.14)",
-  },
-  fourth: {
-    label: "4th Official",
-    color: "#f472b6",
-    bg: "rgba(244, 114, 182, 0.16)",
+    delegationLabel: "Third Referee",
+    shortLabel: "Third",
+    number: "3",
+    tone: "third",
   },
 };
+
+export const REFEREE_ROLE_OPTIONS = Object.entries(
+  REFEREE_ASSIGNMENT_ROLES,
+).map(([value, config]) => ({
+  value,
+  label: config.label,
+}));
 
 const ASSIGNMENT_STATUS_BADGES = {
   pending: {
     label: "Pending",
     shortLabel: "Pending",
-    color: "#eab308",
-    bg: "rgba(234, 179, 8, 0.16)",
+    tone: "pending",
   },
   accepted: {
     label: "Accepted",
     shortLabel: "Accepted",
-    color: "#22c55e",
-    bg: "rgba(34, 197, 94, 0.16)",
+    tone: "accepted",
   },
   declined: {
     label: "Declined",
     shortLabel: "Declined",
-    color: "#ef4444",
-    bg: "rgba(239, 68, 68, 0.15)",
+    tone: "declined",
   },
 };
 
-export const getRefereeRoleBadge = (role) =>
-  ROLE_BADGES[role] || {
-    label: titleize(role, "Referee"),
-    color: FALLBACK_COLOR,
-    bg: FALLBACK_BG,
+export const getRefereeRoleBadge = (role) => {
+  const roleConfig = REFEREE_ASSIGNMENT_ROLES[role];
+
+  if (!roleConfig) {
+    const label = titleize(role, "Referee");
+    return {
+      key: role,
+      label,
+      delegationLabel: label,
+      shortLabel: label,
+      number: "R",
+      tone: "default",
+    };
+  }
+
+  return {
+    key: role,
+    ...roleConfig,
   };
+};
+
+export const getRefereeRoleNumber = (role) =>
+  getRefereeRoleBadge(role).number;
 
 export const getRefereeAssignmentStatusBadge = (status) => ({
   key: status,
   ...(ASSIGNMENT_STATUS_BADGES[status] || {
     label: titleize(status, "Unknown"),
     shortLabel: titleize(status, "Unknown"),
-    color: FALLBACK_COLOR,
-    bg: FALLBACK_BG,
+    tone: "default",
   }),
 });
 
