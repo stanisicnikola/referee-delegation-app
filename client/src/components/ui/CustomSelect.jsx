@@ -1,4 +1,6 @@
 import { FormControl, MenuItem, Select, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { panelVariantColors } from "../../theme/theme";
 import FormValidationError from "./FormValidationError";
 
 /**
@@ -10,6 +12,7 @@ import FormValidationError from "./FormValidationError";
  * @param {string} placeholder - Placeholder shown when no value is selected
  * @param {object} sx - MUI style overrides for the Select component
  * @param {object} formControlSx - MUI style overrides for the FormControl wrapper
+ * @param {string} variant - admin | delegate | referee
  * @param {boolean} error - Error state
  * @param {object} field - react-hook-form field props (from Controller)
  */
@@ -17,19 +20,27 @@ const CustomSelect = ({
   options,
   label,
   placeholder = "Select...",
+  variant = "admin",
   sx = {},
   formControlSx = {},
   error,
   ...field
 }) => {
+  const accentColor = panelVariantColors[variant] || panelVariantColors.admin;
   const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#1a1a1d",
-      borderRadius: "12px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-      "&.Mui-error fieldset": { borderColor: "#ef4444" },
+    bgcolor: "#1a1a1d",
+    borderRadius: "12px",
+    "& .MuiOutlinedInput-notchedOutline": {
+      borderColor: "#242428",
+    },
+    "&:hover .MuiOutlinedInput-notchedOutline": {
+      borderColor: "#3f3f46",
+    },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+      borderColor: accentColor,
+    },
+    "&.Mui-error .MuiOutlinedInput-notchedOutline": {
+      borderColor: "#ef4444",
     },
     ...sx,
   };
@@ -84,10 +95,10 @@ const CustomSelect = ({
                   color: "#fff",
                 },
                 "&.Mui-selected": {
-                  bgcolor: "#8b5cf620",
-                  color: "#8b5cf6",
+                  bgcolor: alpha(accentColor, 0.16),
+                  color: accentColor,
                   "&:hover": {
-                    bgcolor: "#8b5cf630",
+                    bgcolor: alpha(accentColor, 0.22),
                   },
                 },
               },

@@ -30,7 +30,10 @@ import {
 import { useAuth } from "../context";
 import SidebarUserMenu from "../components/ui/SidebarUserMenu";
 import { refereeTheme } from "../theme";
-import { useMyAssignments } from "../hooks/useReferees";
+import {
+  useMyAssignments,
+  useMyPendingAssignments,
+} from "../hooks/useReferees";
 
 const SIDEBAR_WIDTH = 256;
 
@@ -52,6 +55,7 @@ const RefereeLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const { data: assignmentsData } = useMyAssignments();
+  const { data: pendingAssignmentsData } = useMyPendingAssignments();
 
   const scheduleBadgeCount = useMemo(() => {
     const now = new Date();
@@ -64,13 +68,7 @@ const RefereeLayout = () => {
     }).length;
   }, [assignmentsData?.data]);
 
-  const pendingDelegationCount = useMemo(
-    () =>
-      (assignmentsData?.data || []).filter(
-        (assignment) => assignment.status === "pending",
-      ).length,
-    [assignmentsData?.data],
-  );
+  const pendingDelegationCount = pendingAssignmentsData?.data?.length || 0;
 
   const navItems = [
     { path: "/referee/dashboard", label: "Dashboard", icon: HomeIcon },
@@ -84,7 +82,9 @@ const RefereeLayout = () => {
       path: "/referee/pending",
       label: "Pending",
       icon: AssignmentIcon,
-      pulse: pendingDelegationCount > 0,
+      badge: pendingDelegationCount || null,
+      badgeColor: "#eab308",
+      badgePulse: pendingDelegationCount > 0,
     },
     { path: "/referee/availability", label: "Availability", icon: ClockIcon },
   ];
@@ -219,47 +219,51 @@ const RefereeLayout = () => {
                 {item.badge && (
                   <Box
                     sx={{
-                      px: 1,
-                      py: 0.25,
-                      borderRadius: "10px",
-                      bgcolor: item.badgeColor
-                        ? `${item.badgeColor}20`
-                        : "rgba(34, 197, 94, 0.18)",
-                      color: item.badgeColor || "#22c55e",
-                      fontSize: "12px",
-                      fontWeight: 600,
+                      position: "relative",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {item.badge}
-                  </Box>
-                )}
-                {item.pulse && (
-                  <Box sx={{ position: "relative", width: 8, height: 8 }}>
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        borderRadius: "50%",
-                        bgcolor: "#eab308",
-                        animation: "ping 1s cubic-bezier(0,0,0.2,1) infinite",
-                        opacity: 0.75,
-                        "@keyframes ping": {
-                          "75%, 100%": {
-                            transform: "scale(2)",
-                            opacity: 0,
+                    {item.badgePulse && (
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: "999px",
+                          bgcolor: item.badgeColor,
+                          animation: "ping 1s cubic-bezier(0,0,0.2,1) infinite",
+                          opacity: 0.7,
+                          "@keyframes ping": {
+                            "75%, 100%": {
+                              transform: "scale(1.6)",
+                              opacity: 0,
+                            },
                           },
-                        },
-                      }}
-                    />
+                        }}
+                      />
+                    )}
                     <Box
                       sx={{
                         position: "relative",
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        bgcolor: "#eab308",
+                        minWidth: 22,
+                        height: 22,
+                        px: 0.75,
+                        borderRadius: "999px",
+                        bgcolor: item.badgeColor
+                          ? `${item.badgeColor}20`
+                          : "rgba(34, 197, 94, 0.18)",
+                        color: item.badgeColor || "#22c55e",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        lineHeight: 1,
                       }}
-                    />
+                    >
+                      {item.badge}
+                    </Box>
                   </Box>
                 )}
               </Box>

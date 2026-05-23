@@ -3,7 +3,8 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
-import { CALENDAR_DAY_NAMES, DASHBOARD_COLORS as COLORS } from "./constants";
+import { WEEKDAY_SHORT_NAMES_MONDAY_FIRST } from "../../../constants/date";
+import { DASHBOARD_COLORS as COLORS } from "./constants";
 
 const calendarButtonSx = {
   color: COLORS.mutedStrong,
@@ -124,7 +125,7 @@ const CalendarCard = ({ calendar, isSmall, onPrev, onNext }) => (
         mb: 1,
       }}
     >
-      {CALENDAR_DAY_NAMES.map((day) => (
+      {WEEKDAY_SHORT_NAMES_MONDAY_FIRST.map((day) => (
         <Box key={day} sx={{ textAlign: "center", py: 0.75 }}>
           <Typography
             sx={{ color: COLORS.muted, fontSize: 12, fontWeight: 700 }}

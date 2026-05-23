@@ -182,6 +182,31 @@ const sharedPanelPalette = {
   },
 };
 
+const panelVariantColors = {
+  admin: "#8b5cf6",
+  delegate: "#f97316",
+  referee: sharedPanelPalette.success.main,
+};
+
+const refereePanelColors = {
+  bg: sharedPanelPalette.background.default,
+  card: sharedPanelPalette.background.paper,
+  cardHover: "#17171a",
+  panel: sharedPanelPalette.grey[700],
+  panelSoft: "rgba(255, 255, 255, 0.05)",
+  border: sharedPanelPalette.grey[600],
+  borderSoft: "rgba(255, 255, 255, 0.08)",
+  text: "#f8fafc",
+  muted: sharedPanelPalette.text.disabled,
+  mutedStrong: sharedPanelPalette.text.secondary,
+  green: sharedPanelPalette.success.main,
+  orange: panelVariantColors.delegate,
+  warning: sharedPanelPalette.refereeAssignmentStatusColors.pending,
+  blue: sharedPanelPalette.refereeRoleColors.second,
+  purple: sharedPanelPalette.refereeRoleColors.first,
+  red: sharedPanelPalette.error.main,
+};
+
 const sharedPanelTypography = {
   fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif',
   h1: {
@@ -468,4 +493,11 @@ const refereeTheme = createPanelTheme({
 export default loginTheme;
 
 // Named exports
-export { loginTheme, adminTheme, delegateTheme, refereeTheme };
+export {
+  loginTheme,
+  adminTheme,
+  delegateTheme,
+  refereeTheme,
+  panelVariantColors,
+  refereePanelColors,
+};

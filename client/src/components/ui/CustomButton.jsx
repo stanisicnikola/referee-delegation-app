@@ -1,9 +1,10 @@
 import { Button, CircularProgress } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 
 /**
  * Reusable Button component that fits the project's design system.
  *
- * @param {string} variant - admin-primary | delegate-primary | referee-primary | admin-outline | delegate-outline | referee-outline | primary | secondary | danger | outline
+ * @param {string} variant - admin-primary | delegate-primary | referee-primary | referee-accept | referee-decline | admin-outline | delegate-outline | referee-outline | primary | secondary | danger | outline
  * @param {boolean} loading - Shows a spinner if true
  * @param {boolean} disabled - Disables the button
  * @param {ReactNode} children - Button text or content
@@ -17,6 +18,8 @@ const CustomButton = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
+
   const getStyles = () => {
     const baseStyles = {
       px: 3,
@@ -78,6 +81,52 @@ const CustomButton = ({
             color: "#ffffff60",
           },
         };
+      case "referee-accept": {
+        const main = theme.palette.success.main;
+        const light = theme.palette.success.light;
+
+        return {
+          ...baseStyles,
+          bgcolor: alpha(main, 0.14),
+          color: light,
+          border: `1px solid ${alpha(main, 0.36)}`,
+          boxShadow: "none",
+          "&:hover": {
+            bgcolor: alpha(light, 0.18),
+            borderColor: alpha(light, 0.62),
+            transform: "translateY(-1px)",
+            boxShadow: `0 4px 14px ${alpha(main, 0.16)}`,
+          },
+          "&.Mui-disabled": {
+            bgcolor: "rgba(255, 255, 255, 0.08)",
+            borderColor: "rgba(255, 255, 255, 0.08)",
+            color: theme.palette.text.disabled,
+          },
+        };
+      }
+      case "referee-decline": {
+        const main = theme.palette.error.main;
+        const dark = theme.palette.error.dark;
+
+        return {
+          ...baseStyles,
+          bgcolor: alpha(main, 0.16),
+          color: theme.palette.error.light,
+          border: `1px solid ${alpha(main, 0.34)}`,
+          boxShadow: "none",
+          "&:hover": {
+            bgcolor: alpha(main, 0.24),
+            borderColor: alpha(dark, 0.65),
+            transform: "translateY(-1px)",
+            boxShadow: `0 4px 14px ${alpha(main, 0.16)}`,
+          },
+          "&.Mui-disabled": {
+            bgcolor: "rgba(255, 255, 255, 0.08)",
+            borderColor: "rgba(255, 255, 255, 0.08)",
+            color: theme.palette.text.disabled,
+          },
+        };
+      }
       case "primary":
         return {
           ...baseStyles,
@@ -128,6 +177,7 @@ const CustomButton = ({
           color: "#a78bfa",
           "&:hover": {
             bgcolor: "rgba(139, 92, 246, 0.05)",
+            transform: "translateY(-1px)",
             borderColor: "#8b5cf6",
           },
         };
@@ -139,6 +189,7 @@ const CustomButton = ({
           color: "#ee681a",
           "&:hover": {
             bgcolor: "rgba(244, 148, 79, 0.09)",
+            transform: "translateY(-1px)",
             borderColor: "#f66905",
           },
         };
@@ -150,6 +201,7 @@ const CustomButton = ({
           color: "#22c55e",
           "&:hover": {
             bgcolor: "rgba(34, 197, 94, 0.06)",
+            transform: "translateY(-1px)",
             borderColor: "#16a34a",
           },
         };
@@ -160,6 +212,7 @@ const CustomButton = ({
           color: "#fff",
           "&:hover": {
             bgcolor: "#1a1a1d",
+            transform: "translateY(-1px)",
             borderColor: "#3f3f46",
           },
         };
@@ -172,6 +225,7 @@ const CustomButton = ({
           "&:hover": {
             bgcolor: "rgba(34, 197, 94, 0.05)",
             borderColor: "#16a34a",
+            transform: "translateY(-1px)",
             color: "#16a34a",
           },
         };
@@ -184,6 +238,7 @@ const CustomButton = ({
           "&:hover": {
             bgcolor: "rgba(239, 68, 68, 0.05)",
             borderColor: "#dc2626",
+            transform: "translateY(-1px)",
             color: "#dc2626",
           },
         };
@@ -195,6 +250,7 @@ const CustomButton = ({
           color: "#fff",
           "&:hover": {
             bgcolor: "#3f3f46",
+            transform: "translateY(-1px)",
           },
         };
     }

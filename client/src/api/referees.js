@@ -51,6 +51,11 @@ export const refereesApi = {
     return response.data;
   },
 
+  getMyPendingAssignments: async () => {
+    const response = await api.get("/referees/my-pending");
+    return response.data;
+  },
+
   getMyDashboard: async (params = {}) => {
     const response = await api.get("/referees/my-dashboard", { params });
     return response.data;

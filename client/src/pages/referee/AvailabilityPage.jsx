@@ -48,22 +48,10 @@ import {
   DeleteButton,
   FormValidationError,
 } from "../../components/ui";
-
-const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import {
+  MONTH_NAMES,
+  WEEKDAY_SHORT_NAMES_MONDAY_FIRST,
+} from "../../constants/date";
 
 const UNAVAILABILITY_REASONS = [
   "Annual leave",
@@ -671,7 +659,7 @@ const AvailabilityPage = () => {
             <Typography
               sx={{ color: "#fff", fontSize: "24px", fontWeight: 700 }}
             >
-              Availability Calendar - {MONTHS[month - 1]} {year}
+              Availability Calendar - {MONTH_NAMES[month - 1]} {year}
             </Typography>
             <Typography sx={{ mt: 0.5, color: "#6b7280", fontSize: "14px" }}>
               {approvedUnavailableDays} unavailable days, {matchDaysThisMonth}{" "}
@@ -709,7 +697,7 @@ const AvailabilityPage = () => {
             gap: { xs: 0.75, sm: 1.25 },
           }}
         >
-          {DAYS_OF_WEEK.map((day) => (
+          {WEEKDAY_SHORT_NAMES_MONDAY_FIRST.map((day) => (
             <Typography
               key={day}
               sx={{

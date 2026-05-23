@@ -147,6 +147,12 @@ export const useAcceptAssignment = () => {
         queryKey: refereeKeys.myAssignments(),
       });
       queryClient.invalidateQueries({
+        queryKey: refereeKeys.myPendingAssignments(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myDashboard(),
+      });
+      queryClient.invalidateQueries({
         queryKey: refereeKeys.myStatistics(),
       });
       toast.success(data?.message || "Assignment accepted successfully!", {
@@ -179,6 +185,12 @@ export const useRejectAssignment = () => {
       });
       queryClient.invalidateQueries({
         queryKey: refereeKeys.myAssignments(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myPendingAssignments(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: refereeKeys.myDashboard(),
       });
       queryClient.invalidateQueries({
         queryKey: refereeKeys.myStatistics(),

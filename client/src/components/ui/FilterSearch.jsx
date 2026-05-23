@@ -1,11 +1,6 @@
 import { TextField, InputAdornment } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-
-const VARIANT_COLORS = {
-  admin: "#8b5cf6",
-  delegate: "#f97316",
-  referee: "#22c55e",
-};
+import { panelVariantColors } from "../../theme/theme";
 
 const FilterSearch = ({
   placeholder = "Search...",
@@ -15,7 +10,8 @@ const FilterSearch = ({
   sx = {},
   ...props
 }) => {
-  const accentColor = VARIANT_COLORS[variant] || VARIANT_COLORS.admin;
+  const accentColor =
+    panelVariantColors[variant] || panelVariantColors.admin;
 
   const inputStyles = {
     "& .MuiOutlinedInput-root": {

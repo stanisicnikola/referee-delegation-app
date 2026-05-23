@@ -1,10 +1,5 @@
 import { FormControl, Select, MenuItem, Typography } from "@mui/material";
-
-const VARIANT_COLORS = {
-  admin: "#8b5cf6",
-  delegate: "#f97316",
-  referee: "#22c55e",
-};
+import { panelVariantColors } from "../../theme/theme";
 
 const FilterSelect = ({
   value,
@@ -16,7 +11,8 @@ const FilterSelect = ({
   sx = {},
   ...props
 }) => {
-  const accentColor = VARIANT_COLORS[variant] || VARIANT_COLORS.admin;
+  const accentColor =
+    panelVariantColors[variant] || panelVariantColors.admin;
 
   const inputStyles = {
     bgcolor: "#1a1a1d",

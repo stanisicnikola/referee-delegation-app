@@ -9,6 +9,7 @@ import {
   Verified as CompleteIcon,
 } from "@mui/icons-material";
 import { useDelegateDashboard } from "../../hooks/useDelegations";
+import { MONTH_SHORT_NAMES, WEEKDAY_SHORT_NAMES } from "../../constants/date";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -20,25 +21,10 @@ const DashboardPage = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
     return {
-      day: days[date.getDay()],
+      day: WEEKDAY_SHORT_NAMES[date.getDay()],
       date: date.getDate(),
-      month: months[date.getMonth()],
+      month: MONTH_SHORT_NAMES[date.getMonth()],
       time: date.toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",

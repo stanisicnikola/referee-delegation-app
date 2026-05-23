@@ -56,9 +56,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   if (user?.mustChangePassword) {
     const passwordChangePath =
-      user.role === "referee"
-        ? "/referee/settings"
-        : `/${user.role}/settings`;
+      user.role === "referee" ? "/referee/settings" : `/${user.role}/settings`;
 
     if (location.pathname !== passwordChangePath) {
       return <Navigate to={passwordChangePath} replace />;
@@ -132,7 +130,7 @@ const AppRoutes = () => {
         <Route
           path='/delegate'
           element={
-            <ProtectedRoute allowedRoles={["delegate", "admin"]}>
+            <ProtectedRoute allowedRoles={["delegate"]}>
               <DelegateLayout />
             </ProtectedRoute>
           }
@@ -159,7 +157,7 @@ const AppRoutes = () => {
         <Route
           path='/referee'
           element={
-            <ProtectedRoute allowedRoles={["referee", "admin"]}>
+            <ProtectedRoute allowedRoles={["referee"]}>
               <RefereeLayout />
             </ProtectedRoute>
           }
