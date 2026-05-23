@@ -257,10 +257,27 @@ class DelegationService {
           assignment,
         ])
       );
+      const declinedAssignmentByRefereeId = new Map(
+        existingAssignments
+          .filter((assignment) => assignment.status === "declined")
+          .map((assignment) => [assignment.refereeId, assignment])
+      );
       const consecutiveTeamViolations =
         await this.getConsecutiveTeamAssignmentViolations(match, refereeIds, {
           transaction,
         });
+
+      for (const assignment of refereeAssignments) {
+        const declinedAssignment = declinedAssignmentByRefereeId.get(
+          assignment.refereeId
+        );
+        if (declinedAssignment) {
+          throw new AppError(
+            "This referee already declined this match and cannot be assigned again.",
+            400
+          );
+        }
+      }
 
       for (const assignment of activeExistingAssignments) {
         const requested = requestedByRefereeId.get(assignment.refereeId);
@@ -274,11 +291,6 @@ class DelegationService {
           );
         }
       }
-
-      await MatchReferee.destroy({
-        where: { matchId, status: "declined" },
-        transaction,
-      });
 
       for (const assignment of refereeAssignments) {
         const existingAssignment = activeExistingAssignments.find(
@@ -347,7 +359,10 @@ class DelegationService {
               },
             },
           ],
-          where: { refereeId: assignment.refereeId },
+          where: {
+            refereeId: assignment.refereeId,
+            status: { [Op.ne]: "declined" },
+          },
           transaction,
         });
 
@@ -526,6 +541,7 @@ class DelegationService {
           },
         },
       ],
+      where: { status: { [Op.ne]: "declined" } },
       attributes: ["refereeId"],
     });
 
@@ -797,6 +813,7 @@ class DelegationService {
             },
           },
         ],
+        where: { status: { [Op.ne]: "declined" } },
         attributes: ["refereeId"],
         raw: true,
       });
@@ -866,6 +883,10 @@ class DelegationService {
       throw new AppError("Delegation not found.", 404);
     }
 
+    if (assignment.status === "declined") {
+      throw new AppError("Declined assignments cannot be accepted.", 400);
+    }
+
     await assignment.update({ status: "accepted", responseAt: new Date() });
 
     // Check if all referees confirmed - update match status
@@ -882,8 +903,9 @@ class DelegationService {
    * @param {string} matchId - Match ID
    * @param {string} refereeId - Referee ID
    * @param {string} reason - Rejection reason
+   * @param {string} notes - Optional rejection notes
    */
-  async rejectAssignment(matchId, refereeId, reason) {
+  async rejectAssignment(matchId, refereeId, reason, notes = null) {
     const assignment = await MatchReferee.findOne({
       where: { matchId, refereeId },
     });
@@ -905,8 +927,12 @@ class DelegationService {
       throw new AppError("Accepted assignments cannot be rejected.", 400);
     }
 
-    // A declined referee frees that crew slot for a replacement.
-    await assignment.destroy();
+    await assignment.update({
+      status: "declined",
+      responseAt: new Date(),
+      declineReason: reason || null,
+      notes: notes?.trim() || null,
+    });
 
     const remainingAssignments = await MatchReferee.findAll({
       where: { matchId },

@@ -19,6 +19,7 @@ const updateRole = z.object({
 
 const reject = z.object({
   reason: z.string().optional(),
+  notes: z.string().optional().nullable(),
 });
 
 const matchParams = z.object({

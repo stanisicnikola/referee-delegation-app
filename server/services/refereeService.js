@@ -33,9 +33,7 @@ class RefereeService {
       typeof value === "string" && /^\d{4}-\d{2}$/.test(value)
         ? new Date(`${value}-01T00:00:00`)
         : new Date(value);
-    const date = Number.isNaN(sourceDate.getTime())
-      ? new Date()
-      : sourceDate;
+    const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
     const start = new Date(date.getFullYear(), date.getMonth(), 1);
     const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
@@ -252,7 +250,11 @@ class RefereeService {
     const where = { refereeId };
     const matchWhere = {};
 
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { [Op.ne]: "declined" };
+    }
     if (role && role !== "all") where.role = role;
     if (competitionId && competitionId !== "all") {
       matchWhere.competitionId = competitionId;
@@ -446,11 +448,10 @@ class RefereeService {
           matchAssignment.refereeId !== assignment.refereeId &&
           matchAssignment.status !== "declined",
       )
-      .sort(
-        (first, second) =>
-          this.getRefereeRoleNumber(first.role).localeCompare(
-            this.getRefereeRoleNumber(second.role),
-          ),
+      .sort((first, second) =>
+        this.getRefereeRoleNumber(first.role).localeCompare(
+          this.getRefereeRoleNumber(second.role),
+        ),
       );
 
     return {
@@ -532,12 +533,7 @@ class RefereeService {
                     {
                       model: User,
                       as: "user",
-                      attributes: [
-                        "id",
-                        "firstName",
-                        "lastName",
-                        "avatarUrl",
-                      ],
+                      attributes: ["id", "firstName", "lastName", "avatarUrl"],
                     },
                   ],
                 },
@@ -845,34 +841,29 @@ class RefereeService {
       status: { [Op.ne]: "declined" },
     };
 
-    const [
-      statistics,
-      thisMonth,
-      upcoming,
-      upcomingRows,
-      calendarRows,
-    ] = await Promise.all([
-      this.getStatistics(refereeId),
-      MatchReferee.count({
-        where: activeAssignmentWhere,
-        include: this.getDashboardMatchInclude(matchInCurrentMonth),
-      }),
-      MatchReferee.count({
-        where: activeAssignmentWhere,
-        include: this.getDashboardMatchInclude(futureMatch),
-      }),
-      MatchReferee.findAll({
-        where: activeAssignmentWhere,
-        include: this.getDashboardMatchInclude(futureMatch, true),
-        order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
-        limit: 5,
-      }),
-      MatchReferee.findAll({
-        where: activeAssignmentWhere,
-        include: this.getDashboardMatchInclude(selectedMonthMatch),
-        order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
-      }),
-    ]);
+    const [statistics, thisMonth, upcoming, upcomingRows, calendarRows] =
+      await Promise.all([
+        this.getStatistics(refereeId),
+        MatchReferee.count({
+          where: activeAssignmentWhere,
+          include: this.getDashboardMatchInclude(matchInCurrentMonth),
+        }),
+        MatchReferee.count({
+          where: activeAssignmentWhere,
+          include: this.getDashboardMatchInclude(futureMatch),
+        }),
+        MatchReferee.findAll({
+          where: activeAssignmentWhere,
+          include: this.getDashboardMatchInclude(futureMatch, true),
+          order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
+          limit: 5,
+        }),
+        MatchReferee.findAll({
+          where: activeAssignmentWhere,
+          include: this.getDashboardMatchInclude(selectedMonthMatch),
+          order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
+        }),
+      ]);
 
     const calendarDateKeys = new Set(
       calendarRows

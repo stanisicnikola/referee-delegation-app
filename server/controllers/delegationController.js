@@ -144,11 +144,12 @@ const confirmAssignment = asyncHandler(async (req, res) => {
  */
 const rejectAssignment = asyncHandler(async (req, res) => {
   const referee = await refereeService.findByUserId(req.user.id);
-  const { reason } = req.body;
+  const { reason, notes } = req.body;
   const result = await delegationService.rejectAssignment(
     req.params.matchId,
     referee.id,
-    reason
+    reason,
+    notes
   );
 
   res.json({

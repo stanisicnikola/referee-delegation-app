@@ -54,7 +54,7 @@ class MatchService {
         { status: "in_progress" },
         {
           [Op.and]: [
-            { status: "scheduled" },
+            { status: { [Op.in]: ["scheduled", "postponed"] } },
             { scheduledAt: { [Op.lte]: now } },
           ],
         },
@@ -264,8 +264,8 @@ class MatchService {
 
     this.assertDelegateCanAccessMatch(match, actor);
 
-    if (["cancelled", "postponed"].includes(match.status)) {
-      throw new AppError("Cannot complete a cancelled or postponed match.", 400);
+    if (match.status === "cancelled") {
+      throw new AppError("Cannot complete a cancelled match.", 400);
     }
 
     if (match.scheduledAt && new Date(match.scheduledAt) > new Date()) {
