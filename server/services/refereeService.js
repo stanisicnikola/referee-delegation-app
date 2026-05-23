@@ -353,6 +353,209 @@ class RefereeService {
     };
   }
 
+  getRefereeRoleNumber(role) {
+    const numbers = {
+      first_referee: "1",
+      second_referee: "2",
+      third_referee: "3",
+    };
+
+    return numbers[role] || "R";
+  }
+
+  getUserDisplayName(user, fallback = "Colleague") {
+    const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+    return name || fallback;
+  }
+
+  getInitials(name) {
+    const parts = String(name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (parts.length === 0) return "?";
+
+    return parts
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
+  }
+
+  formatPendingAssignmentDate(dateValue) {
+    if (!dateValue) {
+      return {
+        day: "--",
+        month: "---",
+        weekday: "---",
+        time: "--:--",
+        full: "Date not set",
+        displayDate: "-- --- ----",
+      };
+    }
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return {
+        day: "--",
+        month: "---",
+        weekday: "---",
+        time: "--:--",
+        full: "Date not set",
+        displayDate: "-- --- ----",
+      };
+    }
+
+    return {
+      day: String(date.getDate()).padStart(2, "0"),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      full: date.toLocaleDateString("en-US", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      displayDate: date.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    };
+  }
+
+  toPendingAssignmentRow(assignment, index) {
+    const match = assignment.match;
+    const homeTeam = match?.homeTeam?.name || "Home team";
+    const awayTeam = match?.awayTeam?.name || "Away team";
+    const venue = match?.venue;
+    const competitionLabel = match?.competition?.name || null;
+    const roundLabel = match?.round ? `Round ${match.round}` : null;
+    const matchNumberLabel = match?.matchNumber
+      ? `Match ${match.matchNumber}`
+      : null;
+    const otherAssignments = (match?.refereeAssignments || [])
+      .filter(
+        (matchAssignment) =>
+          matchAssignment.refereeId !== assignment.refereeId &&
+          matchAssignment.status !== "declined",
+      )
+      .sort(
+        (first, second) =>
+          this.getRefereeRoleNumber(first.role).localeCompare(
+            this.getRefereeRoleNumber(second.role),
+          ),
+      );
+
+    return {
+      id:
+        assignment.id || assignment.matchId || match?.id || `pending-${index}`,
+      matchId: assignment.matchId,
+      role: assignment.role,
+      roleNumber: this.getRefereeRoleNumber(assignment.role),
+      dateInfo: this.formatPendingAssignmentDate(match?.scheduledAt),
+      homeTeamLabel: homeTeam,
+      awayTeamLabel: awayTeam,
+      matchLabel: `${homeTeam} vs ${awayTeam}`,
+      competitionLabel,
+      roundLabel,
+      matchNumberLabel,
+      detailChips: [competitionLabel, roundLabel, matchNumberLabel]
+        .filter(Boolean)
+        .map((label, chipIndex) => ({
+          label,
+          tone: chipIndex === 0 ? "competition" : "neutral",
+        })),
+      venueLabel: venue
+        ? [venue.name, venue.city].filter(Boolean).join(", ")
+        : "Venue not set",
+      delegateLabel: this.getUserDisplayName(match?.delegate, null),
+      otherReferees: otherAssignments.map((matchAssignment, refereeIndex) => {
+        const name = this.getUserDisplayName(
+          matchAssignment.referee?.user,
+          "Colleague",
+        );
+
+        return {
+          id:
+            matchAssignment.refereeId ||
+            matchAssignment.id ||
+            `referee-${refereeIndex}`,
+          name,
+          initials: this.getInitials(name),
+          role: matchAssignment.role,
+          roleLabel: this.getHistoryRoleLabel(matchAssignment.role),
+        };
+      }),
+    };
+  }
+
+  async getPendingAssignments(refereeId) {
+    const referee = await Referee.findByPk(refereeId);
+    if (!referee) {
+      throw new AppError("Referee not found.", 404);
+    }
+
+    const rows = await MatchReferee.findAll({
+      where: { refereeId, status: "pending" },
+      include: [
+        {
+          model: Match,
+          as: "match",
+          required: true,
+          include: [
+            { model: Competition, as: "competition" },
+            { model: Team, as: "homeTeam" },
+            { model: Team, as: "awayTeam" },
+            { model: Venue, as: "venue" },
+            {
+              model: User,
+              as: "delegate",
+              attributes: ["id", "firstName", "lastName"],
+            },
+            {
+              model: MatchReferee,
+              as: "refereeAssignments",
+              required: false,
+              where: { status: { [Op.ne]: "declined" } },
+              include: [
+                {
+                  model: Referee,
+                  as: "referee",
+                  include: [
+                    {
+                      model: User,
+                      as: "user",
+                      attributes: [
+                        "id",
+                        "firstName",
+                        "lastName",
+                        "avatarUrl",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
+    });
+
+    return {
+      data: rows.map((assignment, index) =>
+        this.toPendingAssignmentRow(assignment, index),
+      ),
+    };
+  }
+
   matchesCompletedHistorySearch(assignment, normalizedSearch) {
     const match = assignment.match;
     const competition = match?.competition;

@@ -20,6 +20,11 @@ router.get(
   refereeController.getMyAssignments,
 );
 router.get(
+  "/my-pending",
+  authorize("referee"),
+  refereeController.getMyPendingAssignments,
+);
+router.get(
   "/my-history",
   authorize("referee"),
   validate(refereeSchemas.historyQuery, "query"),

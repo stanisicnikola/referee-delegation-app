@@ -160,6 +160,21 @@ const getMyAssignments = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get pending assignments prepared for the pending page
+ * @route   GET /api/referees/my-pending
+ * @access  Private/Referee
+ */
+const getMyPendingAssignments = asyncHandler(async (req, res) => {
+  const referee = await refereeService.findByUserId(req.user.id);
+  const result = await refereeService.getPendingAssignments(referee.id);
+
+  res.json({
+    success: true,
+    ...result,
+  });
+});
+
+/**
  * @desc    Get completed match history (for logged in referee)
  * @route   GET /api/referees/my-history
  * @access  Private/Referee
@@ -221,6 +236,7 @@ module.exports = {
   getAvailableReferees,
   getMyDashboard,
   getMyAssignments,
+  getMyPendingAssignments,
   getMyHistory,
   getMyHistoryStatistics,
   getMyStatistics,

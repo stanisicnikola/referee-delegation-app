@@ -9,6 +9,7 @@ const {
   Venue,
   sequelize,
 } = require("../models");
+const { WEEKDAY_SHORT_NAMES } = require("../constants/date");
 
 class DashboardService {
   /**
@@ -128,7 +129,6 @@ class DashboardService {
 
     // Build day map using LOCAL timezone dates (not UTC)
     const dayMap = {};
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const isMonthView = period === "thisMonth" || period === "lastMonth";
     const current = new Date(startDate);
 
@@ -137,7 +137,7 @@ class DashboardService {
       dayMap[key] = {
         day: isMonthView
           ? String(current.getDate())
-          : dayNames[current.getDay()],
+          : WEEKDAY_SHORT_NAMES[current.getDay()],
         date: key,
         matches: 0,
         pending: 0,
