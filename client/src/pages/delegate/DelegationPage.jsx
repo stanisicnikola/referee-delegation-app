@@ -80,6 +80,17 @@ const SLOT_TO_ROLE = Object.fromEntries(
   SLOT_CONFIG.map((config) => [config.slot, config.role]),
 );
 
+const DECLINE_REASON_LABELS = {
+  schedule_conflict: "Schedule conflict",
+  health: "Health issue",
+  personal: "Personal reason",
+  travel: "Travel distance",
+  other: "Other",
+};
+
+const getDeclineReasonLabel = (reason) =>
+  DECLINE_REASON_LABELS[reason] || reason || "No reason provided";
+
 const DelegationPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
@@ -111,6 +122,8 @@ const DelegationPage = () => {
     const nextAssignments = { ...EMPTY_ASSIGNMENTS };
     const nextAssignmentMeta = { ...EMPTY_ASSIGNMENT_META };
     match.refereeAssignments.forEach((assignment) => {
+      if (assignment.status === "declined") return;
+
       const slot = ROLE_TO_SLOT[assignment.role];
       if (slot) {
         nextAssignments[slot] = assignment.referee || null;
@@ -128,6 +141,8 @@ const DelegationPage = () => {
     if (!match?.refereeAssignments) return saved;
 
     match.refereeAssignments.forEach((assignment) => {
+      if (assignment.status === "declined") return;
+
       const slot = ROLE_TO_SLOT[assignment.role];
       if (slot) saved[slot] = assignment.refereeId;
     });
@@ -146,7 +161,7 @@ const DelegationPage = () => {
     ? new Date(match.scheduledAt) <= new Date()
     : false;
   const effectiveMatchStatus =
-    match?.status === "scheduled" && hasMatchStartTimePassed
+    ["scheduled", "postponed"].includes(match?.status) && hasMatchStartTimePassed
       ? "in_progress"
       : match?.status;
   const isMatchFinished = match?.status === "completed";
@@ -173,8 +188,44 @@ const DelegationPage = () => {
     return "";
   })();
 
+  const declinedReferees = useMemo(() => {
+    return (match?.refereeAssignments || [])
+      .filter((assignment) => assignment.status === "declined")
+      .map((assignment) => {
+        const roleBadge = getRefereeRoleBadge(assignment.role);
+
+        return {
+          ...assignment.referee,
+          declinedAssignment: {
+            role: assignment.role,
+            roleLabel: roleBadge.delegationLabel,
+            reason: assignment.declineReason,
+            reasonLabel: getDeclineReasonLabel(assignment.declineReason),
+            notes: assignment.notes,
+            responseAt: assignment.responseAt,
+          },
+        };
+      })
+      .filter((referee) => referee?.id);
+  }, [match?.refereeAssignments]);
+
+  const candidateReferees = useMemo(() => {
+    const byId = new Map();
+
+    allAvailableReferees.forEach((referee) => {
+      if (referee?.id) byId.set(referee.id, referee);
+    });
+
+    declinedReferees.forEach((referee) => {
+      const current = byId.get(referee.id) || {};
+      byId.set(referee.id, { ...current, ...referee });
+    });
+
+    return Array.from(byId.values());
+  }, [allAvailableReferees, declinedReferees]);
+
   const availableReferees = useMemo(() => {
-    return allAvailableReferees
+    return candidateReferees
       .filter((referee) => {
         const fullName =
           `${referee.user?.firstName} ${referee.user?.lastName}`.toLowerCase();
@@ -186,23 +237,37 @@ const DelegationPage = () => {
         return matchesSearch && notAssigned;
       })
       .sort((a, b) => {
+        if (a.declinedAssignment && !b.declinedAssignment) return 1;
+        if (!a.declinedAssignment && b.declinedAssignment) return -1;
+
         const aName = `${a.user?.lastName || ""} ${a.user?.firstName || ""}`;
         const bName = `${b.user?.lastName || ""} ${b.user?.firstName || ""}`;
         return aName.localeCompare(bName);
       });
-  }, [allAvailableReferees, assignedReferees, search]);
+  }, [candidateReferees, assignedReferees, search]);
 
-  const availableWithoutSearch = useMemo(() => {
-    return allAvailableReferees.filter(
+  const assignableWithoutSearch = useMemo(() => {
+    return candidateReferees.filter(
       (referee) =>
+        !referee.declinedAssignment &&
         !Object.values(assignedReferees).some(
           (assigned) => assigned?.id === referee.id,
         ),
     );
-  }, [allAvailableReferees, assignedReferees]);
+  }, [candidateReferees, assignedReferees]);
+
+  const declinedWithoutSearch = useMemo(() => {
+    return candidateReferees.filter(
+      (referee) =>
+        referee.declinedAssignment &&
+        !Object.values(assignedReferees).some(
+          (assigned) => assigned?.id === referee.id,
+        ),
+    );
+  }, [candidateReferees, assignedReferees]);
 
   const handleAssign = (referee, slot) => {
-    if (isAssignmentLocked) return;
+    if (isAssignmentLocked || referee?.declinedAssignment) return;
     setAssignedReferees((prev) => ({ ...prev, [slot]: referee }));
     setAssignmentMeta((prev) => ({ ...prev, [slot]: null }));
   };
@@ -574,12 +639,16 @@ const DelegationPage = () => {
     resultHomeScore < 0 ||
     resultAwayScore < 0;
 
+  const onlyDeclinedCandidates =
+    assignableWithoutSearch.length === 0 && declinedWithoutSearch.length > 0;
   const emptyCandidatesMessage =
-    allAvailableReferees.length === 0
+    candidateReferees.length === 0
       ? "No eligible referees for this date. Everyone is unavailable or already assigned elsewhere."
-      : availableWithoutSearch.length === 0
-        ? "All eligible referees are already assigned to this match. Remove a slot to swap."
-        : "No referees match your search.";
+      : onlyDeclinedCandidates
+        ? "Only referees who declined this match are visible."
+        : assignableWithoutSearch.length === 0
+          ? "All eligible referees are already assigned to this match. Remove a slot to swap."
+          : "No referees match your search.";
   const darkFieldSx = {
     "& .MuiInputLabel-root": { color: "#6b7280" },
     "& .MuiInputLabel-root.Mui-focused": { color: "#f97316" },
@@ -1249,7 +1318,10 @@ const DelegationPage = () => {
                       fontWeight: 600,
                     }}
                   >
-                    Available · {availableWithoutSearch.length}
+                    Available · {assignableWithoutSearch.length}
+                    {declinedWithoutSearch.length > 0
+                      ? ` · Declined ${declinedWithoutSearch.length}`
+                      : ""}
                   </Typography>
                   {search.trim() !== "" && (
                     <Typography sx={{ color: "#4b5563", fontSize: 11 }}>
@@ -1733,10 +1805,14 @@ const AssignmentSlot = ({ config, referee, assignment, locked, onRemove }) => {
 };
 
 const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
+  const declinedAssignment = referee.declinedAssignment;
+  const hasDeclined = Boolean(declinedAssignment);
+
   return (
     <Box
       sx={{
-        border: "1px solid #1e1e22",
+        border: "1px solid",
+        borderColor: hasDeclined ? "rgba(239,68,68,0.28)" : "#1e1e22",
         borderRadius: "10px",
         p: 1.5,
         display: "flex",
@@ -1744,9 +1820,12 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
         gap: 1.5,
         flexWrap: "wrap",
         transition: "all 0.15s ease",
+        bgcolor: hasDeclined ? "rgba(239,68,68,0.05)" : "transparent",
         "&:hover": {
-          borderColor: "#2e2e33",
-          bgcolor: "rgba(255,255,255,0.02)",
+          borderColor: hasDeclined ? "rgba(239,68,68,0.4)" : "#2e2e33",
+          bgcolor: hasDeclined
+            ? "rgba(239,68,68,0.07)"
+            : "rgba(255,255,255,0.02)",
         },
       }}
     >
@@ -1765,21 +1844,46 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
       </Avatar>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography
-          sx={{
-            color: "#e5e7eb",
-            fontSize: 13,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {referee.user?.firstName} {referee.user?.lastName}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Typography
+            sx={{
+              color: "#e5e7eb",
+              fontSize: 13,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {referee.user?.firstName} {referee.user?.lastName}
+          </Typography>
+          {hasDeclined && (
+            <Box
+              sx={{
+                color: "#f87171",
+                bgcolor: "rgba(239,68,68,0.12)",
+                border: "1px solid rgba(239,68,68,0.3)",
+                borderRadius: "5px",
+                px: 0.75,
+                py: "1px",
+                fontSize: 10,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              Declined
+            </Box>
+          )}
+        </Box>
         <Typography sx={{ color: "#6b7280", fontSize: 11 }}>
           Cat. {referee.licenseCategory || "–"} · {referee.city || "–"}
         </Typography>
+        {hasDeclined && (
+          <Typography sx={{ color: "#fca5a5", fontSize: 11, mt: 0.35 }}>
+            {declinedAssignment.roleLabel} · {declinedAssignment.reasonLabel}
+            {declinedAssignment.notes ? ` · ${declinedAssignment.notes}` : ""}
+          </Typography>
+        )}
       </Box>
 
       {/* Role assign buttons */}
@@ -1794,7 +1898,7 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
       >
         {SLOT_CONFIG.map((slotCfg) => {
           const occupied = Boolean(assignedReferees[slotCfg.slot]);
-          const isDisabled = disabled || occupied;
+          const isDisabled = disabled || occupied || hasDeclined;
           return (
             <Box
               key={slotCfg.slot}
@@ -1802,7 +1906,9 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
                 isDisabled ? undefined : () => onAssign(referee, slotCfg.slot)
               }
               title={
-                disabled
+                hasDeclined
+                  ? `Declined this match: ${declinedAssignment.reasonLabel}`
+                  : disabled
                   ? "Assignments are locked for this match"
                   : occupied
                     ? `${slotCfg.label} slot is taken`

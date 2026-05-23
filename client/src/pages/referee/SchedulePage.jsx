@@ -7,6 +7,8 @@ import {
   Paper,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Check as CheckIcon,
@@ -25,6 +27,7 @@ import {
   RefereeAssignmentStatusBadge,
   RefereeRoleBadge,
 } from "../../components/ui";
+import { DeclineAssignmentDialog } from "../../components/referee/pending";
 import {
   isAcceptedAssignmentStatus,
   REFEREE_ROLE_OPTIONS,
@@ -156,6 +159,27 @@ const formatDate = (match) => {
 
 const pluralizeMatches = (count) => `${count} match${count === 1 ? "" : "es"}`;
 
+const toDeclineDialogAssignment = (assignment) => {
+  const match = getMatch(assignment);
+  const date = getScheduledDate(match);
+
+  return {
+    ...assignment,
+    matchId: getAssignmentMatchId(assignment),
+    matchLabel: `${getTeamName(match, "home")} vs ${getTeamName(match, "away")}`,
+    dateInfo: {
+      full: date
+        ? date.toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "Date not set",
+    },
+  };
+};
+
 const getAcceptedColleagues = (assignment) => {
   if (!isAcceptedAssignmentStatus(assignment.status)) return [];
 
@@ -183,9 +207,15 @@ const getAcceptedColleagues = (assignment) => {
 };
 
 const SchedulePage = () => {
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const [selectedCompetition, setSelectedCompetition] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState("upcoming");
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [declineNote, setDeclineNote] = useState("");
 
   const {
     data: assignmentsData,
@@ -260,16 +290,37 @@ const SchedulePage = () => {
     }
   };
 
-  const handleDecline = async (assignment) => {
-    const matchId = getAssignmentMatchId(assignment);
-    if (!matchId) return;
+  const handleDeclineClick = (event, assignment) => {
+    event.currentTarget.blur();
+    setSelectedAssignment(toDeclineDialogAssignment(assignment));
+    setDeclineReason("");
+    setDeclineNote("");
+    setDeclineModalOpen(true);
+  };
+
+  const handleDeclineClose = () => {
+    if (rejectAssignment.isPending) return;
+
+    setDeclineModalOpen(false);
+    setSelectedAssignment(null);
+    setDeclineReason("");
+    setDeclineNote("");
+  };
+
+  const handleDeclineSubmit = async () => {
+    const matchId = selectedAssignment?.matchId;
+    if (!declineReason || !matchId) return;
 
     try {
       await rejectAssignment.mutateAsync({
         matchId,
-        data: { reason: "Declined from schedule" },
+        data: {
+          reason: declineReason,
+          notes: declineNote,
+        },
       });
       await refetch();
+      handleDeclineClose();
     } catch {
       console.error("Failed to decline assignment");
     }
@@ -410,7 +461,7 @@ const SchedulePage = () => {
                       assignment={assignment}
                       isActionPending={isActionPending}
                       onAccept={handleAccept}
-                      onDecline={handleDecline}
+                      onDecline={handleDeclineClick}
                     />
                   ))}
                 </Stack>
@@ -419,6 +470,19 @@ const SchedulePage = () => {
           </Stack>
         )}
       </Box>
+
+      <DeclineAssignmentDialog
+        fullScreen={isSmall}
+        open={declineModalOpen}
+        assignment={selectedAssignment}
+        declineReason={declineReason}
+        declineNote={declineNote}
+        isSubmitting={rejectAssignment.isPending}
+        onClose={handleDeclineClose}
+        onReasonChange={setDeclineReason}
+        onNoteChange={setDeclineNote}
+        onSubmit={handleDeclineSubmit}
+      />
     </Box>
   );
 };
@@ -610,7 +674,7 @@ const MatchCard = ({ assignment, isActionPending, onAccept, onDecline }) => {
                 variant='contained'
                 startIcon={<CloseIcon />}
                 disabled={isActionPending}
-                onClick={() => onDecline(assignment)}
+                onClick={(event) => onDecline(event, assignment)}
                 sx={declineButtonSx}
               >
                 Decline
