@@ -14,6 +14,7 @@ import { createMatchSchema } from "../../validations/matchSchema";
 import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
 import { useAuth } from "../../context";
+import { CancelMatchDialog, PostponeMatchDialog } from "./match";
 
 const MatchModal = ({
   open,
@@ -25,9 +26,6 @@ const MatchModal = ({
   const { user } = useAuth();
   const canChangeDelegate = user?.role === "admin";
   const [statusAction, setStatusAction] = useState(null);
-  const [statusReason, setStatusReason] = useState("");
-  const [postponeDate, setPostponeDate] = useState("");
-  const [postponeTime, setPostponeTime] = useState("");
   const schema = useMemo(
     () => createMatchSchema({ requireDelegate: canChangeDelegate }),
     [canChangeDelegate],
@@ -62,21 +60,45 @@ const MatchModal = ({
     enabled: canChangeDelegate,
   });
 
-  const teams = teamsData?.data || [];
-  const venues = venuesData?.data || [];
-  const competitions = (competitionsData?.data || []).map((c) => ({
-    label: c.name,
-    value: c.id,
-  }));
-  const delegates = (delegatesData?.data?.activeDelegatesData || []).map(
-    (d) => ({
-      label: `${d.firstName} ${d.lastName}`,
-      value: d.id,
-    }),
+  const teams = useMemo(() => teamsData?.data || [], [teamsData?.data]);
+  const venues = useMemo(() => venuesData?.data || [], [venuesData?.data]);
+  const competitions = useMemo(
+    () =>
+      (competitionsData?.data || []).map((competition) => ({
+        label: competition.name,
+        value: competition.id,
+      })),
+    [competitionsData?.data],
+  );
+  const delegates = useMemo(
+    () =>
+      (delegatesData?.data?.activeDelegatesData || []).map((delegate) => ({
+        label: `${delegate.firstName} ${delegate.lastName}`,
+        value: delegate.id,
+      })),
+    [delegatesData?.data?.activeDelegatesData],
+  );
+  const venueOptions = useMemo(
+    () => venues.map((venue) => ({ label: venue.name, value: venue.id })),
+    [venues],
   );
 
   const homeTeamId = watch("homeTeamId");
   const awayTeamId = watch("awayTeamId");
+  const homeTeamOptions = useMemo(
+    () =>
+      teams
+        .filter((team) => team.id !== awayTeamId)
+        .map((team) => ({ label: team.name, value: team.id })),
+    [awayTeamId, teams],
+  );
+  const awayTeamOptions = useMemo(
+    () =>
+      teams
+        .filter((team) => team.id !== homeTeamId)
+        .map((team) => ({ label: team.name, value: team.id })),
+    [homeTeamId, teams],
+  );
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -109,13 +131,6 @@ const MatchModal = ({
           delegateId: editMatch.delegate?.id || editMatch.delegateId || "",
         });
         setStatusAction(null);
-        setStatusReason(editMatch.statusReason || "");
-        setPostponeDate(
-          matchDate ? matchDate.toISOString().split("T")[0] : "",
-        );
-        setPostponeTime(
-          matchDate ? matchDate.toTimeString().substring(0, 5) : "",
-        );
       } else {
         reset({
           id: "",
@@ -130,9 +145,6 @@ const MatchModal = ({
           delegateId: "",
         });
         setStatusAction(null);
-        setStatusReason("");
-        setPostponeDate("");
-        setPostponeTime("");
       }
     }
   }, [editMatch, open, reset]);
@@ -147,41 +159,13 @@ const MatchModal = ({
     });
   };
 
-  const handleStatusAction = async () => {
-    const reason = statusReason.trim();
-    if (!statusAction || !reason) return;
-
-    if (statusAction === "cancelled") {
-      await onSubmit({
-        status: "cancelled",
-        statusReason: reason,
-      });
-      return;
-    }
-
-    if (statusAction === "postponed") {
-      if (!postponeDate || !postponeTime) return;
-      await onSubmit({
-        status: "postponed",
-        statusReason: reason,
-        scheduledAt: new Date(`${postponeDate}T${postponeTime}`).toISOString(),
-      });
-    }
+  const handleStatusSubmit = async (payload) => {
+    await onSubmit(payload);
+    setStatusAction(null);
   };
 
   const canChangeMatchStatus =
     editMatch && !["completed", "cancelled"].includes(editMatch.status);
-  const statusActionLabel =
-    statusAction === "cancelled"
-      ? "Cancel Match"
-      : statusAction === "postponed"
-        ? "Postpone Match"
-        : "";
-  const statusActionDisabled =
-    isLoading ||
-    !statusAction ||
-    !statusReason.trim() ||
-    (statusAction === "postponed" && (!postponeDate || !postponeTime));
 
   if (!open) return null;
 
@@ -203,7 +187,6 @@ const MatchModal = ({
           position: "absolute",
           inset: 0,
           bgcolor: "rgba(0, 0, 0, 0.8)",
-          backdropFilter: "blur(4px)",
         }}
       />
 
@@ -305,9 +288,7 @@ const MatchModal = ({
                 <CustomSelect
                   label='Home Team *'
                   placeholder='Select home team'
-                  options={teams
-                    .filter((t) => t.id !== awayTeamId)
-                    .map((t) => ({ label: t.name, value: t.id }))}
+                  options={homeTeamOptions}
                   error={errors.homeTeamId?.message}
                   {...field}
                 />
@@ -320,9 +301,7 @@ const MatchModal = ({
                 <CustomSelect
                   label='Away Team *'
                   placeholder='Select away team'
-                  options={teams
-                    .filter((t) => t.id !== homeTeamId)
-                    .map((t) => ({ label: t.name, value: t.id }))}
+                  options={awayTeamOptions}
                   error={errors.awayTeamId?.message}
                   {...field}
                 />
@@ -388,7 +367,7 @@ const MatchModal = ({
                 <CustomSelect
                   label='Venue *'
                   placeholder='Select venue'
-                  options={venues.map((v) => ({ label: v.name, value: v.id }))}
+                  options={venueOptions}
                   error={errors.venueId?.message}
                   {...field}
                 />
@@ -438,162 +417,29 @@ const MatchModal = ({
                 bgcolor: "#0d0d0f",
               }}
             >
+              <Typography sx={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>
+                Match status
+              </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: { xs: "stretch", sm: "center" },
-                  justifyContent: "space-between",
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
                   gap: 1,
-                  flexDirection: { xs: "column", sm: "row" },
                 }}
               >
-                <Box>
-                  <Typography
-                    sx={{ color: "#fff", fontSize: 15, fontWeight: 700 }}
-                  >
-                    Match status
-                  </Typography>
-                  <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
-                    Cancel this match or postpone it to a new date.
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                    gap: 1,
-                    minWidth: { sm: 260 },
-                  }}
+                <Button
+                  onClick={() => setStatusAction("cancelled")}
+                  sx={statusButtonSx("cancelled")}
                 >
-                  <Button
-                    onClick={() => {
-                      setStatusAction("cancelled");
-                      setStatusReason("");
-                    }}
-                    sx={{
-                      color: "#ef4444",
-                      bgcolor:
-                        statusAction === "cancelled"
-                          ? "rgba(239,68,68,0.14)"
-                          : "rgba(239,68,68,0.08)",
-                      border: "1px solid rgba(239,68,68,0.28)",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      fontWeight: 700,
-                      "&:hover": { bgcolor: "rgba(239,68,68,0.18)" },
-                    }}
-                  >
-                    Cancel Match
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setStatusAction("postponed");
-                      setStatusReason("");
-                    }}
-                    sx={{
-                      color: "#38bdf8",
-                      bgcolor:
-                        statusAction === "postponed"
-                          ? "rgba(56,189,248,0.14)"
-                          : "rgba(56,189,248,0.08)",
-                      border: "1px solid rgba(56,189,248,0.28)",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      fontWeight: 700,
-                      "&:hover": { bgcolor: "rgba(56,189,248,0.18)" },
-                    }}
-                  >
-                    Postpone Match
-                  </Button>
-                </Box>
+                  Cancel Match
+                </Button>
+                <Button
+                  onClick={() => setStatusAction("postponed")}
+                  sx={statusButtonSx("postponed")}
+                >
+                  Postpone Match
+                </Button>
               </Box>
-
-              {statusAction && (
-                <Box sx={{ display: "grid", gap: 1.5 }}>
-                  {statusAction === "postponed" && (
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                        gap: 1.5,
-                      }}
-                    >
-                      <CustomInput
-                        type='date'
-                        label='New date *'
-                        value={postponeDate}
-                        onChange={(event) => setPostponeDate(event.target.value)}
-                        sx={{
-                          "& input::-webkit-calendar-picker-indicator": {
-                            filter: "invert(1)",
-                          },
-                        }}
-                      />
-                      <CustomInput
-                        type='time'
-                        label='New time *'
-                        value={postponeTime}
-                        onChange={(event) => setPostponeTime(event.target.value)}
-                        sx={{
-                          "& input::-webkit-calendar-picker-indicator": {
-                            filter: "invert(1)",
-                          },
-                        }}
-                      />
-                    </Box>
-                  )}
-
-                  <CustomInput
-                    label={
-                      statusAction === "cancelled"
-                        ? "Cancellation reason *"
-                        : "Postponement reason *"
-                    }
-                    placeholder={
-                      statusAction === "cancelled"
-                        ? "Why is this match being cancelled?"
-                        : "Why is this match being postponed?"
-                    }
-                    multiline
-                    rows={3}
-                    value={statusReason}
-                    onChange={(event) => setStatusReason(event.target.value)}
-                  />
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 1,
-                      flexDirection: { xs: "column-reverse", sm: "row" },
-                    }}
-                  >
-                    <Button
-                      onClick={() => {
-                        setStatusAction(null);
-                        setStatusReason("");
-                      }}
-                      disabled={isLoading}
-                      sx={{
-                        color: "#9ca3af",
-                        borderRadius: "10px",
-                        textTransform: "none",
-                        px: 2,
-                      }}
-                    >
-                      Close status form
-                    </Button>
-                    <CustomButton
-                      onClick={handleStatusAction}
-                      loading={isLoading}
-                      disabled={statusActionDisabled}
-                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                    >
-                      {statusActionLabel}
-                    </CustomButton>
-                  </Box>
-                </Box>
-              )}
             </Box>
           )}
         </Box>
@@ -629,8 +475,44 @@ const MatchModal = ({
           </CustomButton>
         </Box>
       </Box>
+
+      {statusAction && (
+        <>
+          <CancelMatchDialog
+            open={statusAction === "cancelled"}
+            isLoading={isLoading}
+            onClose={() => setStatusAction(null)}
+            onSubmit={handleStatusSubmit}
+          />
+          <PostponeMatchDialog
+            open={statusAction === "postponed"}
+            editMatch={editMatch}
+            isLoading={isLoading}
+            onClose={() => setStatusAction(null)}
+            onSubmit={handleStatusSubmit}
+          />
+        </>
+      )}
     </Box>
   );
+};
+
+const statusButtonSx = (action) => {
+  const isCancel = action === "cancelled";
+  const color = isCancel ? "#ef4444" : "#38bdf8";
+
+  return {
+    color,
+    bgcolor: isCancel ? "rgba(239,68,68,0.08)" : "rgba(56,189,248,0.08)",
+    border: `1px solid ${isCancel ? "rgba(239,68,68,0.28)" : "rgba(56,189,248,0.28)"}`,
+    borderRadius: "10px",
+    textTransform: "none",
+    fontWeight: 700,
+    minHeight: 46,
+    "&:hover": {
+      bgcolor: isCancel ? "rgba(239,68,68,0.18)" : "rgba(56,189,248,0.18)",
+    },
+  };
 };
 
 export default MatchModal;

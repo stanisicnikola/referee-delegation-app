@@ -336,13 +336,15 @@ const MatchesPage = () => {
       />
 
       {/* Match Modal */}
-      <MatchModal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmit}
-        isLoading={createMatch.isPending || updateMatch.isPending}
-        editMatch={editingMatch}
-      />
+      {modalOpen && (
+        <MatchModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          isLoading={createMatch.isPending || updateMatch.isPending}
+          editMatch={editingMatch}
+        />
+      )}
       <ConfirmDialog
         open={confirmDialogOpen}
         onClose={handleCloseDialog}
