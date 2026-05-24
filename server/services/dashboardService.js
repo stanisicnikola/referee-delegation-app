@@ -53,12 +53,14 @@ class DashboardService {
       Match.count({
         where: {
           delegationStatus: { [Op.in]: ["complete", "confirmed"] },
+          status: { [Op.ne]: "cancelled" },
         },
       }),
       Match.count({
         where: {
           delegationStatus: { [Op.in]: ["pending", "partial"] },
           scheduledAt: { [Op.gte]: new Date() },
+          status: { [Op.ne]: "cancelled" },
         },
       }),
       User.count({ where: { role: "referee" } }),
@@ -151,8 +153,9 @@ class DashboardService {
       if (dayMap[key]) {
         dayMap[key].matches += 1;
         if (
-          match.delegationStatus === "pending" ||
-          match.delegationStatus === "partial"
+          match.status !== "cancelled" &&
+          (match.delegationStatus === "pending" ||
+            match.delegationStatus === "partial")
         ) {
           dayMap[key].pending += 1;
         }

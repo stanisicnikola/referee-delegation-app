@@ -12,6 +12,8 @@ const {
 } = require("../models");
 const { AppError } = require("../middlewares");
 
+const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+
 class RefereeService {
   toLocalDateKey(date) {
     const year = date.getFullYear();
@@ -248,12 +250,12 @@ class RefereeService {
     }
 
     const where = { refereeId };
-    const matchWhere = {};
+    const matchWhere = { status: { [Op.ne]: "cancelled" } };
 
     if (status) {
       where.status = status;
     } else {
-      where.status = { [Op.ne]: "declined" };
+      where.status = { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES };
     }
     if (role && role !== "all") where.role = role;
     if (competitionId && competitionId !== "all") {
@@ -309,7 +311,7 @@ class RefereeService {
       const activeAssignments = await MatchReferee.findAll({
         where: {
           matchId: { [Op.in]: matchIds },
-          status: { [Op.ne]: "declined" },
+          status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
         },
         include: [
           {
@@ -446,7 +448,7 @@ class RefereeService {
       .filter(
         (matchAssignment) =>
           matchAssignment.refereeId !== assignment.refereeId &&
-          matchAssignment.status !== "declined",
+          ACTIVE_ASSIGNMENT_STATUSES.includes(matchAssignment.status),
       )
       .sort((first, second) =>
         this.getRefereeRoleNumber(first.role).localeCompare(
@@ -510,6 +512,7 @@ class RefereeService {
           model: Match,
           as: "match",
           required: true,
+          where: { status: { [Op.ne]: "cancelled" } },
           include: [
             { model: Competition, as: "competition" },
             { model: Team, as: "homeTeam" },
@@ -524,7 +527,7 @@ class RefereeService {
               model: MatchReferee,
               as: "refereeAssignments",
               required: false,
-              where: { status: { [Op.ne]: "declined" } },
+              where: { status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES } },
               include: [
                 {
                   model: Referee,
@@ -741,6 +744,16 @@ class RefereeService {
       throw new AppError("Referee not found.", 404);
     }
 
+    const includeNonCancelledMatch = () => [
+      {
+        model: Match,
+        as: "match",
+        where: { status: { [Op.ne]: "cancelled" } },
+        required: true,
+        attributes: [],
+      },
+    ];
+
     const [
       totalAssignments,
       acceptedAssignments,
@@ -748,18 +761,29 @@ class RefereeService {
       pendingAssignments,
       firstRefereeAssignments,
     ] = await Promise.all([
-      MatchReferee.count({ where: { refereeId } }),
+      MatchReferee.count({
+        where: { refereeId, status: { [Op.ne]: "cancelled" } },
+        include: includeNonCancelledMatch(),
+      }),
       MatchReferee.count({
         where: { refereeId, status: "accepted" },
+        include: includeNonCancelledMatch(),
       }),
       MatchReferee.count({
         where: { refereeId, status: "declined" },
+        include: includeNonCancelledMatch(),
       }),
       MatchReferee.count({
         where: { refereeId, status: "pending" },
+        include: includeNonCancelledMatch(),
       }),
       MatchReferee.count({
-        where: { refereeId, role: "first_referee" },
+        where: {
+          refereeId,
+          role: "first_referee",
+          status: { [Op.ne]: "cancelled" },
+        },
+        include: includeNonCancelledMatch(),
       }),
     ]);
 
@@ -824,13 +848,18 @@ class RefereeService {
       this.getMonthRange(query.month);
 
     const matchInCurrentMonth = {
+      status: { [Op.ne]: "cancelled" },
       scheduledAt: {
         [Op.gte]: currentMonthStart,
         [Op.lt]: currentMonthEnd,
       },
     };
-    const futureMatch = { scheduledAt: { [Op.gte]: now } };
+    const futureMatch = {
+      status: { [Op.ne]: "cancelled" },
+      scheduledAt: { [Op.gte]: now },
+    };
     const selectedMonthMatch = {
+      status: { [Op.ne]: "cancelled" },
       scheduledAt: {
         [Op.gte]: selectedMonthStart,
         [Op.lt]: selectedMonthEnd,
@@ -838,7 +867,7 @@ class RefereeService {
     };
     const activeAssignmentWhere = {
       refereeId,
-      status: { [Op.ne]: "declined" },
+      status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
     };
 
     const [statistics, thisMonth, upcoming, upcomingRows, calendarRows] =
@@ -965,12 +994,13 @@ class RefereeService {
           raw: true,
         }),
         MatchReferee.findAll({
-          where: { status: { [Op.ne]: "declined" } },
+          where: { status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES } },
           include: [
             {
               model: Match,
               as: "match",
               where: {
+                status: { [Op.ne]: "cancelled" },
                 scheduledAt: {
                   [Op.gte]: todayStart,
                   [Op.lt]: tomorrowStart,

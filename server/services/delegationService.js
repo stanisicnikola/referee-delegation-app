@@ -12,6 +12,9 @@ const {
 } = require("../models");
 const { AppError } = require("../middlewares");
 
+const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+const CLOSED_MATCH_STATUSES = ["completed", "cancelled"];
+
 class DelegationService {
   toLocalDateKey(date) {
     const year = date.getFullYear();
@@ -76,7 +79,7 @@ class DelegationService {
     const previousAssignments = await MatchReferee.findAll({
       where: {
         refereeId: { [Op.in]: refereeIds },
-        status: { [Op.ne]: "declined" },
+        status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
       },
       include: [
         {
@@ -159,7 +162,7 @@ class DelegationService {
   }
 
   assertMatchCanBeChanged(match) {
-    if (["completed", "cancelled"].includes(match.status)) {
+    if (CLOSED_MATCH_STATUSES.includes(match.status)) {
       throw new AppError(
         "Cannot change referee assignments for a completed or cancelled match.",
         400
@@ -182,7 +185,9 @@ class DelegationService {
   }
 
   getDelegationStatus(assignments) {
-    const activeAssignments = assignments.filter((a) => a.status !== "declined");
+    const activeAssignments = assignments.filter((assignment) =>
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)
+    );
 
     if (activeAssignments.length === 0) return "pending";
     if (activeAssignments.length < 3) return "partial";
@@ -236,7 +241,7 @@ class DelegationService {
         transaction,
       });
       const activeExistingAssignments = existingAssignments.filter(
-        (assignment) => assignment.status !== "declined"
+        (assignment) => ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)
       );
 
       if (activeExistingAssignments.length >= 3) {
@@ -361,7 +366,7 @@ class DelegationService {
           ],
           where: {
             refereeId: assignment.refereeId,
-            status: { [Op.ne]: "declined" },
+            status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
           },
           transaction,
         });
@@ -514,6 +519,10 @@ class DelegationService {
       throw new AppError("Match not found.", 404);
     }
 
+    if (CLOSED_MATCH_STATUSES.includes(match.status)) {
+      return [];
+    }
+
     const matchDate = match.scheduledAt.toISOString().split("T")[0];
 
     // Get referees who are unavailable on that date
@@ -541,7 +550,7 @@ class DelegationService {
           },
         },
       ],
-      where: { status: { [Op.ne]: "declined" } },
+      where: { status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES } },
       attributes: ["refereeId"],
     });
 
@@ -659,22 +668,26 @@ class DelegationService {
   async getDelegationStatistics() {
     const total = await Match.count();
     const pending = await Match.count({
-      where: { delegationStatus: "pending" },
+      where: { delegationStatus: "pending", status: { [Op.ne]: "cancelled" } },
     });
     const partial = await Match.count({
-      where: { delegationStatus: "partial" },
+      where: { delegationStatus: "partial", status: { [Op.ne]: "cancelled" } },
     });
     const complete = await Match.count({
-      where: { delegationStatus: "complete" },
+      where: { delegationStatus: "complete", status: { [Op.ne]: "cancelled" } },
     });
     const confirmed = await Match.count({
-      where: { delegationStatus: "confirmed" },
+      where: {
+        delegationStatus: "confirmed",
+        status: { [Op.ne]: "cancelled" },
+      },
     });
 
     // Matches awaiting delegation in the next 7 days
     const upcomingPending = await Match.count({
       where: {
         delegationStatus: { [Op.in]: ["pending", "partial"] },
+        status: { [Op.ne]: "cancelled" },
         scheduledAt: {
           [Op.gte]: new Date(),
           [Op.lte]: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -713,12 +726,14 @@ class DelegationService {
         where: {
           ...matchScope,
           delegationStatus: "pending",
+          status: { [Op.ne]: "cancelled" },
         },
       }),
       Match.count({
         where: {
           ...matchScope,
           scheduledAt: { [Op.gte]: now },
+          status: { [Op.ne]: "cancelled" },
         },
       }),
       Referee.count({
@@ -728,6 +743,7 @@ class DelegationService {
         where: {
           ...matchScope,
           delegationStatus: "confirmed",
+          status: { [Op.ne]: "cancelled" },
         },
       }),
       // Notifications: matches awaiting delegation in next 7 days
@@ -735,6 +751,7 @@ class DelegationService {
         where: {
           ...matchScope,
           delegationStatus: { [Op.in]: ["pending", "partial"] },
+          status: { [Op.ne]: "cancelled" },
           scheduledAt: {
             [Op.gte]: now,
             [Op.lte]: next7Days,
@@ -748,6 +765,7 @@ class DelegationService {
       where: {
         ...matchScope,
         scheduledAt: { [Op.gte]: now },
+        status: { [Op.ne]: "cancelled" },
       },
       include: [
         { model: Team, as: "homeTeam", attributes: ["name", "logoUrl"] },
@@ -813,7 +831,7 @@ class DelegationService {
             },
           },
         ],
-        where: { status: { [Op.ne]: "declined" } },
+        where: { status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES } },
         attributes: ["refereeId"],
         raw: true,
       });
@@ -883,14 +901,26 @@ class DelegationService {
       throw new AppError("Delegation not found.", 404);
     }
 
+    const match = await Match.findByPk(matchId);
+    if (!match) {
+      throw new AppError("Match not found.", 404);
+    }
+
+    if (match.status === "cancelled") {
+      throw new AppError("Cannot accept a cancelled match assignment.", 400);
+    }
+
     if (assignment.status === "declined") {
       throw new AppError("Declined assignments cannot be accepted.", 400);
+    }
+
+    if (assignment.status === "cancelled") {
+      throw new AppError("Cancelled assignments cannot be accepted.", 400);
     }
 
     await assignment.update({ status: "accepted", responseAt: new Date() });
 
     // Check if all referees confirmed - update match status
-    const match = await Match.findByPk(matchId);
     const allAssignments = await MatchReferee.findAll({ where: { matchId } });
     const delegationStatus = this.getDelegationStatus(allAssignments);
     await match.update({ delegationStatus });
@@ -919,12 +949,20 @@ class DelegationService {
       throw new AppError("Match not found.", 404);
     }
 
+    if (match.status === "cancelled") {
+      throw new AppError("Cannot reject a cancelled match assignment.", 400);
+    }
+
     if (match.delegationStatus === "confirmed") {
       throw new AppError("This match delegation is already confirmed.", 400);
     }
 
     if (assignment.status === "accepted") {
       throw new AppError("Accepted assignments cannot be rejected.", 400);
+    }
+
+    if (assignment.status === "cancelled") {
+      throw new AppError("Cancelled assignments cannot be rejected.", 400);
     }
 
     await assignment.update({

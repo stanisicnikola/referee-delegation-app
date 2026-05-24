@@ -11,6 +11,8 @@ const {
 } = require("../models");
 const { AppError } = require("../middlewares");
 
+const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+
 class MatchService {
   getDelegateScope(actor) {
     return actor?.role === "delegate" ? { delegatedBy: actor.id } : {};
@@ -230,6 +232,14 @@ class MatchService {
       data.delegatedBy = delegateId;
     }
 
+    if (
+      match.status === "cancelled" &&
+      data.status &&
+      data.status !== "cancelled"
+    ) {
+      throw new AppError("Cancelled matches cannot be reopened.", 400);
+    }
+
     if (data.status === "cancelled") {
       if (!data.statusReason?.trim()) {
         throw new AppError("Cancellation reason is required.", 400);
@@ -248,6 +258,34 @@ class MatchService {
         throw new AppError("Postponement reason is required.", 400);
       }
       data.statusReason = data.statusReason.trim();
+    }
+
+    if (data.status === "cancelled") {
+      const transaction = await sequelize.transaction();
+
+      try {
+        await match.update(data, { transaction });
+        await MatchReferee.update(
+          {
+            status: "cancelled",
+            responseAt: new Date(),
+          },
+          {
+            where: {
+              matchId: id,
+              status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
+            },
+            transaction,
+          }
+        );
+
+        await transaction.commit();
+      } catch (error) {
+        await transaction.rollback();
+        throw error;
+      }
+
+      return this.findById(id, actor);
     }
 
     await match.update(data);
@@ -325,6 +363,7 @@ class MatchService {
         ...this.getDelegateScope(actor),
         delegationStatus: { [Op.in]: ["pending", "partial"] },
         scheduledAt: { [Op.gte]: new Date() },
+        status: { [Op.ne]: "cancelled" },
       },
       include: [
         { model: Competition, as: "competition" },
@@ -384,7 +423,10 @@ class MatchService {
     });
 
     const pendingDelegations = await Match.count({
-      where: { delegationStatus: { [Op.in]: ["pending", "partial"] } },
+      where: {
+        delegationStatus: { [Op.in]: ["pending", "partial"] },
+        status: { [Op.ne]: "cancelled" },
+      },
     });
 
     return {
