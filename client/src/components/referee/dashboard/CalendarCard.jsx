@@ -37,7 +37,7 @@ const CalendarDay = ({ dayData }) => {
           border: dayData.isToday
             ? `2px solid ${COLORS.green}`
             : isMatch
-              ? "1px solid rgba(249, 115, 22, 0.28)"
+              ? `1px solid ${COLORS.orange}`
               : "1px solid transparent",
           fontWeight: dayData.isToday || isMatch ? 800 : 600,
           cursor: isMatch ? "pointer" : "default",
@@ -52,38 +52,10 @@ const CalendarDay = ({ dayData }) => {
         <Typography sx={{ fontSize: 14, fontWeight: "inherit" }}>
           {dayData.day}
         </Typography>
-        {isMatch && (
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 5,
-              width: 5,
-              height: 5,
-              borderRadius: "50%",
-              bgcolor: COLORS.orange,
-            }}
-          />
-        )}
       </Box>
     </Tooltip>
   );
 };
-
-const LegendDot = ({ color, label }) => (
-  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-    <Box
-      sx={{
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        bgcolor: color,
-      }}
-    />
-    <Typography sx={{ color: COLORS.mutedStrong, fontSize: 13 }}>
-      {label}
-    </Typography>
-  </Box>
-);
 
 const CalendarCard = ({ calendar, isSmall, onPrev, onNext }) => (
   <Paper
@@ -162,7 +134,20 @@ const CalendarCard = ({ calendar, isSmall, onPrev, onNext }) => (
         flexWrap: "wrap",
       }}
     >
-      <LegendDot color={COLORS.orange} label='Match' />
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box
+          sx={{
+            width: 17,
+            height: 17,
+            borderRadius: "5px",
+            bgcolor: "rgba(249, 115, 22, 0.2)",
+            border: `1px solid ${COLORS.orange}`,
+          }}
+        />
+        <Typography sx={{ color: COLORS.mutedStrong, fontSize: 13 }}>
+          Match
+        </Typography>
+      </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Box
           sx={{

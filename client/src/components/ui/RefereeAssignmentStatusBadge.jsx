@@ -14,6 +14,9 @@ const getStatusColor = (theme, tone) => {
     declined:
       theme.palette.refereeAssignmentStatusColors?.declined ||
       theme.palette.error.main,
+    cancelled:
+      theme.palette.refereeAssignmentStatusColors?.cancelled ||
+      theme.palette.error.main,
   };
 
   return statusColors[tone] || theme.palette.text.secondary;

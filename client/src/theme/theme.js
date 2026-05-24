@@ -159,6 +159,7 @@ const sharedPanelPalette = {
     pending: "#eab308",
     accepted: "#22c55e",
     declined: "#ef4444",
+    cancelled: "#ef4444",
   },
   background: {
     default: "#0a0a0b",

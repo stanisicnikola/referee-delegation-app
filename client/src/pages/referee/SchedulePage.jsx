@@ -214,8 +214,6 @@ const SchedulePage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("upcoming");
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
-  const [declineReason, setDeclineReason] = useState("");
-  const [declineNote, setDeclineNote] = useState("");
 
   const {
     data: assignmentsData,
@@ -293,8 +291,6 @@ const SchedulePage = () => {
   const handleDeclineClick = (event, assignment) => {
     event.currentTarget.blur();
     setSelectedAssignment(toDeclineDialogAssignment(assignment));
-    setDeclineReason("");
-    setDeclineNote("");
     setDeclineModalOpen(true);
   };
 
@@ -303,20 +299,18 @@ const SchedulePage = () => {
 
     setDeclineModalOpen(false);
     setSelectedAssignment(null);
-    setDeclineReason("");
-    setDeclineNote("");
   };
 
-  const handleDeclineSubmit = async () => {
+  const handleDeclineSubmit = async ({ reason, notes }) => {
     const matchId = selectedAssignment?.matchId;
-    if (!declineReason || !matchId) return;
+    if (!reason || !matchId) return;
 
     try {
       await rejectAssignment.mutateAsync({
         matchId,
         data: {
-          reason: declineReason,
-          notes: declineNote,
+          reason,
+          notes,
         },
       });
       await refetch();
@@ -475,12 +469,8 @@ const SchedulePage = () => {
         fullScreen={isSmall}
         open={declineModalOpen}
         assignment={selectedAssignment}
-        declineReason={declineReason}
-        declineNote={declineNote}
         isSubmitting={rejectAssignment.isPending}
         onClose={handleDeclineClose}
-        onReasonChange={setDeclineReason}
-        onNoteChange={setDeclineNote}
         onSubmit={handleDeclineSubmit}
       />
     </Box>

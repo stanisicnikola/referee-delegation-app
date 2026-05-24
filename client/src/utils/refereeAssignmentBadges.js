@@ -55,6 +55,11 @@ const ASSIGNMENT_STATUS_BADGES = {
     shortLabel: "Declined",
     tone: "declined",
   },
+  cancelled: {
+    label: "Cancelled",
+    shortLabel: "Cancelled",
+    tone: "cancelled",
+  },
 };
 
 export const getRefereeRoleBadge = (role) => {

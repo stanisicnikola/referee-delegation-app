@@ -59,9 +59,10 @@ const RefereeLayout = () => {
 
   const scheduleBadgeCount = useMemo(() => {
     const now = new Date();
+    const activeStatuses = ["pending", "accepted"];
 
     return (assignmentsData?.data || []).filter((assignment) => {
-      if (assignment.status === "declined") return false;
+      if (!activeStatuses.includes(assignment.status)) return false;
 
       const scheduledDate = getScheduledDate(getMatch(assignment));
       return scheduledDate && scheduledDate >= now;

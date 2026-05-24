@@ -163,7 +163,12 @@ const formatDateRange = (startDate, endDate) =>
 const getMatchDateKey = (assignment) => {
   const match = assignment?.match || assignment?.Match;
   const scheduledAt = match?.scheduledAt || match?.matchDate || match?.date;
-  if (!scheduledAt || assignment?.status === "declined") return null;
+  if (
+    !scheduledAt ||
+    !["pending", "accepted"].includes(assignment?.status)
+  ) {
+    return null;
+  }
 
   const date = new Date(scheduledAt);
   return Number.isNaN(date.getTime()) ? null : getDateKey(date);

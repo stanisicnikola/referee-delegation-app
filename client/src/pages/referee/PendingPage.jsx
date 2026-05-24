@@ -18,8 +18,6 @@ const PendingPage = () => {
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
-  const [declineReason, setDeclineReason] = useState("");
-  const [declineNote, setDeclineNote] = useState("");
   const [activeAction, setActiveAction] = useState(null);
 
   const { data: pendingData, isLoading } = useMyPendingAssignments();
@@ -52,8 +50,6 @@ const PendingPage = () => {
   const handleDeclineClick = (event, assignment) => {
     event.currentTarget.blur();
     setSelectedAssignment(assignment);
-    setDeclineReason("");
-    setDeclineNote("");
     setDeclineModalOpen(true);
   };
 
@@ -62,12 +58,10 @@ const PendingPage = () => {
 
     setDeclineModalOpen(false);
     setSelectedAssignment(null);
-    setDeclineReason("");
-    setDeclineNote("");
   };
 
-  const handleDeclineSubmit = async () => {
-    if (!declineReason || !selectedAssignment?.matchId) return;
+  const handleDeclineSubmit = async ({ reason, notes }) => {
+    if (!reason || !selectedAssignment?.matchId) return;
 
     setActiveAction({
       id: getAssignmentActionId(selectedAssignment),
@@ -78,8 +72,8 @@ const PendingPage = () => {
       await rejectAssignment.mutateAsync({
         matchId: selectedAssignment.matchId,
         data: {
-          reason: declineReason,
-          notes: declineNote,
+          reason,
+          notes,
         },
       });
       handleDeclineClose();
@@ -140,12 +134,8 @@ const PendingPage = () => {
         fullScreen={isSmall}
         open={declineModalOpen}
         assignment={selectedAssignment}
-        declineReason={declineReason}
-        declineNote={declineNote}
         isSubmitting={rejectAssignment.isPending}
         onClose={handleDeclineClose}
-        onReasonChange={setDeclineReason}
-        onNoteChange={setDeclineNote}
         onSubmit={handleDeclineSubmit}
       />
     </Box>

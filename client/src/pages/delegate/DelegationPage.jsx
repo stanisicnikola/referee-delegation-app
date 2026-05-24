@@ -80,6 +80,10 @@ const SLOT_TO_ROLE = Object.fromEntries(
   SLOT_CONFIG.map((config) => [config.slot, config.role]),
 );
 
+const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+const isActiveAssignmentStatus = (status) =>
+  ACTIVE_ASSIGNMENT_STATUSES.includes(status);
+
 const DECLINE_REASON_LABELS = {
   schedule_conflict: "Schedule conflict",
   health: "Health issue",
@@ -122,7 +126,7 @@ const DelegationPage = () => {
     const nextAssignments = { ...EMPTY_ASSIGNMENTS };
     const nextAssignmentMeta = { ...EMPTY_ASSIGNMENT_META };
     match.refereeAssignments.forEach((assignment) => {
-      if (assignment.status === "declined") return;
+      if (!isActiveAssignmentStatus(assignment.status)) return;
 
       const slot = ROLE_TO_SLOT[assignment.role];
       if (slot) {
@@ -141,7 +145,7 @@ const DelegationPage = () => {
     if (!match?.refereeAssignments) return saved;
 
     match.refereeAssignments.forEach((assignment) => {
-      if (assignment.status === "declined") return;
+      if (!isActiveAssignmentStatus(assignment.status)) return;
 
       const slot = ROLE_TO_SLOT[assignment.role];
       if (slot) saved[slot] = assignment.refereeId;
@@ -170,7 +174,7 @@ const DelegationPage = () => {
   const isConfirmed = match?.delegationStatus === "confirmed";
   const savedAssignedCount =
     match?.refereeAssignments?.filter(
-      (assignment) => assignment.status !== "declined",
+      (assignment) => isActiveAssignmentStatus(assignment.status),
     ).length || 0;
   const hasFullSavedCrew = savedAssignedCount >= 3;
   const isAssignmentLocked =
@@ -178,6 +182,7 @@ const DelegationPage = () => {
 
   const saveDisabledReason = (() => {
     if (isMatchFinished) return "This match is finished.";
+    if (match?.status === "cancelled") return "This match is cancelled.";
     if (isMatchClosed) return "This match is closed.";
     if (isMatchStarted) return "This match has already started.";
     if (isConfirmed) return "All referees confirmed this match.";
@@ -627,6 +632,10 @@ const DelegationPage = () => {
   const dateInfo = formatMatchDate(match?.scheduledAt);
   const statusChip = getStatusChip(match?.delegationStatus);
   const matchStatusChip = getMatchStatusChip(effectiveMatchStatus);
+  const cancellationReason =
+    match?.status === "cancelled" && match?.statusReason?.trim()
+      ? match.statusReason.trim()
+      : "";
   const canCompleteMatch =
     effectiveMatchStatus === "in_progress" && assignedCount > 0;
   const resultHomeScore = Number(resultForm.homeScore);
@@ -947,7 +956,7 @@ const DelegationPage = () => {
                 </Box>
               </Box>
 
-              {!isMatchFinished && (
+              {!isMatchClosed && (
                 <Box
                   sx={{
                     display: "inline-flex",
@@ -1166,6 +1175,29 @@ const DelegationPage = () => {
                 {match?.venue?.city ? `, ${match.venue.city}` : ""}
               </Typography>
             </Box>
+
+            {match?.status === "cancelled" && (
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 1.5,
+                  borderRadius: "10px",
+                  border: "1px solid rgba(239,68,68,0.24)",
+                  bgcolor: "rgba(239,68,68,0.08)",
+                }}
+              >
+                <Typography
+                  sx={{ color: "#fca5a5", fontSize: 13, fontWeight: 700 }}
+                >
+                  This match was cancelled.
+                </Typography>
+                {cancellationReason && (
+                  <Typography sx={{ color: "#9ca3af", fontSize: 12, mt: 0.35 }}>
+                    Reason: {cancellationReason}
+                  </Typography>
+                )}
+              </Box>
+            )}
           </Box>
 
           {/* ── Crew + Candidates grid ──────────────────────────────────────── */}
@@ -1205,7 +1237,9 @@ const DelegationPage = () => {
                     Assigned Crew
                   </Typography>
                   <Typography sx={{ color: "#6b7280", fontSize: 13, mt: 0.25 }}>
-                    {assignedCount === 3
+                    {match?.status === "cancelled"
+                      ? "This match was cancelled. Referee assignments were released."
+                      : assignedCount === 3
                       ? isConfirmed
                         ? "All referees confirmed this match."
                         : hasFullSavedCrew

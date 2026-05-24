@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { matchesApi } from "../api";
 import { toast } from "react-toastify";
+import { refereeKeys } from "./useReferees";
 
 export const matchKeys = {
   all: ["matches"],
@@ -61,6 +62,7 @@ export const useCreateMatch = () => {
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: refereeKeys.all });
       toast.success(data?.message || "Match created successfully!", {
         toastId: "match-create",
       });
@@ -85,6 +87,8 @@ export const useUpdateMatch = () => {
       queryClient.invalidateQueries({
         queryKey: matchKeys.pendingDelegation(),
       });
+      queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: refereeKeys.all });
       toast.success(data?.message || "Match updated successfully!", {
         toastId: "match-update",
       });
@@ -109,6 +113,7 @@ export const useDeleteMatch = () => {
         queryKey: matchKeys.pendingDelegation(),
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: refereeKeys.all });
       toast.success(data?.message || "Match deleted successfully!", {
         toastId: "match-delete",
       });
@@ -135,6 +140,7 @@ export const useUpdateMatchResult = () => {
       });
       queryClient.invalidateQueries({ queryKey: matchKeys.statistics() });
       queryClient.invalidateQueries({ queryKey: ["delegations"] });
+      queryClient.invalidateQueries({ queryKey: refereeKeys.all });
       toast.success(data?.message || "Match result updated successfully!", {
         toastId: "match-result-update",
       });
