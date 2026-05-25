@@ -239,6 +239,7 @@ class RefereeService {
       competitionId,
       role,
       period,
+      view,
     } = query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
@@ -278,6 +279,9 @@ class RefereeService {
       };
     }
 
+    const isScheduleView = view === "schedule";
+    const orderDirection = isScheduleView && period !== "past" ? "ASC" : "DESC";
+
     const { count, rows } = await MatchReferee.findAndCountAll({
       where,
       include: [
@@ -300,7 +304,7 @@ class RefereeService {
       ],
       limit: limitNum,
       offset,
-      order: [[{ model: Match, as: "match" }, "scheduledAt", "DESC"]],
+      order: [[{ model: Match, as: "match" }, "scheduledAt", orderDirection]],
     });
 
     const matchIds = [
@@ -346,8 +350,17 @@ class RefereeService {
       });
     }
 
+    const data = isScheduleView
+      ? rows.map((assignment, index) =>
+          this.toScheduleAssignmentRow(assignment, offset + index),
+        )
+      : rows;
+
     return {
-      data: rows,
+      data,
+      ...(isScheduleView
+        ? { groups: this.groupScheduleAssignments(data, period) }
+        : {}),
       pagination: {
         total: count,
         page: pageNum,
@@ -355,6 +368,157 @@ class RefereeService {
         totalPages: Math.ceil(count / limitNum),
       },
     };
+  }
+
+  formatScheduleAssignmentDate(dateValue) {
+    if (!dateValue) {
+      return {
+        day: "--",
+        month: "---",
+        weekday: "---",
+        time: "--:--",
+        full: "Date not set",
+        displayDate: "-- --- ----",
+        monthGroup: "Date not set",
+        sortKey: "9999-99",
+      };
+    }
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return {
+        day: "--",
+        month: "---",
+        weekday: "---",
+        time: "--:--",
+        full: "Date not set",
+        displayDate: "-- --- ----",
+        monthGroup: "Date not set",
+        sortKey: "9999-99",
+      };
+    }
+
+    const monthNumber = String(date.getMonth() + 1).padStart(2, "0");
+
+    return {
+      day: String(date.getDate()).padStart(2, "0"),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      full: date.toLocaleDateString("en-US", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      displayDate: date.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      monthGroup: date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      sortKey: `${date.getFullYear()}-${monthNumber}`,
+    };
+  }
+
+  toScheduleAssignmentRow(assignment, index) {
+    const match = assignment.match;
+    const homeTeam = match?.homeTeam?.name || "Home team";
+    const awayTeam = match?.awayTeam?.name || "Away team";
+    const venue = match?.venue;
+    const competitionLabel = match?.competition?.name || "Competition";
+    const roundLabel = match?.round ? `Round ${match.round}` : null;
+    const matchNumberLabel = match?.matchNumber
+      ? `Match ${match.matchNumber}`
+      : null;
+    const dateInfo = this.formatScheduleAssignmentDate(match?.scheduledAt);
+    const currentRefereeId = assignment.refereeId || assignment.referee_id;
+    const acceptedColleagues =
+      assignment.status === "accepted"
+        ? (match?.refereeAssignments || [])
+            .filter((matchAssignment) => {
+              const refereeId =
+                matchAssignment.refereeId || matchAssignment.referee_id;
+
+              return (
+                refereeId &&
+                refereeId !== currentRefereeId &&
+                matchAssignment.status === "accepted"
+              );
+            })
+            .map((matchAssignment, refereeIndex) => {
+              const name = this.getUserDisplayName(
+                matchAssignment.referee?.user,
+                "Colleague",
+              );
+
+              return {
+                id:
+                  matchAssignment.refereeId ||
+                  matchAssignment.id ||
+                  `colleague-${refereeIndex}`,
+                name,
+                initials: this.getInitials(name),
+              };
+            })
+        : [];
+
+    return {
+      id:
+        assignment.id || assignment.matchId || match?.id || `schedule-${index}`,
+      matchId: assignment.matchId,
+      status: assignment.status,
+      role: assignment.role,
+      roleNumber: this.getRefereeRoleNumber(assignment.role),
+      dateInfo,
+      homeTeamLabel: homeTeam,
+      awayTeamLabel: awayTeam,
+      matchLabel: `${homeTeam} vs ${awayTeam}`,
+      competitionLabel,
+      roundLabel,
+      matchNumberLabel,
+      detailChips: [competitionLabel, roundLabel, matchNumberLabel]
+        .filter(Boolean)
+        .map((label, chipIndex) => ({
+          label,
+          tone: chipIndex === 0 ? "competition" : "neutral",
+        })),
+      venueLabel: venue
+        ? [venue.name, venue.city].filter(Boolean).join(", ")
+        : "Venue not set",
+      acceptedColleagues,
+    };
+  }
+
+  groupScheduleAssignments(assignments, period) {
+    const groups = new Map();
+
+    assignments.forEach((assignment) => {
+      const key = assignment.dateInfo?.sortKey || "9999-99";
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          id: key,
+          name: assignment.dateInfo?.monthGroup || "Date not set",
+          matches: [],
+        });
+      }
+
+      groups.get(key).matches.push(assignment);
+    });
+
+    return [...groups.values()].sort((first, second) =>
+      period === "past"
+        ? second.id.localeCompare(first.id)
+        : first.id.localeCompare(second.id),
+    );
   }
 
   getRefereeRoleNumber(role) {
