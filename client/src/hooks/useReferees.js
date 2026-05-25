@@ -87,6 +87,7 @@ export const useMyDashboard = (params = {}) => {
   return useQuery({
     queryKey: refereeKeys.myDashboardData(params),
     queryFn: () => refereesApi.getMyDashboard(params),
+    placeholderData: (previousData) => previousData,
   });
 };
 

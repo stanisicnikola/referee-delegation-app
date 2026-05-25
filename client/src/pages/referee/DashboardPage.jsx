@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
 import {
@@ -48,9 +48,16 @@ const DashboardPage = () => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const [calendarMonth, setCalendarMonth] = useState(new Date());
-  const dashboardQuery = { month: getMonthKey(calendarMonth) };
+  const dashboardQuery = useMemo(
+    () => ({ month: getMonthKey(calendarMonth) }),
+    [calendarMonth],
+  );
 
-  const { data: dashboardData, isLoading } = useMyDashboard(dashboardQuery);
+  const {
+    data: dashboardData,
+    isLoading,
+    isFetching,
+  } = useMyDashboard(dashboardQuery);
   const dashboard = dashboardData?.data || DEFAULT_DASHBOARD;
   const summary = dashboard.summary || DEFAULT_DASHBOARD.summary;
   const assignmentStatus =
@@ -97,7 +104,7 @@ const DashboardPage = () => {
     );
   };
 
-  if (isLoading) return <LoadingSpinner fullPage />;
+  if (isLoading && !dashboardData) return <LoadingSpinner fullPage />;
 
   return (
     <Box sx={{ minHeight: "100%", bgcolor: COLORS.bg, color: COLORS.text }}>
@@ -147,6 +154,7 @@ const DashboardPage = () => {
             <CalendarCard
               calendar={dashboard.calendar || DEFAULT_DASHBOARD.calendar}
               isSmall={isSmall}
+              isUpdating={isFetching && !isLoading}
               onPrev={handlePrevMonth}
               onNext={handleNextMonth}
             />

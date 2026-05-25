@@ -40,6 +40,7 @@ export const useMyCalendar = (params = {}) => {
     queryKey: availabilityKeys.myCalendar(params),
     queryFn: () => availabilityApi.getMyCalendar(params),
     enabled: !!params.month && !!params.year,
+    placeholderData: (previousData) => previousData,
   });
 };
 
