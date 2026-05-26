@@ -7,8 +7,21 @@ export const availabilityRequestDefaultValues = {
   description: "",
 };
 
-export const createAvailabilityRequestSchema = (todayKey) =>
-  z
+const getAcceptedMatchConflictMessage = (dates) => {
+  const visibleDates = dates.slice(0, 3).join(", ");
+  const remainingCount = dates.length - 3;
+  const suffix = remainingCount > 0 ? ` and ${remainingCount} more` : "";
+
+  return `You already accepted a match on ${visibleDates}${suffix}. Choose dates without accepted matches.`;
+};
+
+export const createAvailabilityRequestSchema = (
+  todayKey,
+  acceptedMatchDateKeys = [],
+) => {
+  const acceptedMatchDates = [...new Set(acceptedMatchDateKeys)].sort();
+
+  return z
     .object({
       dateFrom: z.string().min(1, "From date is required."),
       dateTo: z.string().min(1, "To date is required."),
@@ -39,4 +52,19 @@ export const createAvailabilityRequestSchema = (todayKey) =>
           message: "The end date must be on or after the start date.",
         });
       }
+
+      if (data.dateFrom && data.dateTo && data.dateFrom <= data.dateTo) {
+        const conflicts = acceptedMatchDates.filter(
+          (dateKey) => data.dateFrom <= dateKey && dateKey <= data.dateTo,
+        );
+
+        if (conflicts.length > 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["dateTo"],
+            message: getAcceptedMatchConflictMessage(conflicts),
+          });
+        }
+      }
     });
+};

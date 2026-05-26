@@ -75,17 +75,18 @@ const DelegateLayout = () => {
       label: "Matches",
     },
     { path: "/delegate/referees", icon: RefereesIcon, label: "Referees" },
-    {
-      path: "/delegate/availability",
-      icon: AvailabilityIcon,
-      label: "Availability",
-    },
+
     {
       path: "/delegate/competitions",
       icon: CompetitionsIcon,
       label: "Competitions",
     },
     { path: "/delegate/teams", icon: TeamsIcon, label: "Teams" },
+    {
+      path: "/delegate/availability",
+      icon: AvailabilityIcon,
+      label: "Unavailability Requests",
+    },
   ];
 
   const isActive = (path, exact = false) => {

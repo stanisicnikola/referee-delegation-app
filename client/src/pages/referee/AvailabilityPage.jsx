@@ -20,7 +20,10 @@ import {
   buildAvailabilityCalendarGrid,
   countApprovedUnavailableDays,
   countMatchDaysInMonth,
+  filterVisibleAvailabilityPeriods,
+  formatDateConflictMessage,
   getDateKey,
+  getDateRangeConflicts,
   getMatchDateKey,
   groupAvailabilityPeriods,
   normalizeDateKey,
@@ -32,18 +35,39 @@ import {
 
 const AvailabilityPage = () => {
   const todayKey = useMemo(() => getDateKey(new Date()), []);
-  const availabilityRequestSchema = useMemo(
-    () => createAvailabilityRequestSchema(todayKey),
-    [todayKey],
-  );
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [periodToDelete, setPeriodToDelete] = useState(null);
+  const assignmentQueryParams = useMemo(
+    () => ({ limit: 1000, dateFrom: todayKey }),
+    [todayKey],
+  );
+  const { data: assignmentsData } = useMyAssignments(assignmentQueryParams);
+
+  const acceptedMatchDateSet = useMemo(() => {
+    const dates = new Set();
+    (assignmentsData?.data || []).forEach((assignment) => {
+      const dateKey = getMatchDateKey(assignment, ["accepted"]);
+      if (dateKey) dates.add(dateKey);
+    });
+    return dates;
+  }, [assignmentsData?.data]);
+
+  const acceptedMatchDateKeys = useMemo(
+    () => Array.from(acceptedMatchDateSet).sort(),
+    [acceptedMatchDateSet],
+  );
+
+  const availabilityRequestSchema = useMemo(
+    () => createAvailabilityRequestSchema(todayKey, acceptedMatchDateKeys),
+    [acceptedMatchDateKeys, todayKey],
+  );
 
   const {
     control,
     handleSubmit,
     reset,
+    setError,
     setValue,
     watch,
     formState: { errors },
@@ -67,7 +91,6 @@ const AvailabilityPage = () => {
     isLoading: isAvailabilityLoading,
     error: availabilityError,
   } = useMyAvailability({ limit: 365, dateFrom: todayKey });
-  const { data: assignmentsData } = useMyAssignments();
   const setAvailabilityRange = useSetMyAvailabilityRange();
   const deleteAvailability = useDeleteMyAvailability();
 
@@ -82,10 +105,10 @@ const AvailabilityPage = () => {
     () => availabilityData?.data || [],
     [availabilityData],
   );
-  const periods = useMemo(
-    () => groupAvailabilityPeriods(availabilityRows),
-    [availabilityRows],
-  );
+  const periods = useMemo(() => {
+    const groupedPeriods = groupAvailabilityPeriods(availabilityRows);
+    return filterVisibleAvailabilityPeriods(groupedPeriods, todayKey);
+  }, [availabilityRows, todayKey]);
 
   const calendarByDate = useMemo(() => {
     const map = new Map();
@@ -98,7 +121,7 @@ const AvailabilityPage = () => {
   const matchDateSet = useMemo(() => {
     const dates = new Set();
     (assignmentsData?.data || []).forEach((assignment) => {
-      const dateKey = getMatchDateKey(assignment);
+      const dateKey = getMatchDateKey(assignment, ["accepted"]);
       if (dateKey) dates.add(dateKey);
     });
     return dates;
@@ -145,6 +168,20 @@ const AvailabilityPage = () => {
   };
 
   const handleFormSubmit = async (values) => {
+    const acceptedMatchConflicts = getDateRangeConflicts(
+      values.dateFrom,
+      values.dateTo,
+      acceptedMatchDateSet,
+    );
+
+    if (acceptedMatchConflicts.length > 0) {
+      setError("dateTo", {
+        type: "manual",
+        message: formatDateConflictMessage(acceptedMatchConflicts),
+      });
+      return;
+    }
+
     try {
       await setAvailabilityRange.mutateAsync({
         dateFrom: values.dateFrom,

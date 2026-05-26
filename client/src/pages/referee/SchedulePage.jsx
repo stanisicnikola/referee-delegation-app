@@ -26,14 +26,24 @@ const SchedulePage = () => {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
 
   const scheduleQuery = useMemo(
-    () => ({
-      view: "schedule",
-      competitionId:
-        selectedCompetition !== "all" ? selectedCompetition : undefined,
-      role: selectedRole !== "all" ? selectedRole : undefined,
-      period: selectedPeriod !== "all" ? selectedPeriod : undefined,
-      limit: SCHEDULE_QUERY_LIMIT,
-    }),
+    () => {
+      const query = {
+        view: "schedule",
+        limit: SCHEDULE_QUERY_LIMIT,
+      };
+
+      if (selectedCompetition !== "all") {
+        query.competitionId = selectedCompetition;
+      }
+      if (selectedRole !== "all") {
+        query.role = selectedRole;
+      }
+      if (selectedPeriod !== "all") {
+        query.period = selectedPeriod;
+      }
+
+      return query;
+    },
     [selectedCompetition, selectedPeriod, selectedRole],
   );
 

@@ -89,6 +89,7 @@ const DECLINE_REASON_LABELS = {
   health: "Health issue",
   personal: "Personal reason",
   travel: "Travel distance",
+  unavailable: "Unavailable",
   other: "Other",
 };
 
@@ -165,7 +166,8 @@ const DelegationPage = () => {
     ? new Date(match.scheduledAt) <= new Date()
     : false;
   const effectiveMatchStatus =
-    ["scheduled", "postponed"].includes(match?.status) && hasMatchStartTimePassed
+    ["scheduled", "postponed"].includes(match?.status) &&
+    hasMatchStartTimePassed
       ? "in_progress"
       : match?.status;
   const isMatchFinished = match?.status === "completed";
@@ -173,8 +175,8 @@ const DelegationPage = () => {
   const isMatchClosed = ["completed", "cancelled"].includes(match?.status);
   const isConfirmed = match?.delegationStatus === "confirmed";
   const savedAssignedCount =
-    match?.refereeAssignments?.filter(
-      (assignment) => isActiveAssignmentStatus(assignment.status),
+    match?.refereeAssignments?.filter((assignment) =>
+      isActiveAssignmentStatus(assignment.status),
     ).length || 0;
   const hasFullSavedCrew = savedAssignedCount >= 3;
   const isAssignmentLocked =
@@ -1240,14 +1242,14 @@ const DelegationPage = () => {
                     {match?.status === "cancelled"
                       ? "This match was cancelled. Referee assignments were released."
                       : assignedCount === 3
-                      ? isConfirmed
-                        ? "All referees confirmed this match."
-                        : hasFullSavedCrew
-                          ? "Full crew assigned — waiting for confirmations."
-                          : "Full crew — ready to save."
-                      : isMatchStarted
-                        ? "Match started — assignment is locked."
-                        : "Select referees from the right panel."}
+                        ? isConfirmed
+                          ? "All referees confirmed this match."
+                          : hasFullSavedCrew
+                            ? "Full crew assigned — waiting for confirmations."
+                            : "Full crew — ready to save."
+                        : isMatchStarted
+                          ? "Match started — assignment is locked."
+                          : "Select referees from the right panel."}
                   </Typography>
                 </Box>
 
@@ -1943,10 +1945,10 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
                 hasDeclined
                   ? `Declined this match: ${declinedAssignment.reasonLabel}`
                   : disabled
-                  ? "Assignments are locked for this match"
-                  : occupied
-                    ? `${slotCfg.label} slot is taken`
-                    : `Assign as ${slotCfg.label}`
+                    ? "Assignments are locked for this match"
+                    : occupied
+                      ? `${slotCfg.label} slot is taken`
+                      : `Assign as ${slotCfg.label}`
               }
               sx={{
                 px: 1.25,

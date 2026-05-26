@@ -55,6 +55,8 @@ export const useSetMyAvailability = () => {
         queryKey: availabilityKeys.myAvailability(),
       });
       queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
       toast.success(data?.message || "Availability updated successfully!", {
         toastId: "availability-set-my",
       });
@@ -76,6 +78,8 @@ export const useSetMyAvailabilityRange = () => {
     mutationFn: (data) => availabilityApi.setMyAvailabilityRange(data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
       toast.success(data?.message || "Unavailability request submitted!", {
         toastId: "availability-set-my-range",
       });
@@ -219,6 +223,8 @@ export const useReviewAvailabilityRequests = () => {
     mutationFn: (data) => availabilityApi.reviewAvailabilityRequests(data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
       toast.success(data?.message || "Availability request reviewed.", {
         toastId: "availability-review",
       });

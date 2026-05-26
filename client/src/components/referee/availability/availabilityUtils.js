@@ -22,6 +22,21 @@ export const addDays = (date, amount) => {
   return copy;
 };
 
+export const getDateKeysInRange = (dateFrom, dateTo = dateFrom) => {
+  if (!dateFrom || !dateTo || dateFrom > dateTo) return [];
+
+  const dates = [];
+  let currentDate = parseDateKey(dateFrom);
+  const endDate = parseDateKey(dateTo);
+
+  while (currentDate <= endDate) {
+    dates.push(getDateKey(currentDate));
+    currentDate = addDays(currentDate, 1);
+  }
+
+  return dates;
+};
+
 export const formatDisplayDate = (dateKey) =>
   parseDateKey(dateKey).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -34,11 +49,14 @@ export const formatDateRange = (startDate, endDate) =>
     ? formatDisplayDate(startDate)
     : `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
 
-export const getMatchDateKey = (assignment) => {
+export const getMatchDateKey = (
+  assignment,
+  allowedStatuses = ["pending", "accepted"],
+) => {
   const match = assignment?.match || assignment?.Match;
   const scheduledAt = match?.scheduledAt || match?.matchDate || match?.date;
 
-  if (!scheduledAt || !["pending", "accepted"].includes(assignment?.status)) {
+  if (!scheduledAt || !allowedStatuses.includes(assignment?.status)) {
     return null;
   }
 
@@ -52,13 +70,7 @@ const isNextDate = (previousDateKey, nextDateKey) =>
 export const groupAvailabilityPeriods = (rows = []) => {
   const unavailableRows = rows
     .filter((row) => row && row.isAvailable === false)
-    .map((row) => ({
-      ...row,
-      dateKey: normalizeDateKey(row.date),
-      approvalStatus: row.approvalStatus || "approved",
-      reason: row.reason || "Unavailable",
-      description: row.description || "",
-    }))
+    .map((row) => normalizeAvailabilityRow(row))
     .filter((row) => row.dateKey)
     .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
 
@@ -93,6 +105,72 @@ export const groupAvailabilityPeriods = (rows = []) => {
 
     return periods;
   }, []);
+};
+
+export const normalizeAvailabilityRow = (row) => ({
+  ...row,
+  dateKey: normalizeDateKey(row.date),
+  approvalStatus: row.approvalStatus || "approved",
+  reason: row.reason || "Unavailable",
+  description: row.description || "",
+  reviewedAt: row.reviewedAt || null,
+});
+
+export const isRecentlyRejectedAvailability = (row, todayKey) => {
+  if (!row.reviewedAt) return true;
+
+  const reviewedDate = new Date(row.reviewedAt);
+  if (Number.isNaN(reviewedDate.getTime())) return true;
+
+  const hideAfterDate = addDays(reviewedDate, 2);
+  return todayKey <= getDateKey(hideAfterDate);
+};
+
+export const shouldShowAvailabilityRow = (row, todayKey) => {
+  const normalizedRow = normalizeAvailabilityRow(row);
+
+  if (normalizedRow.approvalStatus === "approved") {
+    return normalizedRow.dateKey > todayKey;
+  }
+
+  if (normalizedRow.approvalStatus === "rejected") {
+    return isRecentlyRejectedAvailability(normalizedRow, todayKey);
+  }
+
+  return true;
+};
+
+export const filterVisibleAvailabilityRows = (rows = [], todayKey) =>
+  rows.filter((row) => shouldShowAvailabilityRow(row, todayKey));
+
+export const shouldShowAvailabilityPeriod = (period, todayKey) => {
+  if (period.approvalStatus === "approved") {
+    return period.startDate > todayKey;
+  }
+
+  if (period.approvalStatus === "rejected") {
+    return period.items.some((item) =>
+      isRecentlyRejectedAvailability(item, todayKey),
+    );
+  }
+
+  return true;
+};
+
+export const filterVisibleAvailabilityPeriods = (periods = [], todayKey) =>
+  periods.filter((period) => shouldShowAvailabilityPeriod(period, todayKey));
+
+export const getDateRangeConflicts = (dateFrom, dateTo, blockedDateSet) =>
+  getDateKeysInRange(dateFrom, dateTo).filter((dateKey) =>
+    blockedDateSet.has(dateKey),
+  );
+
+export const formatDateConflictMessage = (conflictDateKeys) => {
+  const dates = conflictDateKeys.slice(0, 3).map(formatDisplayDate);
+  const remainingCount = conflictDateKeys.length - dates.length;
+  const suffix = remainingCount > 0 ? ` and ${remainingCount} more` : "";
+
+  return `You already accepted a match on ${dates.join(", ")}${suffix}. Choose dates without accepted matches.`;
 };
 
 export const buildAvailabilityCalendarGrid = ({

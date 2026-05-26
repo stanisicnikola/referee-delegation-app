@@ -7,5 +7,6 @@ export const DECLINE_REASONS = [
   { value: "health", label: "Health issue" },
   { value: "personal", label: "Personal reason" },
   { value: "travel", label: "Travel distance" },
+  { value: "unavailable", label: "Unavailable" },
   { value: "other", label: "Other" },
 ];

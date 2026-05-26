@@ -36,15 +36,10 @@ import {
 } from "../hooks/useReferees";
 
 const SIDEBAR_WIDTH = 256;
-
-const getMatch = (assignment) => assignment?.match || assignment?.Match || null;
-
-const getScheduledDate = (match) => {
-  const value = match?.scheduledAt || match?.matchDate || match?.date;
-  if (!value) return null;
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+const SCHEDULE_BADGE_QUERY = {
+  view: "schedule",
+  period: "upcoming",
+  limit: 1000,
 };
 
 const RefereeLayout = () => {
@@ -54,20 +49,17 @@ const RefereeLayout = () => {
   const isMobile = useMediaQuery(refereeTheme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const { data: assignmentsData } = useMyAssignments();
+  const { data: assignmentsData } = useMyAssignments(SCHEDULE_BADGE_QUERY);
   const { data: pendingAssignmentsData } = useMyPendingAssignments();
 
   const scheduleBadgeCount = useMemo(() => {
-    const now = new Date();
-    const activeStatuses = ["pending", "accepted"];
+    if (Array.isArray(assignmentsData?.data)) return assignmentsData.data.length;
 
-    return (assignmentsData?.data || []).filter((assignment) => {
-      if (!activeStatuses.includes(assignment.status)) return false;
-
-      const scheduledDate = getScheduledDate(getMatch(assignment));
-      return scheduledDate && scheduledDate >= now;
-    }).length;
-  }, [assignmentsData?.data]);
+    return (assignmentsData?.groups || []).reduce(
+      (count, group) => count + (group.matches?.length || 0),
+      0,
+    );
+  }, [assignmentsData?.data, assignmentsData?.groups]);
 
   const pendingDelegationCount = pendingAssignmentsData?.data?.length || 0;
 
@@ -127,6 +119,8 @@ const RefereeLayout = () => {
   };
 
   const isActive = (path) => location.pathname === path;
+
+  const shouldShowBadge = (badge) => Number(badge) > 0;
 
   const sidebarContent = (
     <Box
@@ -217,7 +211,7 @@ const RefereeLayout = () => {
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", flex: 1 }}>
                   {item.label}
                 </Typography>
-                {item.badge && (
+                {shouldShowBadge(item.badge) && (
                   <Box
                     sx={{
                       position: "relative",

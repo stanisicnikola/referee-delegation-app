@@ -256,7 +256,7 @@ const AvailabilityRequestsPage = () => {
             lineHeight: 1.05,
           }}
         >
-          Availability Requests
+          Unavailability Requests
         </Typography>
         <Typography sx={{ mt: 1, fontSize: "14px", color: "#6b7280" }}>
           Review referee unavailability submissions.
