@@ -13,6 +13,7 @@ const {
 const { AppError } = require("../middlewares");
 
 const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+const BLOCKING_AVAILABILITY_STATUSES = ["approved"];
 
 class RefereeService {
   toLocalDateKey(date) {
@@ -945,7 +946,7 @@ class RefereeService {
         where: {
           refereeId,
           role: "first_referee",
-          status: { [Op.ne]: "cancelled" },
+          status: "accepted",
         },
         include: includeNonCancelledMatch(),
       }),
@@ -1029,6 +1030,10 @@ class RefereeService {
         [Op.lt]: selectedMonthEnd,
       },
     };
+    const acceptedAssignmentWhere = {
+      refereeId,
+      status: "accepted",
+    };
     const activeAssignmentWhere = {
       refereeId,
       status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
@@ -1038,7 +1043,7 @@ class RefereeService {
       await Promise.all([
         this.getStatistics(refereeId),
         MatchReferee.count({
-          where: activeAssignmentWhere,
+          where: acceptedAssignmentWhere,
           include: this.getDashboardMatchInclude(matchInCurrentMonth),
         }),
         MatchReferee.count({
@@ -1052,7 +1057,7 @@ class RefereeService {
           limit: 5,
         }),
         MatchReferee.findAll({
-          where: activeAssignmentWhere,
+          where: acceptedAssignmentWhere,
           include: this.getDashboardMatchInclude(selectedMonthMatch),
           order: [[{ model: Match, as: "match" }, "scheduledAt", "ASC"]],
         }),
@@ -1070,7 +1075,7 @@ class RefereeService {
         thisMonth,
         upcoming,
         firstRefereeCount: statistics.firstRefereeCount || 0,
-        seasonTotal: statistics.total || 0,
+        seasonTotal: statistics.accepted || 0,
       },
       assignmentStatus: {
         total: statistics.total || 0,
@@ -1088,7 +1093,11 @@ class RefereeService {
 
   async getAvailableForDate(date) {
     const unavailableRefereeIds = await RefereeAvailability.findAll({
-      where: { date, isAvailable: false, approvalStatus: "approved" },
+      where: {
+        date,
+        isAvailable: false,
+        approvalStatus: { [Op.in]: BLOCKING_AVAILABILITY_STATUSES },
+      },
       attributes: ["refereeId"],
     }).then((results) => results.map((r) => r.refereeId));
 

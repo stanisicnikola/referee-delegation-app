@@ -210,6 +210,7 @@ const setMyAvailability = asyncHandler(async (req, res) => {
     {
       defaultApprovalStatus: req.body.isAvailable ? "approved" : "pending",
       disallowPast: true,
+      disallowAcceptedAssignments: !req.body.isAvailable,
     }
   );
 
@@ -232,6 +233,7 @@ const setMyAvailabilityRange = asyncHandler(async (req, res) => {
     {
       defaultApprovalStatus: req.body.isAvailable ? "approved" : "pending",
       disallowPast: true,
+      disallowAcceptedAssignments: !req.body.isAvailable,
     }
   );
 

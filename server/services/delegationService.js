@@ -14,6 +14,7 @@ const { AppError } = require("../middlewares");
 
 const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
 const CLOSED_MATCH_STATUSES = ["completed", "cancelled"];
+const BLOCKING_AVAILABILITY_STATUSES = ["approved"];
 
 class DelegationService {
   toLocalDateKey(date) {
@@ -335,7 +336,7 @@ class DelegationService {
             refereeId: assignment.refereeId,
             date: matchDate,
             isAvailable: false,
-            approvalStatus: "approved",
+            approvalStatus: { [Op.in]: BLOCKING_AVAILABILITY_STATUSES },
           },
           transaction,
         });
@@ -527,7 +528,11 @@ class DelegationService {
 
     // Get referees who are unavailable on that date
     const unavailableReferees = await RefereeAvailability.findAll({
-      where: { date: matchDate, isAvailable: false, approvalStatus: "approved" },
+      where: {
+        date: matchDate,
+        isAvailable: false,
+        approvalStatus: { [Op.in]: BLOCKING_AVAILABILITY_STATUSES },
+      },
       attributes: ["refereeId"],
     });
 

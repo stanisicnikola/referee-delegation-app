@@ -1,6 +1,16 @@
 const { Op } = require("sequelize");
-const { RefereeAvailability, Referee, User, sequelize } = require("../models");
+const {
+  Match,
+  MatchReferee,
+  RefereeAvailability,
+  Referee,
+  User,
+  sequelize,
+} = require("../models");
 const { AppError } = require("../middlewares");
+
+const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+const BLOCKING_AVAILABILITY_STATUSES = ["approved"];
 
 class AvailabilityService {
   toDateKey(value) {
@@ -25,6 +35,153 @@ class AvailabilityService {
   parsePositiveInt(value, fallback) {
     const parsed = Number.parseInt(value, 10);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
+  parseDateKey(dateKey) {
+    const [year, month, day] = String(dateKey).split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+
+  addUtcDays(date, amount) {
+    const copy = new Date(date);
+    copy.setUTCDate(copy.getUTCDate() + amount);
+    return copy;
+  }
+
+  getDateKeysBetween(dateFrom, dateTo = dateFrom) {
+    const dates = [];
+    let currentDate = this.parseDateKey(dateFrom);
+    const endDate = this.parseDateKey(dateTo);
+
+    while (currentDate <= endDate) {
+      dates.push(this.toDateKey(currentDate));
+      currentDate = this.addUtcDays(currentDate, 1);
+    }
+
+    return dates;
+  }
+
+  formatConflictDates(dateKeys) {
+    return dateKeys.slice(0, 3).join(", ");
+  }
+
+  getDelegationStatus(assignments) {
+    const activeAssignments = assignments.filter((assignment) =>
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)
+    );
+
+    if (activeAssignments.length === 0) return "pending";
+    if (activeAssignments.length < 3) return "partial";
+
+    return activeAssignments.every((assignment) => assignment.status === "accepted")
+      ? "confirmed"
+      : "complete";
+  }
+
+  async getAssignmentsForDateKeys(refereeId, dateKeys, statuses, transaction) {
+    if (!dateKeys.length) return [];
+
+    const dateKeySet = new Set(dateKeys);
+    const assignments = await MatchReferee.findAll({
+      where: {
+        refereeId,
+        status: { [Op.in]: statuses },
+      },
+      include: [
+        {
+          model: Match,
+          as: "match",
+          required: true,
+          where: { status: { [Op.ne]: "cancelled" } },
+        },
+      ],
+      transaction,
+    });
+
+    return assignments.filter((assignment) =>
+      dateKeySet.has(this.toDateKey(assignment.match?.scheduledAt))
+    );
+  }
+
+  async assertNoAcceptedAssignments(refereeId, dateKeys, transaction) {
+    const acceptedAssignments = await this.getAssignmentsForDateKeys(
+      refereeId,
+      dateKeys,
+      ["accepted"],
+      transaction
+    );
+
+    if (acceptedAssignments.length === 0) return;
+
+    const conflictDates = [
+      ...new Set(
+        acceptedAssignments
+          .map((assignment) => this.toDateKey(assignment.match?.scheduledAt))
+          .filter(Boolean)
+      ),
+    ].sort();
+
+    throw new AppError(
+      `You already accepted a match on ${this.formatConflictDates(conflictDates)}. Remove that match assignment before reporting unavailability for that date.`,
+      400
+    );
+  }
+
+  getUnavailabilityAssignmentNote(reason, description) {
+    const parts = ["Unavailable request", reason, description?.trim()].filter(
+      Boolean
+    );
+    return parts.join(": ");
+  }
+
+  async releasePendingAssignmentsForDates(
+    refereeId,
+    dateKeys,
+    reason,
+    description,
+    transaction
+  ) {
+    const pendingAssignments = await this.getAssignmentsForDateKeys(
+      refereeId,
+      dateKeys,
+      ["pending"],
+      transaction
+    );
+
+    if (pendingAssignments.length === 0) return 0;
+
+    const now = new Date();
+    const affectedMatchIds = [
+      ...new Set(pendingAssignments.map((assignment) => assignment.matchId)),
+    ];
+
+    for (const assignment of pendingAssignments) {
+      await assignment.update(
+        {
+          status: "declined",
+          responseAt: now,
+          declineReason: "unavailable",
+          notes: this.getUnavailabilityAssignmentNote(reason, description),
+        },
+        { transaction }
+      );
+    }
+
+    for (const matchId of affectedMatchIds) {
+      const match = await Match.findByPk(matchId, { transaction });
+      if (!match) continue;
+
+      const assignments = await MatchReferee.findAll({
+        where: { matchId },
+        transaction,
+      });
+      await match.update(
+        { delegationStatus: this.getDelegationStatus(assignments) },
+        { transaction }
+      );
+    }
+
+    return pendingAssignments.length;
   }
 
   /**
@@ -95,31 +252,60 @@ class AvailabilityService {
       throw new AppError("Referee not found.", 404);
     }
 
-    // Upsert - create or update
-    const [availability, created] = await RefereeAvailability.findOrCreate({
-      where: { refereeId, date },
-      defaults: {
-        isAvailable,
-        reason: isAvailable ? null : reason || null,
-        description: isAvailable ? null : description || null,
-        approvalStatus: status,
-        reviewedBy: status === "pending" ? null : options.reviewedBy || null,
-        reviewedAt: status === "pending" ? null : options.reviewedAt || null,
-      },
-    });
+    const transaction = await sequelize.transaction();
 
-    if (!created) {
-      await availability.update({
-        isAvailable,
-        reason: isAvailable ? null : reason || null,
-        description: isAvailable ? null : description || null,
-        approvalStatus: status,
-        reviewedBy: status === "pending" ? null : options.reviewedBy || null,
-        reviewedAt: status === "pending" ? null : options.reviewedAt || null,
+    try {
+      const dateKeys = this.getDateKeysBetween(date);
+
+      if (options.disallowAcceptedAssignments && isAvailable === false) {
+        await this.assertNoAcceptedAssignments(refereeId, dateKeys, transaction);
+      }
+
+      // Upsert - create or update
+      const [availability, created] = await RefereeAvailability.findOrCreate({
+        where: { refereeId, date },
+        defaults: {
+          isAvailable,
+          reason: isAvailable ? null : reason || null,
+          description: isAvailable ? null : description || null,
+          approvalStatus: status,
+          reviewedBy: status === "pending" ? null : options.reviewedBy || null,
+          reviewedAt: status === "pending" ? null : options.reviewedAt || null,
+        },
+        transaction,
       });
-    }
 
-    return availability;
+      if (!created) {
+        await availability.update(
+          {
+            isAvailable,
+            reason: isAvailable ? null : reason || null,
+            description: isAvailable ? null : description || null,
+            approvalStatus: status,
+            reviewedBy: status === "pending" ? null : options.reviewedBy || null,
+            reviewedAt: status === "pending" ? null : options.reviewedAt || null,
+          },
+          { transaction }
+        );
+      }
+
+      if (options.releasePendingAssignments && isAvailable === false) {
+        await this.releasePendingAssignmentsForDates(
+          refereeId,
+          dateKeys,
+          reason,
+          description,
+          transaction
+        );
+      }
+
+      await transaction.commit();
+
+      return availability;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   /**
@@ -152,9 +338,14 @@ class AvailabilityService {
       throw new AppError("Start date must be before end date.", 400);
     }
 
+    const dateKeys = this.getDateKeysBetween(dateFrom, dateTo);
     const transaction = await sequelize.transaction();
 
     try {
+      if (options.disallowAcceptedAssignments && isAvailable === false) {
+        await this.assertNoAcceptedAssignments(refereeId, dateKeys, transaction);
+      }
+
       const dates = [];
       let currentDate = new Date(startDate);
 
@@ -186,11 +377,26 @@ class AvailabilityService {
 
       await RefereeAvailability.bulkCreate(availabilities, { transaction });
 
+      const releasedAssignments =
+        options.releasePendingAssignments && isAvailable === false
+          ? await this.releasePendingAssignmentsForDates(
+              refereeId,
+              dateKeys,
+              reason,
+              description,
+              transaction
+            )
+          : 0;
+
       await transaction.commit();
 
       return {
-        message: `Availability set for ${dates.length} days.`,
+        message:
+          releasedAssignments > 0
+            ? `Availability set for ${dates.length} days. Released ${releasedAssignments} pending assignment${releasedAssignments === 1 ? "" : "s"}.`
+            : `Availability set for ${dates.length} days.`,
         count: dates.length,
+        releasedAssignments,
       };
     } catch (error) {
       await transaction.rollback();
@@ -264,7 +470,11 @@ class AvailabilityService {
   async getAvailableReferees(date) {
     // Get referees who are explicitly unavailable
     const unavailableReferees = await RefereeAvailability.findAll({
-      where: { date, isAvailable: false, approvalStatus: "approved" },
+      where: {
+        date,
+        isAvailable: false,
+        approvalStatus: { [Op.in]: BLOCKING_AVAILABILITY_STATUSES },
+      },
       attributes: ["refereeId"],
     });
 
@@ -518,38 +728,81 @@ class AvailabilityService {
       throw new AppError("Invalid approval status.", 400);
     }
 
-    const requests = await RefereeAvailability.findAll({
-      where: {
-        id: { [Op.in]: ids },
-        isAvailable: false,
-      },
-    });
+    const transaction = await sequelize.transaction();
 
-    if (requests.length === 0) {
-      throw new AppError("Availability request not found.", 404);
-    }
-
-    await RefereeAvailability.update(
-      {
-        approvalStatus,
-        reviewedBy,
-        reviewedAt: new Date(),
-      },
-      {
+    try {
+      const requests = await RefereeAvailability.findAll({
         where: {
           id: { [Op.in]: ids },
           isAvailable: false,
         },
-      }
-    );
+        transaction,
+      });
 
-    return {
-      message:
-        approvalStatus === "approved"
-          ? "Availability request approved."
-          : "Availability request rejected.",
-      count: requests.length,
-    };
+      if (requests.length === 0) {
+        throw new AppError("Availability request not found.", 404);
+      }
+
+      if (approvalStatus === "approved") {
+        const requestsByReferee = requests.reduce((acc, request) => {
+          const dateKey = this.toDateKey(request.date);
+          if (!acc.has(request.refereeId)) acc.set(request.refereeId, []);
+          acc.get(request.refereeId).push(dateKey);
+          return acc;
+        }, new Map());
+
+        for (const [refereeId, dateKeys] of requestsByReferee.entries()) {
+          await this.assertNoAcceptedAssignments(
+            refereeId,
+            [...new Set(dateKeys)],
+            transaction
+          );
+        }
+      }
+
+      await RefereeAvailability.update(
+        {
+          approvalStatus,
+          reviewedBy,
+          reviewedAt: new Date(),
+        },
+        {
+          where: {
+            id: { [Op.in]: ids },
+            isAvailable: false,
+          },
+          transaction,
+        }
+      );
+
+      let releasedAssignments = 0;
+
+      if (approvalStatus === "approved") {
+        for (const request of requests) {
+          releasedAssignments += await this.releasePendingAssignmentsForDates(
+            request.refereeId,
+            [this.toDateKey(request.date)],
+            request.reason,
+            request.description,
+            transaction
+          );
+        }
+      }
+
+      await transaction.commit();
+
+      return {
+        message:
+          approvalStatus === "approved"
+            ? "Availability request approved."
+            : "Availability request rejected.",
+        count: requests.length,
+        releasedAssignments,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 }
 
