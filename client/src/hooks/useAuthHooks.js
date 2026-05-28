@@ -48,6 +48,35 @@ export const useChangePassword = () => {
   });
 };
 
+export const useUpdateMe = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => authApi.updateMe(data),
+    onSuccess: (data) => {
+      if (data?.data) {
+        queryClient.setQueryData(authKeys.me, data.data);
+        localStorage.setItem("user", JSON.stringify(data.data));
+      } else {
+        queryClient.invalidateQueries({ queryKey: authKeys.me });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["referees"] });
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
+      queryClient.invalidateQueries({ queryKey: ["availability"] });
+      toast.success(data?.message || "Profile updated successfully.", {
+        toastId: "auth-update-me",
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update profile.",
+        { toastId: "auth-update-me-error" },
+      );
+    },
+  });
+};
+
 export const useDeleteMe = () => {
   const queryClient = useQueryClient();
 

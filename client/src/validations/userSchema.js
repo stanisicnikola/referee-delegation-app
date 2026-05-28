@@ -1,26 +1,8 @@
 import { z } from "zod";
+import { phoneSchema } from "./sharedSchemas";
 
-const digitsOnly = (s = "") => s.replace(/\D/g, "");
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])(?!.*\s).{8,}$/;
-
-const phoneSchema = z
-  .string()
-  .trim()
-  .refine((s) => !s || /^[+\d\s\-().]*$/.test(s), {
-    message: "Phone may contain only digits, and an optional leading +.",
-  })
-  .transform((s) => {
-    if (!s) return undefined;
-    const hasPlus = /^\+/.test(s.trim());
-    const digits = digitsOnly(s);
-    if (!digits) return undefined;
-    return hasPlus ? `+${digits}` : digits;
-  })
-  .refine((v) => v === undefined || /^\+?\d{8,15}$/.test(v), {
-    message: "Phone number must contain between 8 and 15 digits",
-  })
-  .optional();
 
 export const adminDelegateSchema = z
   .object({

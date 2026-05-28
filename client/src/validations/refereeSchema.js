@@ -1,26 +1,8 @@
 import { z } from "zod";
+import { phoneSchema } from "./sharedSchemas";
 
-const digitsOnly = (s = "") => s.replace(/\D/g, "");
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])(?!.*\s).{8,}$/;
-
-const phoneSchema = z
-  .string()
-  .trim()
-  .refine((s) => !s || /^[+\d\s\-().]*$/.test(s), {
-    message: "Ovo polje može sadržati samo cifre i opcioni + na početku.",
-  })
-  .transform((s) => {
-    if (!s) return undefined;
-    const hasPlus = /^\+/.test(s.trim());
-    const digits = digitsOnly(s);
-    if (!digits) return undefined;
-    return hasPlus ? `+${digits}` : digits;
-  })
-  .refine((v) => v === undefined || /^\+?\d{8,15}$/.test(v), {
-    message: "Broj telefona mora imati između 8 i 15 cifara.",
-  })
-  .optional();
 
 const experienceYearsSchema = z.preprocess(
   (value) => {

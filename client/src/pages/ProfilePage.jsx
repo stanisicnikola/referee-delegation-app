@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Box,
   Typography,
@@ -16,10 +17,14 @@ import { useAuth } from "../context";
 import { useNavigate } from "react-router-dom";
 import StatusBadge from "../components/user/StatusBadge";
 import { CustomButton, PageHeader } from "../components/ui";
+import ProfileEditDialog from "../components/profile/ProfileEditDialog";
+import { useUpdateMe } from "../hooks/useAuthHooks";
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const updateProfile = useUpdateMe();
+  const [editOpen, setEditOpen] = useState(false);
   const roleStyles = {
     admin: {
       basePath: "/admin",
@@ -44,6 +49,23 @@ const ProfilePage = () => {
     },
   };
   const roleStyle = roleStyles[user?.role] || roleStyles.admin;
+  const isSavingProfile = updateProfile.isPending;
+
+  const openEditProfile = () => setEditOpen(true);
+
+  const closeEditProfile = () => {
+    if (isSavingProfile) return;
+    setEditOpen(false);
+  };
+
+  const handleSaveProfile = async (data) => {
+    try {
+      await updateProfile.mutateAsync(data);
+      setEditOpen(false);
+    } catch {
+      // The mutation hook shows the API error toast.
+    }
+  };
 
   return (
     <Box
@@ -114,12 +136,35 @@ const ProfilePage = () => {
               borderColor: "divider",
             }}
           >
-            <Typography
-              variant='h6'
-              sx={{ fontWeight: 600, mb: 3, color: "white" }}
+            <Box
+              sx={{
+                mb: 3,
+                display: "flex",
+                alignItems: { xs: "stretch", sm: "center" },
+                justifyContent: "space-between",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1.5,
+              }}
             >
-              Account Information
-            </Typography>
+              <Typography
+                variant='h6'
+                sx={{ fontWeight: 600, color: "white" }}
+              >
+                Account Information
+              </Typography>
+              <CustomButton
+                variant={roleStyle.outlineVariant}
+                size='small'
+                onClick={openEditProfile}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  justifyContent: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Edit Profile
+              </CustomButton>
+            </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -268,6 +313,16 @@ const ProfilePage = () => {
           </Paper>
         </Grid>
       </Box>
+
+      <ProfileEditDialog
+        open={editOpen}
+        user={user}
+        onClose={closeEditProfile}
+        onSubmit={handleSaveProfile}
+        isLoading={isSavingProfile}
+        submitVariant={roleStyle.outlineVariant}
+        accentColor={roleStyle.accent}
+      />
     </Box>
   );
 };

@@ -83,7 +83,7 @@ const DashboardPage = () => {
       color: COLORS.purple,
     },
     {
-      label: "Season total",
+      label: "Total matches",
       value: summary.seasonTotal,
       icon: TrophyIcon,
       color: COLORS.green,

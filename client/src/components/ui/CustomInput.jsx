@@ -8,6 +8,7 @@ import loginTheme from "../../theme/theme";
  *
  * @param {string} label - Label displayed above the input
  * @param {string} error - Error message (if any)
+ * @param {string} accentColor - Border color used when input is focused
  * @param {object} sx - MUI style overrides for the TextField
  * @param {object} field - react-hook-form field props (from Controller)
  */
@@ -16,6 +17,7 @@ const CustomInput = ({
   placeholder,
   loginType,
   error,
+  accentColor = "#8b5cf6",
   sx = {},
   ...props
 }) => {
@@ -25,7 +27,7 @@ const CustomInput = ({
       borderRadius: "12px",
       "& fieldset": { borderColor: "#242428" },
       "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+      "&.Mui-focused fieldset": { borderColor: accentColor },
       "&.Mui-error fieldset": { borderColor: "#ef4444" },
     },
     "& .MuiInputBase-input": {

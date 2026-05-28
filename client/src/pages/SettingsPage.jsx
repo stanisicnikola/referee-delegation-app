@@ -4,22 +4,15 @@ import {
   Typography,
   Paper,
   Grid,
-  Switch,
   Divider,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  TextField,
-  Stepper,
-  Step,
-  StepLabel,
-  Alert,
-  CircularProgress,
 } from "@mui/material";
 import { CustomButton, PageHeader } from "../components/ui";
+import ChangePasswordDialog from "../components/settings/ChangePasswordDialog";
 import { useAuth } from "../context";
 import {
   useVerifyPassword,
@@ -39,29 +32,25 @@ const SettingsPage = () => {
 
   // Password Change Modal State
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
-  const [error, setError] = useState("");
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Delete Account Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const isAdmin = user?.role === "admin";
   const roleVariants = {
     admin: {
       primary: "admin-primary",
       outline: "admin-outline",
+      accent: "#8b5cf6",
     },
     delegate: {
       primary: "delegate-primary",
       outline: "delegate-outline",
+      accent: "#f97316",
     },
     referee: {
       primary: "referee-primary",
       outline: "referee-outline",
+      accent: "#22c55e",
     },
   };
   const roleVariant = roleVariants[user?.role] || roleVariants.admin;
@@ -74,60 +63,13 @@ const SettingsPage = () => {
   // Password logic
   const handleOpenPasswordModal = () => {
     setPasswordModalOpen(true);
-    setActiveStep(0);
-    setError("");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
   useEffect(() => {
     if (user?.mustChangePassword) {
       setPasswordModalOpen(true);
-      setActiveStep(0);
-      setError("");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
     }
   }, [user?.mustChangePassword]);
-
-  const handleVerifyPassword = async () => {
-    if (!currentPassword) {
-      setError("Please enter your current password.");
-      return;
-    }
-
-    setError("");
-    try {
-      await verifyPasswordMutation.mutateAsync(currentPassword);
-      setActiveStep(1);
-    } catch (err) {
-      setError(err.response?.data?.message || "Incorrect password.");
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setError("");
-    try {
-      await changePasswordMutation.mutateAsync({
-        currentPassword,
-        newPassword,
-      });
-      setPasswordModalOpen(false);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to change password.");
-    }
-  };
 
   // Delete account logic
   const handleDeleteAccount = async () => {
@@ -152,75 +94,12 @@ const SettingsPage = () => {
     >
       <PageHeader
         title='Settings'
-        subtitle='Manage your account and preferences'
+        subtitle='Manage your account and security'
       />
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* General Settings - only show for non-admins if it has relevant settings */}
-        {!isAdmin && (
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: { xs: 2.25, sm: 3 },
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Typography variant='h6' sx={{ fontWeight: 600, mb: 3 }}>
-                General
-              </Typography>
-
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: { xs: 1.5, sm: 2 },
-                  }}
-                >
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant='body1' sx={{ fontWeight: 500 }}>
-                      Email Notifications
-                    </Typography>
-                    <Typography variant='body2' color='text.secondary'>
-                      Receive email notifications for new delegations
-                    </Typography>
-                  </Box>
-                  <Switch defaultChecked sx={{ ml: { xs: -1, sm: 0 } }} />
-                </Box>
-
-                <Divider />
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: { xs: 1.5, sm: 2 },
-                  }}
-                >
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant='body1' sx={{ fontWeight: 500 }}>
-                      Reminder Notifications
-                    </Typography>
-                    <Typography variant='body2' color='text.secondary'>
-                      Send reminders 24h before matches
-                    </Typography>
-                  </Box>
-                  <Switch defaultChecked sx={{ ml: { xs: -1, sm: 0 } }} />
-                </Box>
-              </Box>
-            </Paper>
-          </Grid>
-        )}
-
         {/* Account Info */}
-        <Grid item xs={12} md={isAdmin ? 6 : 6}>
+        <Grid item xs={12}>
           <Paper
             elevation={0}
             sx={{
@@ -378,99 +257,15 @@ const SettingsPage = () => {
         </Grid>
       </Box>
 
-      {/* Change Password Modal */}
-      <Dialog
+      <ChangePasswordDialog
         open={passwordModalOpen}
-        onClose={() => !loading && setPasswordModalOpen(false)}
-        maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2, p: 1 },
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 700 }}>Change Password</DialogTitle>
-        <DialogContent>
-          <Stepper activeStep={activeStep} sx={{ mb: 4, mt: 1 }}>
-            <Step>
-              <StepLabel>Verify Current</StepLabel>
-            </Step>
-            <Step>
-              <StepLabel>Set New</StepLabel>
-            </Step>
-          </Stepper>
-
-          {error && (
-            <Alert severity='error' sx={{ mb: 3, borderRadius: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {activeStep === 0 ? (
-            <Box>
-              <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-                Please enter your current password to proceed.
-              </Typography>
-              <TextField
-                fullWidth
-                label='Current Password'
-                type='password'
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                variant='outlined'
-                disabled={loading}
-              />
-            </Box>
-          ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <TextField
-                fullWidth
-                label='New Password'
-                type='password'
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                variant='outlined'
-                disabled={loading}
-                helperText='At least 8 characters with upper, lower and numbers'
-              />
-              <TextField
-                fullWidth
-                label='Confirm New Password'
-                type='password'
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                variant='outlined'
-                disabled={loading}
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <CustomButton
-            variant='outline'
-            onClick={() => setPasswordModalOpen(false)}
-            disabled={loading}
-          >
-            Cancel
-          </CustomButton>
-          {activeStep === 0 ? (
-            <CustomButton
-              variant={rolePrimaryVariant}
-              onClick={handleVerifyPassword}
-              disabled={loading || !currentPassword}
-            >
-              {loading ? "Loading..." : "Next Step"}
-            </CustomButton>
-          ) : (
-            <CustomButton
-              variant={rolePrimaryVariant}
-              onClick={handleChangePassword}
-              disabled={loading || !newPassword || !confirmPassword}
-            >
-              {loading ? "Loading..." : "Change Password"}
-            </CustomButton>
-          )}
-        </DialogActions>
-      </Dialog>
+        onClose={() => setPasswordModalOpen(false)}
+        onVerifyPassword={verifyPasswordMutation.mutateAsync}
+        onChangePassword={changePasswordMutation.mutateAsync}
+        isLoading={loading}
+        primaryVariant={rolePrimaryVariant}
+        accentColor={roleVariant.accent}
+      />
 
       {/* Delete Account Dialog */}
       <Dialog
