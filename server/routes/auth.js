@@ -15,6 +15,12 @@ router.post(
 // Protected routes
 router.get("/me", authenticate, authController.getMe);
 router.put(
+  "/me",
+  authenticate,
+  validate(authSchemas.updateMe),
+  authController.updateMe,
+);
+router.put(
   "/change-password",
   authenticate,
   validate(authSchemas.changePassword),

@@ -1,5 +1,7 @@
 const { z } = require("zod");
 
+const digitsOnly = (value = "") => value.replace(/\D/g, "");
+
 const login = z.object({
   email: z
     .string({ required_error: "Email is required." })
@@ -90,6 +92,45 @@ const verifyPassword = z.object({
     .min(1, "Password is required."),
 });
 
+const nullablePhone = z.preprocess(
+  (value) => {
+    if (value === null || value === undefined) return "";
+    const trimmed = String(value).trim();
+    return trimmed;
+  },
+  z
+    .string()
+    .trim()
+    .refine((value) => !value || /^\+?[\d\s\-().]*$/.test(value), {
+      message:
+        "This field can only contain digits and an optional + at the beginning.",
+    })
+    .transform((value) => {
+      if (!value) return null;
+
+      const hasPlus = value.startsWith("+");
+      const digits = digitsOnly(value);
+      return hasPlus ? `+${digits}` : digits;
+    })
+    .refine((value) => value === null || /^\+?\d{8,15}$/.test(value), {
+      message: "Phone number must be between 8 and 15 digits.",
+    }),
+);
+
+const updateMe = z.object({
+  firstName: z
+    .string({ required_error: "First name is required." })
+    .trim()
+    .min(2, "First name must be at least 2 characters.")
+    .max(100, "First name can be at most 100 characters."),
+  lastName: z
+    .string({ required_error: "Last name is required." })
+    .trim()
+    .min(2, "Last name must be at least 2 characters.")
+    .max(100, "Last name can be at most 100 characters."),
+  phone: nullablePhone,
+});
+
 module.exports = {
   login,
   register,
@@ -97,4 +138,5 @@ module.exports = {
   changePassword,
   resetPassword,
   verifyPassword,
+  updateMe,
 };

@@ -59,6 +59,24 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Update current user profile
+ * @route   PUT /api/auth/me
+ * @access  Private
+ */
+const updateMe = asyncHandler(async (req, res) => {
+  const user = await authService.updateCurrentUser(
+    req.user.id,
+    req.validatedBody || req.body,
+  );
+
+  res.json({
+    success: true,
+    message: "Profile updated successfully.",
+    data: user,
+  });
+});
+
+/**
  * @desc    Change password
  * @route   PUT /api/auth/change-password
  * @access  Private
@@ -127,6 +145,7 @@ module.exports = {
   register,
   registerReferee,
   getMe,
+  updateMe,
   changePassword,
   resetPassword,
   verifyPassword,

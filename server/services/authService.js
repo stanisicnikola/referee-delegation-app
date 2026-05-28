@@ -247,6 +247,22 @@ class AuthService {
     return { success: true };
   }
 
+  async updateCurrentUser(userId, data) {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new AppError("User not found.", 404);
+    }
+
+    await user.update({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone || null,
+    });
+
+    return this.getCurrentUser(userId);
+  }
+
   // Delete user account
   async deleteAccount(userId) {
     const user = await User.findByPk(userId);
