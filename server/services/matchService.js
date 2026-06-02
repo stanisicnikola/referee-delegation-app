@@ -18,6 +18,35 @@ class MatchService {
     return actor?.role === "delegate" ? { delegatedBy: actor.id } : {};
   }
 
+  getCompetitionBoundary(dateOnly, endOfDay = false) {
+    const time = endOfDay ? "23:59:59.999" : "00:00:00.000";
+    return new Date(`${dateOnly}T${time}`);
+  }
+
+  assertMatchDateWithinCompetition(competition, scheduledAt) {
+    if (!competition?.startDate || !competition?.endDate || !scheduledAt) {
+      return;
+    }
+
+    const matchDate = new Date(scheduledAt);
+    if (Number.isNaN(matchDate.getTime())) {
+      throw new AppError("Invalid match date and time.", 400);
+    }
+
+    const competitionStart = this.getCompetitionBoundary(competition.startDate);
+    const competitionEnd = this.getCompetitionBoundary(
+      competition.endDate,
+      true
+    );
+
+    if (matchDate < competitionStart || matchDate > competitionEnd) {
+      throw new AppError(
+        `Match date must be within ${competition.name} (${competition.startDate} - ${competition.endDate}).`,
+        400,
+      );
+    }
+  }
+
   assertDelegateCanAccessMatch(match, actor) {
     if (actor?.role === "delegate" && match.delegatedBy !== actor.id) {
       throw new AppError("Match not found.", 404);
@@ -207,6 +236,7 @@ class MatchService {
     // Check if competition exists
     const competition = await Competition.findByPk(matchData.competitionId);
     if (!competition) throw new AppError("Competition not found.", 400);
+    this.assertMatchDateWithinCompetition(competition, matchData.scheduledAt);
 
     const match = await Match.create(data);
     return this.findById(match.id, actor);
@@ -258,6 +288,18 @@ class MatchService {
         throw new AppError("Postponement reason is required.", 400);
       }
       data.statusReason = data.statusReason.trim();
+    }
+
+    if (data.competitionId !== undefined || data.scheduledAt !== undefined) {
+      const competition = await Competition.findByPk(
+        data.competitionId || match.competitionId,
+      );
+      if (!competition) throw new AppError("Competition not found.", 400);
+
+      this.assertMatchDateWithinCompetition(
+        competition,
+        data.scheduledAt || match.scheduledAt,
+      );
     }
 
     if (data.status === "cancelled") {
