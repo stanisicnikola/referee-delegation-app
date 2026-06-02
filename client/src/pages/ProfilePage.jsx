@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Box,
-  Typography,
-  Paper,
-  Avatar,
-  Grid,
-  Divider,
-} from "@mui/material";
+import { Box, Typography, Paper, Avatar, Divider } from "@mui/material";
 import {
   Person as PersonIcon,
   Email as EmailIcon,
@@ -125,7 +118,7 @@ const ProfilePage = () => {
         </Box>
 
         {/* Details and Info */}
-        <Grid item xs={12} md={8}>
+        <Box>
           <Paper
             elevation={0}
             sx={{
@@ -146,10 +139,7 @@ const ProfilePage = () => {
                 gap: 1.5,
               }}
             >
-              <Typography
-                variant='h6'
-                sx={{ fontWeight: 600, color: "white" }}
-              >
+              <Typography variant='h6' sx={{ fontWeight: 600, color: "white" }}>
                 Account Information
               </Typography>
               <CustomButton
@@ -169,7 +159,10 @@ const ProfilePage = () => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
+                  sx={{
+                    bgcolor: roleStyle.accentSoft,
+                    color: roleStyle.accent,
+                  }}
                 >
                   <PersonIcon />
                 </Avatar>
@@ -193,7 +186,10 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
+                  sx={{
+                    bgcolor: roleStyle.accentSoft,
+                    color: roleStyle.accent,
+                  }}
                 >
                   <PersonIcon />
                 </Avatar>
@@ -217,7 +213,10 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
+                  sx={{
+                    bgcolor: roleStyle.accentSoft,
+                    color: roleStyle.accent,
+                  }}
                 >
                   <EmailIcon />
                 </Avatar>
@@ -245,7 +244,10 @@ const ProfilePage = () => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  sx={{ bgcolor: roleStyle.accentSoft, color: roleStyle.accent }}
+                  sx={{
+                    bgcolor: roleStyle.accentSoft,
+                    color: roleStyle.accent,
+                  }}
                 >
                   <PhoneIcon />
                 </Avatar>
@@ -311,7 +313,7 @@ const ProfilePage = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
       </Box>
 
       <ProfileEditDialog

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Typography, IconButton, Button } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import {
@@ -25,10 +25,28 @@ const MatchModal = ({
 }) => {
   const { user } = useAuth();
   const canChangeDelegate = user?.role === "admin";
+  const { data: teamsData } = useTeams({ limit: 100 });
+  const { data: venuesData } = useVenues({ limit: 100 });
+  const { data: competitionsData } = useCompetitions({ limit: 100 });
+  const { data: delegatesData } = useUserStatistics({
+    enabled: canChangeDelegate,
+  });
+  const teams = useMemo(() => teamsData?.data || [], [teamsData?.data]);
+  const venues = useMemo(() => venuesData?.data || [], [venuesData?.data]);
+  const competitionRows = useMemo(
+    () => competitionsData?.data || [],
+    [competitionsData?.data],
+  );
   const [statusAction, setStatusAction] = useState(null);
+  const venueManuallyChangedRef = useRef(false);
+  const lastAutoVenueIdRef = useRef("");
   const schema = useMemo(
-    () => createMatchSchema({ requireDelegate: canChangeDelegate }),
-    [canChangeDelegate],
+    () =>
+      createMatchSchema({
+        requireDelegate: canChangeDelegate,
+        competitions: competitionRows,
+      }),
+    [canChangeDelegate, competitionRows],
   );
 
   const {
@@ -36,6 +54,8 @@ const MatchModal = ({
     handleSubmit,
     reset,
     watch,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
@@ -53,22 +73,15 @@ const MatchModal = ({
     },
   });
 
-  const { data: teamsData } = useTeams({ limit: 100 });
-  const { data: venuesData } = useVenues({ limit: 100 });
-  const { data: competitionsData } = useCompetitions({ limit: 100 });
-  const { data: delegatesData } = useUserStatistics({
-    enabled: canChangeDelegate,
-  });
-
-  const teams = useMemo(() => teamsData?.data || [], [teamsData?.data]);
-  const venues = useMemo(() => venuesData?.data || [], [venuesData?.data]);
   const competitions = useMemo(
     () =>
-      (competitionsData?.data || []).map((competition) => ({
-        label: competition.name,
+      competitionRows.map((competition) => ({
+        label: competition.season
+          ? `${competition.name} · ${competition.season}`
+          : competition.name,
         value: competition.id,
       })),
-    [competitionsData?.data],
+    [competitionRows],
   );
   const delegates = useMemo(
     () =>
@@ -85,6 +98,16 @@ const MatchModal = ({
 
   const homeTeamId = watch("homeTeamId");
   const awayTeamId = watch("awayTeamId");
+  const competitionId = watch("competitionId");
+  const selectedCompetition = useMemo(
+    () =>
+      competitionRows.find((competition) => competition.id === competitionId),
+    [competitionId, competitionRows],
+  );
+  const getPrimaryVenueId = useCallback(
+    (teamId) => teams.find((team) => team.id === teamId)?.primaryVenueId || "",
+    [teams],
+  );
   const homeTeamOptions = useMemo(
     () =>
       teams
@@ -130,6 +153,8 @@ const MatchModal = ({
           notes: editMatch.notes || "",
           delegateId: editMatch.delegate?.id || editMatch.delegateId || "",
         });
+        venueManuallyChangedRef.current = false;
+        lastAutoVenueIdRef.current = editMatch.venueId || "";
         setStatusAction(null);
       } else {
         reset({
@@ -144,10 +169,38 @@ const MatchModal = ({
           notes: "",
           delegateId: "",
         });
+        venueManuallyChangedRef.current = false;
+        lastAutoVenueIdRef.current = "";
         setStatusAction(null);
       }
     }
   }, [editMatch, open, reset]);
+
+  const handleHomeTeamChange = (field) => (event) => {
+    field.onChange(event);
+
+    const primaryVenueId = getPrimaryVenueId(event.target.value);
+    const currentVenueId = getValues("venueId");
+
+    if (
+      !venueManuallyChangedRef.current ||
+      !currentVenueId ||
+      currentVenueId === lastAutoVenueIdRef.current
+    ) {
+      setValue("venueId", primaryVenueId, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      lastAutoVenueIdRef.current = primaryVenueId;
+      venueManuallyChangedRef.current = false;
+    }
+  };
+
+  const handleVenueChange = (field) => (event) => {
+    field.onChange(event);
+    venueManuallyChangedRef.current =
+      event.target.value !== lastAutoVenueIdRef.current;
+  };
 
   const onFormSubmit = (data) => {
     const { date, time, delegateId, ...rest } = data;
@@ -291,6 +344,7 @@ const MatchModal = ({
                   options={homeTeamOptions}
                   error={errors.homeTeamId?.message}
                   {...field}
+                  onChange={handleHomeTeamChange(field)}
                 />
               )}
             />
@@ -329,6 +383,12 @@ const MatchModal = ({
                   sx={{
                     "& input::-webkit-calendar-picker-indicator": {
                       filter: "invert(1)",
+                    },
+                  }}
+                  slotProps={{
+                    htmlInput: {
+                      min: selectedCompetition?.startDate || undefined,
+                      max: selectedCompetition?.endDate || undefined,
                     },
                   }}
                 />
@@ -370,6 +430,7 @@ const MatchModal = ({
                   options={venueOptions}
                   error={errors.venueId?.message}
                   {...field}
+                  onChange={handleVenueChange(field)}
                 />
               )}
             />

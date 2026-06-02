@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Divider,
   Dialog,
   DialogTitle,
@@ -99,7 +98,7 @@ const SettingsPage = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* Account Info */}
-        <Grid item xs={12}>
+        <Box>
           <Paper
             elevation={0}
             sx={{
@@ -156,10 +155,10 @@ const SettingsPage = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
 
         {/* Security */}
-        <Grid item xs={12}>
+        <Box>
           <Paper
             elevation={0}
             sx={{
@@ -203,10 +202,10 @@ const SettingsPage = () => {
               </CustomButton>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
 
         {/* Danger Zone */}
-        <Grid item xs={12}>
+        <Box>
           <Paper
             elevation={0}
             sx={{
@@ -254,7 +253,7 @@ const SettingsPage = () => {
               </CustomButton>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
       </Box>
 
       <ChangePasswordDialog

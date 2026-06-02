@@ -1,6 +1,16 @@
 import { z } from "zod";
 
-export const createMatchSchema = ({ requireDelegate = false } = {}) =>
+const formatCompetitionRange = (competition) => {
+  if (!competition?.startDate || !competition?.endDate) {
+    return "the competition dates";
+  }
+  return `${competition.startDate} - ${competition.endDate}`;
+};
+
+export const createMatchSchema = ({
+  requireDelegate = false,
+  competitions = [],
+} = {}) =>
   z
     .object({
       id: z.preprocess(
@@ -26,6 +36,26 @@ export const createMatchSchema = ({ requireDelegate = false } = {}) =>
           code: "custom",
           message: "Delegate is required",
           path: ["delegateId"],
+        });
+      }
+
+      const competition = competitions.find(
+        (item) => item.id === data.competitionId,
+      );
+
+      if (competition?.startDate && data.date < competition.startDate) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Match date must be within ${competition.name} (${formatCompetitionRange(competition)})`,
+          path: ["date"],
+        });
+      }
+
+      if (competition?.endDate && data.date > competition.endDate) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Match date must be within ${competition.name} (${formatCompetitionRange(competition)})`,
+          path: ["date"],
         });
       }
 
