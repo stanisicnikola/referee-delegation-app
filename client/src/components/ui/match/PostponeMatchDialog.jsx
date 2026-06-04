@@ -4,6 +4,12 @@ import { Close as CloseIcon } from "@mui/icons-material";
 import CustomButton from "../CustomButton";
 import CustomInput from "../CustomInput";
 
+const getTodayDateValue = () => {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split("T")[0];
+};
+
 const PostponeMatchDialog = ({
   open,
   editMatch,
@@ -29,8 +35,20 @@ const PostponeMatchDialog = ({
 
   if (!open) return null;
 
+  const todayDate = getTodayDateValue();
+  const selectedDateTime =
+    postponeDate && postponeTime
+      ? new Date(`${postponeDate}T${postponeTime}`)
+      : null;
+  const dateTimeIsPast = Boolean(
+    selectedDateTime && selectedDateTime.getTime() <= Date.now(),
+  );
   const disabled =
-    isLoading || !reason.trim() || !postponeDate || !postponeTime;
+    isLoading ||
+    !reason.trim() ||
+    !postponeDate ||
+    !postponeTime ||
+    dateTimeIsPast;
 
   const handleSubmit = async () => {
     const statusReason = reason.trim();
@@ -113,6 +131,11 @@ const PostponeMatchDialog = ({
               sx={{
                 "& input::-webkit-calendar-picker-indicator": {
                   filter: "invert(1)",
+                },
+              }}
+              slotProps={{
+                htmlInput: {
+                  min: todayDate,
                 },
               }}
             />

@@ -59,18 +59,15 @@ export const createMatchSchema = ({
         });
       }
 
-      // Only check for past date if we are CREATING a new match (no ID)
-      if (!data.id) {
-        const scheduledDate = new Date(`${data.date}T${data.time}`);
-        const now = new Date();
+      const scheduledDate = new Date(`${data.date}T${data.time}`);
+      const now = new Date();
 
-        if (scheduledDate < now) {
-          ctx.addIssue({
-            code: "custom",
-            message: "Match date and time cannot be in the past",
-            path: ["date"],
-          });
-        }
+      if (scheduledDate <= now) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Match date and time must be in the future",
+          path: ["date"],
+        });
       }
     });
 

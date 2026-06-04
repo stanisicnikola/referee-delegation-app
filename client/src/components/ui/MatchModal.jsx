@@ -16,6 +16,12 @@ import CustomButton from "./CustomButton";
 import { useAuth } from "../../context";
 import { CancelMatchDialog, PostponeMatchDialog } from "./match";
 
+const getTodayDateValue = () => {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split("T")[0];
+};
+
 const MatchModal = ({
   open,
   onClose,
@@ -99,11 +105,19 @@ const MatchModal = ({
   const homeTeamId = watch("homeTeamId");
   const awayTeamId = watch("awayTeamId");
   const competitionId = watch("competitionId");
+  const todayDate = getTodayDateValue();
   const selectedCompetition = useMemo(
     () =>
       competitionRows.find((competition) => competition.id === competitionId),
     [competitionId, competitionRows],
   );
+  const minMatchDate = useMemo(() => {
+    if (selectedCompetition?.startDate > todayDate) {
+      return selectedCompetition.startDate;
+    }
+
+    return todayDate;
+  }, [selectedCompetition?.startDate, todayDate]);
   const getPrimaryVenueId = useCallback(
     (teamId) => teams.find((team) => team.id === teamId)?.primaryVenueId || "",
     [teams],
@@ -387,7 +401,7 @@ const MatchModal = ({
                   }}
                   slotProps={{
                     htmlInput: {
-                      min: selectedCompetition?.startDate || undefined,
+                      min: minMatchDate,
                       max: selectedCompetition?.endDate || undefined,
                     },
                   }}
