@@ -23,6 +23,21 @@ class MatchService {
     return new Date(`${dateOnly}T${time}`);
   }
 
+  assertMatchDateInFuture(scheduledAt, message = "Match date and time must be in the future.") {
+    if (!scheduledAt) {
+      return;
+    }
+
+    const matchDate = new Date(scheduledAt);
+    if (Number.isNaN(matchDate.getTime())) {
+      throw new AppError("Invalid match date and time.", 400);
+    }
+
+    if (matchDate <= new Date()) {
+      throw new AppError(message, 400);
+    }
+  }
+
   assertMatchDateWithinCompetition(competition, scheduledAt) {
     if (!competition?.startDate || !competition?.endDate || !scheduledAt) {
       return;
@@ -236,6 +251,7 @@ class MatchService {
     // Check if competition exists
     const competition = await Competition.findByPk(matchData.competitionId);
     if (!competition) throw new AppError("Competition not found.", 400);
+    this.assertMatchDateInFuture(matchData.scheduledAt);
     this.assertMatchDateWithinCompetition(competition, matchData.scheduledAt);
 
     const match = await Match.create(data);
@@ -281,13 +297,18 @@ class MatchService {
       if (!data.scheduledAt) {
         throw new AppError("New match date and time are required.", 400);
       }
-      if (new Date(data.scheduledAt) <= new Date()) {
-        throw new AppError("New match date and time must be in the future.", 400);
-      }
+      this.assertMatchDateInFuture(
+        data.scheduledAt,
+        "New match date and time must be in the future.",
+      );
       if (!data.statusReason?.trim()) {
         throw new AppError("Postponement reason is required.", 400);
       }
       data.statusReason = data.statusReason.trim();
+    }
+
+    if (data.scheduledAt !== undefined && data.status !== "postponed") {
+      this.assertMatchDateInFuture(data.scheduledAt);
     }
 
     if (data.competitionId !== undefined || data.scheduledAt !== undefined) {
