@@ -27,6 +27,7 @@ import {
   DistributionBar,
   MatchActivityChart,
 } from "../../components/ui";
+import { formatMatchDateTile } from "../../utils/dateFormatters";
 
 const DashboardPage = () => {
   const [activityPeriod, setActivityPeriod] = useState("current");
@@ -78,17 +79,6 @@ const DashboardPage = () => {
       color: "#eab308",
     },
   ];
-
-  const formatMatchDate = (dateStr) => {
-    const date = new Date(dateStr);
-    const day = date.getDate();
-    const month = date.toLocaleDateString("en-US", { month: "short" });
-    const time = date.toLocaleTimeString("bs-BA", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return { day, month, time };
-  };
 
   return (
     <Box sx={{ color: "#fff", width: "100%", minWidth: 0 }}>
@@ -373,7 +363,7 @@ const DashboardPage = () => {
                 </Typography>
               ) : (
                 upcomingMatches.map((match) => {
-                  const { day, month, time } = formatMatchDate(
+                  const { day, month, time } = formatMatchDateTile(
                     match.scheduledAt,
                   );
                   return (

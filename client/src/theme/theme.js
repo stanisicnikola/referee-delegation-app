@@ -483,6 +483,14 @@ const delegateTheme = createPanelTheme({
   dark: "#ea580c",
 });
 
+const delegatePanelColors = {
+  ...refereePanelColors,
+  accent: panelVariantColors.delegate,
+  accentLight: delegateTheme.palette.primary.light,
+  orange: panelVariantColors.delegate,
+  cyan: sharedPanelPalette.secondary.main,
+};
+
 // Referee theme (green accent)
 const refereeTheme = createPanelTheme({
   main: "#22c55e",
@@ -499,6 +507,7 @@ export {
   adminTheme,
   delegateTheme,
   refereeTheme,
+  delegatePanelColors,
   panelVariantColors,
   refereePanelColors,
 };
