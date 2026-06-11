@@ -19,7 +19,7 @@ const DELEGATION_STATUS = {
   pending: { label: "Pending", color: "#eab308", bg: "rgba(234,179,8,0.12)" },
   partial: { label: "Partial", color: "#f97316", bg: "rgba(249,115,22,0.12)" },
   complete: {
-    label: "Crew assigned",
+    label: "Assigned",
     color: "#38bdf8",
     bg: "rgba(56,189,248,0.12)",
   },

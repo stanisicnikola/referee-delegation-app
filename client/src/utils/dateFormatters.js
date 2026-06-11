@@ -58,3 +58,26 @@ export const formatShortDateLabel = (dateString) => {
     }),
   };
 };
+
+export const formatDateTimeLabel = (
+  dateTime,
+  fallback = { date: "-", time: "-" },
+) => {
+  if (!dateTime) return fallback;
+
+  const date = new Date(dateTime);
+
+  if (Number.isNaN(date.getTime())) return fallback;
+
+  return {
+    date: date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }),
+    time: date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+};

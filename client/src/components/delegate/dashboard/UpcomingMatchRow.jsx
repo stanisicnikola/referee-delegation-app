@@ -1,6 +1,6 @@
 import { Box, Chip, Typography } from "@mui/material";
 import { LocationOn as LocationIcon } from "@mui/icons-material";
-import DelegationStatusBadge from "./DelegationStatusBadge";
+import DelegationStatusBadge from "../DelegationStatusBadge";
 import { delegatePanelColors as COLORS } from "../../../theme/theme";
 import { formatMatchDateTile } from "../../../utils/dateFormatters";
 import { getMatchTitle, getVenueLabel } from "../../../utils/matchDisplay";

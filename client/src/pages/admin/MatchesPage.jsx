@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Box, Chip, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Box, Chip, TablePagination, Typography } from "@mui/material";
 import {
   CalendarMonth as CalendarIcon,
   SportsBasketball as MatchIcon,
@@ -28,6 +28,12 @@ import {
   ConfirmDialog,
 } from "../../components/ui";
 import MatchStatusBadge from "../../components/user/MatchStatusBadge";
+import MatchTitle from "../../utils/MatchTitle";
+import MatchMobileCard, {
+  MatchMobileEmptyState,
+  MatchMobileSkeleton,
+} from "../../components/matches/MatchMobileCard";
+import { delegatePanelColors as COLORS } from "../../theme/theme";
 
 const MatchesPage = () => {
   const [page, setPage] = useState(0);
@@ -52,13 +58,20 @@ const MatchesPage = () => {
   const { data: statistics } = useMatchStatistics();
 
   const matches = data?.data || [];
-  const totalMatches = statistics?.data?.total || 0;
+  const statsTotalMatches = statistics?.data?.total || 0;
+  const totalMatches = data?.pagination?.total ?? matches.length;
   const scheduledMatches = statistics?.data?.scheduled || 0;
   const inProgressMatches = statistics?.data?.inProgress || 0;
   const completedMatches = statistics?.data?.completed || 0;
   const cancelledMatches = statistics?.data?.cancelled || 0;
   const postponedMatches = statistics?.data?.postponed || 0;
   const pendingDelegations = statistics?.data?.pendingDelegations || 0;
+  const tableLoading = isLoading || isFetching;
+  const hasFilters = Boolean(search) || statusFilter !== "all";
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, statusFilter]);
 
   const handleOpenModal = (match = null) => {
     setEditingMatch(match);
@@ -137,7 +150,7 @@ const MatchesPage = () => {
         stats={[
           {
             label: "Total Matches",
-            value: totalMatches,
+            value: statsTotalMatches,
             icon: MatchIcon,
             color: "#8b5cf6",
           },
@@ -191,7 +204,7 @@ const MatchesPage = () => {
           display: "flex",
           flexDirection: { xs: "column", sm: "row" },
           flexWrap: { sm: "wrap" },
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
           gap: 2,
         }}
       >
@@ -215,125 +228,187 @@ const MatchesPage = () => {
         />
       </Box>
 
-      {/* Table */}
-      <DataTable
-        columns={[
-          {
-            id: "id",
-            label: "Matches",
-            render: (_, match) => (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "10px",
-                    bgcolor: "#8b5cf615",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <MatchIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
+      <Box sx={{ display: { xs: "grid", md: "none" }, gap: 1.5 }}>
+        {tableLoading ? (
+          Array.from({ length: 3 }).map((_, index) => (
+            <MatchMobileSkeleton key={index} />
+          ))
+        ) : matches.length === 0 ? (
+          <MatchMobileEmptyState hasFilters={hasFilters} />
+        ) : (
+          matches.map((match) => (
+            <MatchMobileCard
+              key={match.id}
+              match={match}
+              accentColor='#8b5cf6'
+              status={
+                <MatchStatusBadge
+                  status={match.status}
+                  scheduledAt={match.scheduledAt}
+                />
+              }
+              actions={
+                <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+                  <EditButton onClick={() => handleOpenModal(match)} />
+                  <DeleteButton onClick={() => handleOpenDialog(match)} />
                 </Box>
-                <Box>
-                  <Typography
+              }
+            />
+          ))
+        )}
+
+        {!tableLoading && totalMatches > 0 && (
+          <Box
+            sx={{
+              bgcolor: COLORS.card,
+              borderRadius: "14px",
+              border: `1px solid ${COLORS.border}`,
+              overflow: "hidden",
+            }}
+          >
+            <TablePagination
+              component='div'
+              count={totalMatches}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              onRowsPerPageChange={(event) => {
+                setRowsPerPage(parseInt(event.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{
+                borderTop: `1px solid ${COLORS.border}`,
+                color: COLORS.muted,
+                "& .MuiTablePagination-selectIcon": { color: COLORS.muted },
+                "& .MuiIconButton-root": { color: COLORS.muted },
+                "& .Mui-disabled": { color: "#3f3f46 !important" },
+              }}
+            />
+          </Box>
+        )}
+      </Box>
+
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
+        <DataTable
+          columns={[
+            {
+              id: "id",
+              label: "Matches",
+              render: (_, match) => (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box
                     sx={{
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      color: "#fff",
+                      width: 40,
+                      height: 40,
+                      borderRadius: "10px",
+                      bgcolor: "#8b5cf615",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {match.homeTeam.name} - {match.awayTeam.name}
-                  </Typography>
+                    <MatchIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#fff",
+                      }}
+                    >
+                      <MatchTitle match={match} />
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            ),
-          },
-          {
-            id: "competition",
-            label: "Competition",
-            render: (_, match) => (
-              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                {match.competition.name}
-              </Typography>
-            ),
-          },
-          {
-            id: "round",
-            label: "Round",
-            render: (_, match) => (
-              <Chip
-                label={match.round}
-                size='small'
-                sx={{
-                  height: 22,
-                  minWidth: 28,
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  bgcolor: "rgba(107, 114, 128, 0.3)",
-                  color: "text.secondary",
-                }}
-              />
-            ),
-          },
-          {
-            id: "scheduledAt",
-            label: "Date & Time",
-            render: (_, match) => {
-              const dateTimeValue = match.scheduledAt;
-              const { date, time } = formatDateTime(dateTimeValue);
-
-              return (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <CalendarIcon sx={{ fontSize: 16, color: "#6b7280" }} />
-                  <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                    {date} - {time}
-                  </Typography>
-                </Box>
-              );
+              ),
             },
-          },
-          {
-            id: "status",
-            label: "Status",
-            render: (status, match) => (
-              <MatchStatusBadge
-                status={status}
-                scheduledAt={match.scheduledAt}
-              />
-            ),
-          },
-          {
-            id: "actions",
-            label: "Actions",
-            align: "right",
-            render: (_, match) => (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 0.5,
-                }}
-              >
-                <EditButton onClick={() => handleOpenModal(match)} />
-                <DeleteButton onClick={() => handleOpenDialog(match)} />
-              </Box>
-            ),
-          },
-        ]}
-        data={matches}
-        loading={isLoading || isFetching}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalRows={totalMatches}
-        onPageChange={setPage}
-        onRowsPerPageChange={(newRowsPerPage) => {
-          setRowsPerPage(newRowsPerPage);
-          setPage(0);
-        }}
-        emptyMessage='No matches found'
-      />
+            {
+              id: "competition",
+              label: "Competition",
+              render: (_, match) => (
+                <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                  {match.competition.name}
+                </Typography>
+              ),
+            },
+            {
+              id: "round",
+              label: "Round",
+              render: (_, match) => (
+                <Chip
+                  label={match.round}
+                  size='small'
+                  sx={{
+                    height: 22,
+                    minWidth: 28,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    bgcolor: "rgba(107, 114, 128, 0.3)",
+                    color: "text.secondary",
+                  }}
+                />
+              ),
+            },
+            {
+              id: "scheduledAt",
+              label: "Date & Time",
+              render: (_, match) => {
+                const dateTimeValue = match.scheduledAt;
+                const { date, time } = formatDateTime(dateTimeValue);
+
+                return (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <CalendarIcon sx={{ fontSize: 16, color: "#6b7280" }} />
+                    <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
+                      {date} - {time}
+                    </Typography>
+                  </Box>
+                );
+              },
+            },
+            {
+              id: "status",
+              label: "Status",
+              render: (status, match) => (
+                <MatchStatusBadge
+                  status={status}
+                  scheduledAt={match.scheduledAt}
+                />
+              ),
+            },
+            {
+              id: "actions",
+              label: "Actions",
+              align: "right",
+              render: (_, match) => (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 0.5,
+                  }}
+                >
+                  <EditButton onClick={() => handleOpenModal(match)} />
+                  <DeleteButton onClick={() => handleOpenDialog(match)} />
+                </Box>
+              ),
+            },
+          ]}
+          data={matches}
+          loading={tableLoading}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalRows={totalMatches}
+          onPageChange={setPage}
+          onRowsPerPageChange={(newRowsPerPage) => {
+            setRowsPerPage(newRowsPerPage);
+            setPage(0);
+          }}
+          emptyMessage='No matches found'
+        />
+      </Box>
 
       {/* Match Modal */}
       {modalOpen && (

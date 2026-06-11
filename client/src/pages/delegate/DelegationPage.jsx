@@ -385,7 +385,7 @@ const DelegationPage = () => {
         bg: "rgba(249, 115, 22, 0.12)",
       },
       complete: {
-        label: "Crew assigned",
+        label: "Assigned",
         color: "#38bdf8",
         bg: "rgba(56, 189, 248, 0.14)",
       },

@@ -22,6 +22,8 @@ const DataTable = ({
   onRowsPerPageChange,
   emptyMessage = "No data available",
   rowKey = "id",
+  onRowClick,
+  getRowSx,
 }) => {
   const tableMinWidth = Math.max(
     720,
@@ -98,26 +100,35 @@ const DataTable = ({
               <TableBody>
                 {data.length === 0
                   ? renderEmptyState()
-                  : data.map((row) => (
-                      <TableRow
-                        key={row[rowKey]}
-                        sx={{
-                          "&:hover": { bgcolor: "#1a1a1d" },
-                          "& td": { borderColor: "#242428" },
-                        }}
-                      >
-                        {columns.map((column) => (
-                          <TableCell
-                            key={column.id}
-                            align={column.align || "left"}
-                          >
-                            {column.render
-                              ? column.render(row[column.id], row)
-                              : row[column.id]}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
+                  : data.map((row) => {
+                      const isClickable = Boolean(onRowClick);
+
+                      return (
+                        <TableRow
+                          key={row[rowKey]}
+                          onClick={
+                            onRowClick ? () => onRowClick(row) : undefined
+                          }
+                          sx={{
+                            cursor: isClickable ? "pointer" : "default",
+                            "&:hover": { bgcolor: "#1a1a1d" },
+                            "& td": { borderColor: "#242428" },
+                            ...(getRowSx ? getRowSx(row) : {}),
+                          }}
+                        >
+                          {columns.map((column) => (
+                            <TableCell
+                              key={column.id}
+                              align={column.align || "left"}
+                            >
+                              {column.render
+                                ? column.render(row[column.id], row)
+                                : row[column.id]}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })}
               </TableBody>
             </Table>
           </TableContainer>

@@ -77,6 +77,7 @@ const MatchStatusBadge = ({ status = "scheduled", scheduledAt }) => {
           fontSize: "12px",
           fontWeight: 500,
           color: config.color,
+          whiteSpace: "nowrap",
         }}
       >
         {config.label}

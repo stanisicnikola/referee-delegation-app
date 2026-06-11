@@ -31,12 +31,12 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import SidebarUserMenu from "../components/ui/SidebarUserMenu";
-import { delegateTheme } from "../theme";
+import { delegateTheme as theme } from "../theme";
 
 const DRAWER_WIDTH = 256;
 
 const DelegateLayout = () => {
-  const isMobile = useMediaQuery(delegateTheme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -142,7 +142,12 @@ const DelegateLayout = () => {
             >
               RefDelegate
             </Typography>
-            <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
+            <Typography
+              sx={{
+                fontSize: "12px",
+                color: (theme) => theme.palette.primary.main,
+              }}
+            >
               Delegate Panel
             </Typography>
           </Box>
@@ -247,7 +252,7 @@ const DelegateLayout = () => {
   );
 
   return (
-    <ThemeProvider theme={delegateTheme}>
+    <ThemeProvider theme={theme}>
       <Box
         sx={{
           display: "flex",

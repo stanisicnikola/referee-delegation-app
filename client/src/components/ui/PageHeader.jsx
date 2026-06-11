@@ -8,6 +8,7 @@ const PageHeader = ({
   onRefresh,
   onAdd,
   addLabel = "New",
+  addButtonVariant = "admin-primary",
 }) => {
   return (
     <Box sx={{ mb: { xs: 3, md: 4 } }}>
@@ -66,6 +67,7 @@ const PageHeader = ({
           )}
           {onAdd && (
             <CustomButton
+              variant={addButtonVariant}
               startIcon={<AddIcon />}
               onClick={onAdd}
               sx={{
