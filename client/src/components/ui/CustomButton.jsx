@@ -1,4 +1,5 @@
-import { Button, CircularProgress } from "@mui/material";
+import { Box, Button, CircularProgress, Tooltip } from "@mui/material";
+import { InfoOutlined as InfoIcon } from "@mui/icons-material";
 import { alpha, useTheme } from "@mui/material/styles";
 
 /**
@@ -7,6 +8,7 @@ import { alpha, useTheme } from "@mui/material/styles";
  * @param {string} variant - admin-primary | delegate-primary | referee-primary | referee-accept | referee-decline | admin-outline | delegate-outline | referee-outline | primary | secondary | danger | outline
  * @param {boolean} loading - Shows a spinner if true
  * @param {boolean} disabled - Disables the button
+ * @param {string} infoTooltip - Optional helper text shown on hover/focus
  * @param {ReactNode} children - Button text or content
  * @param {object} sx - MUI style overrides
  */
@@ -14,8 +16,12 @@ const CustomButton = ({
   variant = "admin-primary",
   loading = false,
   disabled = false,
+  infoTooltip = "",
+  tooltipWrapperSx = {},
   children,
   sx = {},
+  startIcon,
+  endIcon,
   ...props
 }) => {
   const theme = useTheme();
@@ -256,18 +262,42 @@ const CustomButton = ({
     }
   };
 
-  return (
+  const button = (
     <Button
       disabled={disabled || loading}
+      startIcon={loading ? undefined : startIcon}
+      endIcon={loading ? undefined : endIcon}
       sx={{ ...getStyles(), ...sx }}
       {...props}
     >
       {loading ? (
         <CircularProgress size={20} sx={{ color: "inherit" }} />
       ) : (
-        children
+        <>
+          {children}
+          {infoTooltip && (
+            <InfoIcon
+              aria-label={infoTooltip}
+              sx={{
+                fontSize: 16,
+                opacity: disabled ? 0.8 : 0.95,
+                flexShrink: 0,
+              }}
+            />
+          )}
+        </>
       )}
     </Button>
+  );
+
+  if (!infoTooltip) return button;
+
+  return (
+    <Tooltip title={infoTooltip} arrow disableInteractive>
+      <Box component='span' sx={{ display: "inline-flex", ...tooltipWrapperSx }}>
+        {button}
+      </Box>
+    </Tooltip>
   );
 };
 

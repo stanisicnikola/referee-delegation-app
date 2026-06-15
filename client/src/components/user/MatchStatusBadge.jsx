@@ -45,7 +45,7 @@ const statusConfig = {
   },
 };
 
-const MatchStatusBadge = ({ status = "scheduled", scheduledAt }) => {
+const MatchStatusBadge = ({ status = "scheduled", scheduledAt, sx = {} }) => {
   let displayStatus = status;
 
   if (status === "scheduled" && scheduledAt) {
@@ -69,6 +69,7 @@ const MatchStatusBadge = ({ status = "scheduled", scheduledAt }) => {
         borderRadius: "10px",
         bgcolor: config.bg,
         border: `1px solid ${config.border}`,
+        ...sx,
       }}
     >
       <Icon sx={{ fontSize: 12, color: config.color }} />

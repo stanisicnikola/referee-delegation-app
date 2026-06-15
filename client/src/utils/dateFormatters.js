@@ -1,4 +1,5 @@
 import {
+  MONTH_NAMES,
   MONTH_SHORT_NAMES,
   WEEKDAY_SHORT_NAMES,
 } from "../constants/date";
@@ -13,6 +14,12 @@ export const DEFAULT_MATCH_DATE_TILE = {
 export const DEFAULT_SHORT_DATE_LABEL = {
   weekday: "-",
   label: "--",
+};
+
+export const DEFAULT_MATCH_SUMMARY_DATE = {
+  shortDay: "-",
+  fullDate: "TBA",
+  time: "--:--",
 };
 
 export const parseLocalDateKey = (dateString) => {
@@ -75,6 +82,25 @@ export const formatDateTimeLabel = (
       month: "2-digit",
       year: "numeric",
     }),
+    time: date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+};
+
+export const formatMatchSummaryDate = (dateString) => {
+  const date = new Date(dateString);
+
+  if (!dateString || Number.isNaN(date.getTime())) {
+    return DEFAULT_MATCH_SUMMARY_DATE;
+  }
+
+  return {
+    shortDay: WEEKDAY_SHORT_NAMES[date.getDay()].toUpperCase(),
+    fullDate: `${String(date.getDate()).padStart(2, "0")} ${
+      MONTH_NAMES[date.getMonth()]
+    } ${date.getFullYear()}`,
     time: date.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
