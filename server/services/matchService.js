@@ -373,6 +373,24 @@ class MatchService {
       throw new AppError("Match cannot be completed before it starts.", 400);
     }
 
+    const activeAssignments = await MatchReferee.findAll({
+      where: {
+        matchId: id,
+        status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
+      },
+      attributes: ["status"],
+    });
+
+    if (
+      activeAssignments.length < 3 ||
+      activeAssignments.some((assignment) => assignment.status !== "accepted")
+    ) {
+      throw new AppError(
+        "All three referees must accept before the match can be completed.",
+        400,
+      );
+    }
+
     await match.update({
       homeScore: resultData.homeScore,
       awayScore: resultData.awayScore,
