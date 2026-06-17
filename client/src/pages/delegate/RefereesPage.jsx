@@ -1,12 +1,5 @@
-import { useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Avatar,
-  Chip,
-  CircularProgress,
-} from "@mui/material";
+import { useMemo, useState } from "react";
+import { Box, Typography, Avatar, Chip, CircularProgress } from "@mui/material";
 import RefereeDetailsModal from "../../components/delegate/RefereeDetailsModal";
 import {
   Phone as PhoneIcon,
@@ -24,9 +17,31 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from "../../hooks";
-import { ConfirmDialog, FilterSearch } from "../../components/ui";
+import { ConfirmDialog, CustomButton, FilterSearch } from "../../components/ui";
 import UserModal from "../../components/user/UserModal";
 import StatusBadge from "../../components/user/StatusBadge";
+
+const CATEGORY_FILTERS = [
+  { value: "all", label: "All categories" },
+  { value: "international", label: "International" },
+  { value: "A", label: "Category A" },
+  { value: "B", label: "Category B" },
+  { value: "C", label: "Category C" },
+  { value: "regional", label: "Regional" },
+];
+
+const REFEREE_ONLY_ROLES = ["referee"];
+
+const AVATAR_GRADIENTS = [
+  "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+  "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
+  "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+  "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+  "linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%)",
+];
+
+const getAvatarColor = (index) =>
+  AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
 const RefereesPage = () => {
   const [search, setSearch] = useState("");
@@ -41,30 +56,27 @@ const RefereesPage = () => {
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
-  const referees = refereesData?.data || [];
+  const referees = useMemo(
+    () => refereesData?.data || [],
+    [refereesData?.data],
+  );
   const stats = statisticsData?.data || {};
 
-  // Filter referees
-  const filteredReferees = referees.filter((referee) => {
-    const fullName =
-      `${referee.user?.firstName} ${referee.user?.lastName}`.toLowerCase();
-    const matchesSearch =
-      search === "" || fullName.includes(search.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || referee.licenseCategory === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
-  const getAvatarColor = (index) => {
-    const colors = [
-      "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-      "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-      "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-      "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-      "linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%)",
-    ];
-    return colors[index % colors.length];
-  };
+  const filteredReferees = useMemo(
+    () =>
+      referees.filter((referee) => {
+        const fullName = `${referee.user?.firstName || ""} ${
+          referee.user?.lastName || ""
+        }`.toLowerCase();
+        const matchesSearch =
+          search.trim() === "" || fullName.includes(search.toLowerCase());
+        const matchesCategory =
+          categoryFilter === "all" ||
+          referee.licenseCategory === categoryFilter;
+        return matchesSearch && matchesCategory;
+      }),
+    [categoryFilter, referees, search],
+  );
 
   const handleOpenDetails = (referee) => {
     setDetailsReferee(referee);
@@ -236,24 +248,18 @@ const RefereesPage = () => {
                 </Typography>
               </Box>
             </Box>
-            <Button
+            <CustomButton
+              variant='delegate-primary'
               startIcon={<AddIcon />}
               onClick={() => handleOpenModal()}
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 px: 2.5,
                 py: 1.25,
-                borderRadius: "12px",
-                bgcolor: "#f97316",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: 600,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#ea580c" },
               }}
             >
               New referee
-            </Button>
+            </CustomButton>
           </Box>
         </Box>
       </Box>
@@ -295,41 +301,35 @@ const RefereesPage = () => {
               },
             }}
           >
-            {[
-              { value: "all", label: "All categories" },
-              { value: "international", label: "International" },
-              { value: "A", label: "Category A" },
-              { value: "B", label: "Category B" },
-              { value: "C", label: "Category C" },
-              { value: "regional", label: "Regional" },
-            ].map((category) => (
-              <Button
-                key={category.value}
-                onClick={() => setCategoryFilter(category.value)}
-                sx={{
-                  px: 2.5,
-                  py: 1,
-                  borderRadius: "10px",
-                  bgcolor:
-                    categoryFilter === category.value ? "#f97316" : "#121214",
-                  border: "1px solid",
-                  borderColor:
-                    categoryFilter === category.value ? "#f97316" : "#242428",
-                  color: categoryFilter === category.value ? "#fff" : "#9ca3af",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  textTransform: "none",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  "&:hover": {
-                    bgcolor:
-                      categoryFilter === category.value ? "#ea580c" : "#1a1a1d",
-                  },
-                }}
-              >
-                {category.label}
-              </Button>
-            ))}
+            {CATEGORY_FILTERS.map((category) => {
+              const selected = categoryFilter === category.value;
+
+              return (
+                <CustomButton
+                  key={category.value}
+                  variant={selected ? "delegate-primary" : "outline"}
+                  onClick={() => setCategoryFilter(category.value)}
+                  sx={{
+                    px: 2.5,
+                    py: 1,
+                    borderRadius: "10px",
+                    bgcolor: selected ? "#f97316" : "#121214",
+                    borderColor: selected ? "#f97316" : "#242428",
+                    color: selected ? "#fff" : "#9ca3af",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    minWidth: "auto",
+                    "&:hover": {
+                      bgcolor: selected ? "#ea580c" : "#1a1a1d",
+                    },
+                  }}
+                >
+                  {category.label}
+                </CustomButton>
+              );
+            })}
           </Box>
         </Box>
 
@@ -344,7 +344,8 @@ const RefereesPage = () => {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                md: "repeat(3, 1fr)",
+                sm: "repeat(2, 1fr)",
+                lg: "repeat(3, 1fr)",
               },
               gap: { xs: 2, md: 3 },
             }}
@@ -370,71 +371,100 @@ const RefereesPage = () => {
                   <Box
                     sx={{
                       p: { xs: 2, sm: 2.5 },
+                      pt: { xs: 0.75, sm: 1 },
+                      pr: { xs: 0.75, sm: 1 },
                       borderBottom: "1px solid #242428",
                       display: "flex",
-                      alignItems: "flex-start",
-                      gap: 2,
+                      flexDirection: "column",
+                      gap: 0.5,
                       minWidth: 0,
                     }}
                   >
-                    <Avatar
+                    <Box
                       sx={{
-                        width: { xs: 48, sm: 56 },
-                        height: { xs: 48, sm: 56 },
-                        background: getAvatarColor(index),
-                        fontSize: "18px",
-                        fontWeight: 700,
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        width: "100%",
                       }}
                     >
-                      {referee.user?.firstName?.[0]}
-                      {referee.user?.lastName?.[0]}
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box
+                      <StatusBadge
+                        status={referee.user?.status}
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          minWidth: 0,
+                          px: 1,
+                          py: 0.35,
+                          borderRadius: "12px",
+                        }}
+                        iconSx={{ fontSize: 11 }}
+                        labelSx={{ fontSize: "11px", fontWeight: 700 }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 2,
+                        minWidth: 0,
+                        width: "100%",
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: { xs: 48, sm: 56 },
+                          height: { xs: 48, sm: 56 },
+                          background: getAvatarColor(index),
+                          fontSize: "18px",
+                          fontWeight: 700,
                         }}
                       >
-                        <Typography
+                        {referee.user?.firstName?.[0]}
+                        {referee.user?.lastName?.[0]}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box
                           sx={{
-                            fontWeight: 600,
-                            color: "#fff",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            display: "flex",
+                            alignItems: "center",
+                            minWidth: 0,
                           }}
                         >
-                          {referee.user?.firstName} {referee.user?.lastName}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          mt: 0.5,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <Chip
-                          icon={
-                            <StarIcon sx={{ fontSize: "14px !important" }} />
-                          }
-                          label={`Cat. ${referee.licenseCategory || "N/A"}`}
-                          size='small'
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              color: "#fff",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {referee.user?.firstName} {referee.user?.lastName}
+                          </Typography>
+                        </Box>
+                        <Box
                           sx={{
-                            bgcolor: "rgba(249, 115, 22, 0.1)",
-                            color: "#f97316",
-                            border: "1px solid rgba(249, 115, 22, 0.3)",
-                            fontWeight: 500,
-                            fontSize: "12px",
-                            height: 24,
-                            "& .MuiChip-icon": { color: "#f97316" },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            mt: 0.5,
+                            flexWrap: "wrap",
                           }}
-                        />
-                        <StatusBadge status={referee.user?.status} />
+                        >
+                          <Chip
+                            icon={
+                              <StarIcon sx={{ fontSize: "14px !important" }} />
+                            }
+                            label={`Cat. ${referee.licenseCategory || "N/A"}`}
+                            size='small'
+                            sx={{
+                              bgcolor: "rgba(40, 36, 33, 0.1)",
+                              color: "#f97316",
+                              border: "1px solid rgba(249, 115, 22, 0.3)",
+                              fontWeight: 500,
+                              fontSize: "12px",
+                              height: 24,
+                              "& .MuiChip-icon": { color: "#f97316" },
+                            }}
+                          />
+                        </Box>
                       </Box>
                     </Box>
                   </Box>
@@ -507,46 +537,56 @@ const RefereesPage = () => {
                         flexWrap: "wrap",
                       }}
                     >
-                      <Button
+                      <CustomButton
+                        variant='secondary'
                         size='small'
                         onClick={() => handleOpenDetails(referee)}
                         sx={{
-                          color: "#f97316",
-                          textTransform: "none",
                           fontWeight: 600,
                           bgcolor: "#1a1a1d",
+                          minWidth: "auto",
+                          px: 2,
+                          py: 0.875,
                           "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
                         }}
                       >
                         View details
-                      </Button>
+                      </CustomButton>
                       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        <Button
+                        <CustomButton
+                          variant='outline'
                           size='small'
                           startIcon={<EditIcon />}
                           onClick={() => handleOpenModal(referee)}
                           sx={{
                             color: "#9ca3af",
-                            textTransform: "none",
                             fontWeight: 600,
+                            border: 0,
+                            minWidth: "auto",
+                            px: 1.5,
+                            py: 0.75,
                             "&:hover": { bgcolor: "#242428", color: "#fff" },
                           }}
                         >
                           Edit
-                        </Button>
-                        <Button
+                        </CustomButton>
+                        <CustomButton
+                          variant='danger-outline'
                           size='small'
                           startIcon={<DeleteIcon />}
                           onClick={() => setRefereeToDelete(referee)}
                           sx={{
                             color: "#ef4444",
-                            textTransform: "none",
                             fontWeight: 600,
+                            border: 0,
+                            minWidth: "auto",
+                            px: 1.5,
+                            py: 0.75,
                             "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
                           }}
                         >
                           Delete
-                        </Button>
+                        </CustomButton>
                       </Box>
                     </Box>
                   </Box>
@@ -569,7 +609,8 @@ const RefereesPage = () => {
         onConfirm={handleSubmit}
         isLoading={createUser.isPending || updateUser.isPending}
         editUser={editingUser}
-        allowedRoles={["referee"]}
+        allowedRoles={REFEREE_ONLY_ROLES}
+        panelVariant='delegate'
       />
       <ConfirmDialog
         open={Boolean(refereeToDelete)}

@@ -2,7 +2,19 @@ import { Box, Typography, Checkbox, FormControlLabel } from "@mui/material";
 import { Controller } from "react-hook-form";
 import { CustomInput, CustomSelect, PasswordInput } from "../ui";
 
-const AdminDelegateForm = ({ control, errors, editUser }) => {
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "suspended", label: "Suspended" },
+];
+
+const AdminDelegateForm = ({
+  control,
+  errors,
+  editUser,
+  variant = "admin",
+  accentColor = "#8b5cf6",
+}) => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* General Information */}
@@ -39,6 +51,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                   label='First Name *'
                   placeholder='Enter first name'
                   error={errors?.firstName?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -53,6 +66,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                   label='Last Name *'
                   placeholder='Enter last name'
                   error={errors?.lastName?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -77,6 +91,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                   type='email'
                   placeholder='email@example.com'
                   error={errors?.email?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -91,6 +106,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                   label='Phone'
                   placeholder='+387 6X XXX XXX'
                   error={errors?.phone?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -106,11 +122,8 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                 <CustomSelect
                   {...field}
                   label='Status *'
-                  options={[
-                    { value: "active", label: "Active" },
-                    { value: "inactive", label: "Inactive" },
-                    { value: "suspended", label: "Suspended" },
-                  ]}
+                  options={STATUS_OPTIONS}
+                  variant={variant}
                 />
               )}
             />
@@ -138,6 +151,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                   placeholder='Minimum 8 characters'
                   autoComplete='off'
                   error={errors?.password?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -153,6 +167,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                   placeholder='Repeat password'
                   autoComplete='off'
                   error={errors?.confirmPassword?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -181,7 +196,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                     checked={field.value}
                     sx={{
                       color: "#3f3f46",
-                      "&.Mui-checked": { color: "#8b5cf6" },
+                      "&.Mui-checked": { color: accentColor },
                     }}
                   />
                 }
@@ -204,7 +219,7 @@ const AdminDelegateForm = ({ control, errors, editUser }) => {
                     checked={field.value}
                     sx={{
                       color: "#3f3f46",
-                      "&.Mui-checked": { color: "#8b5cf6" },
+                      "&.Mui-checked": { color: accentColor },
                     }}
                   />
                 }

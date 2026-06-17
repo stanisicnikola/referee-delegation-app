@@ -2,7 +2,27 @@ import { Box, Typography, Checkbox, FormControlLabel } from "@mui/material";
 import { Controller } from "react-hook-form";
 import { CustomInput, CustomSelect, PasswordInput } from "../ui";
 
-const RefereeForm = ({ control, errors, editUser }) => {
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "suspended", label: "Suspended" },
+];
+
+const LICENSE_CATEGORY_OPTIONS = [
+  { value: "international", label: "International" },
+  { value: "A", label: "Category A" },
+  { value: "B", label: "Category B" },
+  { value: "C", label: "Category C" },
+  { value: "regional", label: "Regional" },
+];
+
+const RefereeForm = ({
+  control,
+  errors,
+  editUser,
+  variant = "admin",
+  accentColor = "#8b5cf6",
+}) => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* General Information */}
@@ -39,6 +59,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   label='First Name *'
                   placeholder='Enter first name'
                   error={errors?.firstName?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -53,6 +74,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   label='Last Name *'
                   placeholder='Enter last name'
                   error={errors?.lastName?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -77,6 +99,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   type='email'
                   placeholder='email@example.com'
                   error={errors?.email?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -91,6 +114,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   label='Phone'
                   placeholder='+387 6X XXX XXX'
                   error={errors?.phone?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -106,11 +130,8 @@ const RefereeForm = ({ control, errors, editUser }) => {
                 <CustomSelect
                   {...field}
                   label='Status *'
-                  options={[
-                    { value: "active", label: "Active" },
-                    { value: "inactive", label: "Inactive" },
-                    { value: "suspended", label: "Suspended" },
-                  ]}
+                  options={STATUS_OPTIONS}
+                  variant={variant}
                   error={errors?.status?.message}
                 />
               )}
@@ -153,6 +174,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   label='License Number *'
                   placeholder='SUD-XXXX-XXX'
                   error={errors?.licenseNumber?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -165,13 +187,8 @@ const RefereeForm = ({ control, errors, editUser }) => {
                 <CustomSelect
                   {...field}
                   label='Category *'
-                  options={[
-                    { value: "international", label: "International" },
-                    { value: "A", label: "Category A" },
-                    { value: "B", label: "Category B" },
-                    { value: "C", label: "Category C" },
-                    { value: "regional", label: "Regional" },
-                  ]}
+                  options={LICENSE_CATEGORY_OPTIONS}
+                  variant={variant}
                   error={errors?.licenseCategory?.message}
                 />
               )}
@@ -196,6 +213,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   label='City *'
                   placeholder='e.g. Sarajevo'
                   error={errors?.city?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -211,6 +229,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   autoComplete='on'
                   placeholder='0'
                   error={errors?.experienceYears?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -238,6 +257,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   placeholder='Minimum 8 characters'
                   autoComplete='off'
                   error={errors?.password?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -253,6 +273,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                   placeholder='Repeat password'
                   autoComplete='off'
                   error={errors?.confirmPassword?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -281,7 +302,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                     checked={field.value}
                     sx={{
                       color: "#3f3f46",
-                      "&.Mui-checked": { color: "#8b5cf6" },
+                      "&.Mui-checked": { color: accentColor },
                     }}
                   />
                 }
@@ -304,7 +325,7 @@ const RefereeForm = ({ control, errors, editUser }) => {
                     checked={field.value}
                     sx={{
                       color: "#3f3f46",
-                      "&.Mui-checked": { color: "#8b5cf6" },
+                      "&.Mui-checked": { color: accentColor },
                     }}
                   />
                 }

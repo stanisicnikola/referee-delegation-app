@@ -5,12 +5,41 @@ import {
   VerifiedUser as AdminIcon,
 } from "@mui/icons-material";
 
+const ROLE_OPTIONS = [
+  {
+    value: "referee",
+    label: "Referee",
+    icon: PersonIcon,
+    color: "#22c55e",
+  },
+  {
+    value: "delegate",
+    label: "Delegate",
+    icon: GroupsIcon,
+    color: "#3b82f6",
+  },
+  {
+    value: "admin",
+    label: "Admin",
+    icon: AdminIcon,
+    color: "#8b5cf6",
+  },
+];
+
+const VARIANT_ACCENTS = {
+  admin: "#8b5cf6",
+  delegate: "#f97316",
+  referee: "#22c55e",
+};
+
 const RoleSelection = ({
   watchedRole,
   allowedRoles,
   onChange,
   editUser = null,
+  variant = "admin",
 }) => {
+  const accentColor = VARIANT_ACCENTS[variant] || VARIANT_ACCENTS.admin;
   const labelStyles = {
     fontSize: "14px",
     fontWeight: 500,
@@ -27,26 +56,7 @@ const RoleSelection = ({
           gap: { xs: 1, sm: 1.5 },
         }}
       >
-        {[
-          {
-            value: "referee",
-            label: "Referee",
-            icon: PersonIcon,
-            color: "#22c55e",
-          },
-          {
-            value: "delegate",
-            label: "Delegate",
-            icon: GroupsIcon,
-            color: "#3b82f6",
-          },
-          {
-            value: "admin",
-            label: "Admin",
-            icon: AdminIcon,
-            color: "#8b5cf6",
-          },
-        ].map((role) => {
+        {ROLE_OPTIONS.map((role) => {
           const isSelected = watchedRole === role.value;
           const isDisabled =
             (editUser && !isSelected) ||
@@ -62,7 +72,7 @@ const RoleSelection = ({
                 p: { xs: 1.5, sm: 2 },
                 bgcolor: "#1a1a1d",
                 border: "2px solid",
-                borderColor: isSelected ? "#8b5cf6" : "#242428",
+                borderColor: isSelected ? accentColor : "#242428",
                 borderRadius: "12px",
                 textAlign: { xs: "left", sm: "center" },
                 display: "flex",
@@ -77,11 +87,11 @@ const RoleSelection = ({
                   borderColor: isDisabled
                     ? "#242428"
                     : isSelected
-                      ? "#8b5cf6"
+                      ? accentColor
                       : "#3f3f46",
                 },
                 ...(isSelected && {
-                  bgcolor: "rgba(139, 92, 246, 0.1)",
+                  bgcolor: `${accentColor}1a`,
                 }),
               }}
             >

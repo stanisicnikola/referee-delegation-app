@@ -240,7 +240,6 @@ const CustomButton = ({
           ...baseStyles,
           border: "1px solid #ef4444",
           color: "#ef4444",
-          borderRadius: "8px",
           "&:hover": {
             bgcolor: "rgba(239, 68, 68, 0.05)",
             borderColor: "#dc2626",
@@ -294,7 +293,10 @@ const CustomButton = ({
 
   return (
     <Tooltip title={infoTooltip} arrow disableInteractive>
-      <Box component='span' sx={{ display: "inline-flex", ...tooltipWrapperSx }}>
+      <Box
+        component='span'
+        sx={{ display: "inline-flex", ...tooltipWrapperSx }}
+      >
         {button}
       </Box>
     </Tooltip>

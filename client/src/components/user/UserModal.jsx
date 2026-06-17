@@ -1,11 +1,5 @@
-import { useCallback, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
+import { useCallback, useEffect, useMemo } from "react";
+import { Box, Typography, IconButton } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +14,30 @@ import {
 import RoleSelection from "./RoleSelection";
 import RefereeForm from "./RefereeForm";
 import AdminDelegateForm from "./AdminDelegateForm";
+import CustomButton from "../ui/CustomButton";
+
+const PANEL_ACCENTS = {
+  admin: "#8b5cf6",
+  delegate: "#f97316",
+  referee: "#22c55e",
+};
+
+const PANEL_PRIMARY_VARIANTS = {
+  admin: "admin-primary",
+  delegate: "delegate-primary",
+  referee: "referee-primary",
+};
+
+const getRoleLabel = (allowedRoles) => {
+  if (allowedRoles?.length !== 1) return "User";
+
+  const [role] = allowedRoles;
+  if (role === "referee") return "Referee";
+  if (role === "delegate") return "Delegate";
+  if (role === "admin") return "Admin";
+
+  return "User";
+};
 
 const UserModal = ({
   open,
@@ -28,7 +46,15 @@ const UserModal = ({
   isLoading,
   editUser = null,
   allowedRoles = null,
+  panelVariant = "admin",
 }) => {
+  const accentColor = PANEL_ACCENTS[panelVariant] || PANEL_ACCENTS.admin;
+  const primaryVariant =
+    PANEL_PRIMARY_VARIANTS[panelVariant] || PANEL_PRIMARY_VARIANTS.admin;
+  const roleLabel = getRoleLabel(allowedRoles);
+  const modalTitle = editUser ? `Edit ${roleLabel}` : `New ${roleLabel}`;
+  const submitLabel = editUser ? `Update ${roleLabel}` : `Create ${roleLabel}`;
+
   const getFormValues = useCallback(
     (user = null) => {
       return {
@@ -55,15 +81,24 @@ const UserModal = ({
     [allowedRoles],
   );
 
-  // Switch schemas based on role and edit/create mode
-  const getResolver = (role) => {
-    if (role === "referee") {
-      return zodResolver(editUser ? refereeSchema : createRefereeSchema);
-    }
-    return zodResolver(
-      editUser ? adminDelegateSchema : createAdminDelegateSchema,
-    );
-  };
+  const refereeResolver = useMemo(
+    () => zodResolver(editUser ? refereeSchema : createRefereeSchema),
+    [editUser],
+  );
+  const adminDelegateResolver = useMemo(
+    () => zodResolver(editUser ? adminDelegateSchema : createAdminDelegateSchema),
+    [editUser],
+  );
+  const resolver = useCallback(
+    (values, context, options) => {
+      const currentRole = values.role || allowedRoles?.[0] || "referee";
+      const currentResolver =
+        currentRole === "referee" ? refereeResolver : adminDelegateResolver;
+
+      return currentResolver(values, context, options);
+    },
+    [adminDelegateResolver, allowedRoles, refereeResolver],
+  );
 
   const {
     control,
@@ -74,11 +109,7 @@ const UserModal = ({
     reset,
     clearErrors,
   } = useForm({
-    resolver: (values, context, options) => {
-      // Dynamic resolver based on watched role
-      const currentRole = values.role || "referee";
-      return getResolver(currentRole)(values, context, options);
-    },
+    resolver,
     defaultValues: getFormValues(editUser),
   });
 
@@ -99,7 +130,11 @@ const UserModal = ({
   // Reset form when modal opens or editUser changes
   useEffect(() => {
     if (open) {
-      reset(getFormValues(editUser));
+      reset(getFormValues(editUser), {
+        keepErrors: false,
+        keepDirty: false,
+        keepTouched: false,
+      });
     }
   }, [open, editUser, reset, getFormValues]);
 
@@ -123,7 +158,6 @@ const UserModal = ({
   };
 
   const handleClose = () => {
-    reset(getFormValues(null));
     onClose();
   };
 
@@ -166,11 +200,6 @@ const UserModal = ({
           maxWidth: 640,
           maxHeight: { xs: "calc(100dvh - 16px)", sm: "90vh" },
           overflow: "auto",
-          animation: "slideIn 0.3s ease-out",
-          "@keyframes slideIn": {
-            from: { opacity: 0, transform: "translateY(10px)" },
-            to: { opacity: 1, transform: "translateY(0)" },
-          },
         }}
       >
         {/* Header */}
@@ -195,7 +224,7 @@ const UserModal = ({
               color: "#fff",
             }}
           >
-            {editUser ? "Edit User" : "New User"}
+            {modalTitle}
           </Typography>
           <IconButton
             onClick={handleClose}
@@ -217,9 +246,15 @@ const UserModal = ({
           {/* Role Selection */}
           <RoleSelection
             watchedRole={watchedRole}
-            onChange={(value) => setValue("role", value)}
+            onChange={(value) =>
+              setValue("role", value, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
             editUser={editUser}
             allowedRoles={allowedRoles}
+            variant={panelVariant}
           />
 
           {/* Dynamic Form Content */}
@@ -228,12 +263,16 @@ const UserModal = ({
               control={control}
               errors={errors}
               editUser={editUser}
+              variant={panelVariant}
+              accentColor={accentColor}
             />
           ) : (
             <AdminDelegateForm
               control={control}
               errors={errors}
               editUser={editUser}
+              variant={panelVariant}
+              accentColor={accentColor}
             />
           )}
         </Box>
@@ -254,46 +293,23 @@ const UserModal = ({
             gap: 1.5,
           }}
         >
-          <Button
+          <CustomButton
+            variant='outline'
             onClick={handleClose}
             disabled={isLoading}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#fff",
-              width: { xs: "100%", sm: "auto" },
-              "&:hover": { bgcolor: "#242428" },
-            }}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             Cancel
-          </Button>
-          <Button
+          </CustomButton>
+          <CustomButton
             type='submit'
+            variant={primaryVariant}
             disabled={isLoading}
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#fff",
-              bgcolor: "#8b5cf6",
-              width: { xs: "100%", sm: "auto" },
-              "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#3f3f46", color: "#6b7280" },
-            }}
+            loading={isLoading}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
-            {isLoading ? (
-              <CircularProgress size={20} sx={{ color: "#fff" }} />
-            ) : editUser ? (
-              "Update User"
-            ) : (
-              "Create User"
-            )}
-          </Button>
+            {submitLabel}
+          </CustomButton>
         </Box>
       </Box>
     </Box>

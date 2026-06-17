@@ -46,7 +46,12 @@ const statusConfig = {
   },
 };
 
-const StatusBadge = ({ status = "inactive" }) => {
+const StatusBadge = ({
+  status = "inactive",
+  sx = {},
+  iconSx = {},
+  labelSx = {},
+}) => {
   const config = statusConfig[status] || statusConfig.inactive;
   const Icon = config.icon;
 
@@ -61,11 +66,17 @@ const StatusBadge = ({ status = "inactive" }) => {
         borderRadius: "10px",
         bgcolor: config.bg,
         border: `1px solid ${config.border}`,
+        ...sx,
       }}
     >
-      <Icon sx={{ fontSize: 12, color: config.color }} />
+      <Icon sx={{ fontSize: 12, color: config.color, ...iconSx }} />
       <Typography
-        sx={{ fontSize: "12px", fontWeight: 500, color: config.color }}
+        sx={{
+          fontSize: "12px",
+          fontWeight: 500,
+          color: config.color,
+          ...labelSx,
+        }}
       >
         {config.label}
       </Typography>
