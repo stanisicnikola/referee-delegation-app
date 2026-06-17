@@ -1,48 +1,84 @@
-import { Box, Chip, Paper, Typography } from "@mui/material";
+import { useState } from "react";
+import { Box, Button, Chip, Paper, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { EventAvailable as EventAvailableIcon } from "@mui/icons-material";
-import { DeleteButton } from "../../ui";
+import { CustomButton, DeleteButton } from "../../ui";
 import {
   AVAILABILITY_COLORS as COLORS,
   AVAILABILITY_STATUS_META,
 } from "./constants";
 import { formatDateRange } from "./availabilityUtils";
 
+const COLLAPSED_PERIOD_LIMIT = 2;
+
 const getStatusMeta = (theme, status) => {
-  const meta = AVAILABILITY_STATUS_META[status] || AVAILABILITY_STATUS_META.pending;
+  const meta =
+    AVAILABILITY_STATUS_META[status] || AVAILABILITY_STATUS_META.pending;
   const color = theme.palette[meta.palette].main;
 
   return { ...meta, color };
 };
 
-const AvailabilityPeriodsSection = ({ periods, onDelete }) => (
-  <Box sx={{ mb: 4 }}>
-    <Typography
-      sx={{
-        mb: 2,
-        color: COLORS.text,
-        fontSize: { xs: "22px", md: "26px" },
-        fontWeight: 700,
-      }}
-    >
-      Reported unavailable periods
-    </Typography>
+const AvailabilityPeriodsSection = ({ periods, onDelete }) => {
+  const [expanded, setExpanded] = useState(false);
+  const canToggle = periods.length > COLLAPSED_PERIOD_LIMIT;
+  const visiblePeriods = expanded
+    ? periods
+    : periods.slice(0, COLLAPSED_PERIOD_LIMIT);
 
-    {periods.length === 0 ? (
-      <EmptyPeriodsCard />
-    ) : (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {periods.map((period) => (
-          <AvailabilityPeriodCard
-            key={period.key}
-            period={period}
-            onDelete={onDelete}
-          />
-        ))}
-      </Box>
-    )}
-  </Box>
-);
+  return (
+    <Box sx={{ mb: 4 }}>
+      <Typography
+        sx={{
+          mb: 2,
+          color: COLORS.text,
+          fontSize: { xs: "22px", md: "26px" },
+          fontWeight: 700,
+        }}
+      >
+        Reported unavailable periods
+      </Typography>
+
+      {periods.length === 0 ? (
+        <EmptyPeriodsCard />
+      ) : (
+        <>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {visiblePeriods.map((period) => (
+              <AvailabilityPeriodCard
+                key={period.key}
+                period={period}
+                onDelete={onDelete}
+              />
+            ))}
+          </Box>
+
+          {canToggle && (
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
+              <Button
+                type='button'
+                onClick={() => setExpanded((value) => !value)}
+                sx={{
+                  color: COLORS.green,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: "10px",
+                  px: 1.5,
+                  py: 0.5,
+                  "&:hover": { bgcolor: "rgba(34, 197, 94, 0.08)" },
+                }}
+              >
+                {expanded
+                  ? "Show less"
+                  : `Show more (${periods.length - COLLAPSED_PERIOD_LIMIT})`}
+              </Button>
+            </Box>
+          )}
+        </>
+      )}
+    </Box>
+  );
+};
 
 const EmptyPeriodsCard = () => (
   <Paper
@@ -134,7 +170,10 @@ const AvailabilityPeriodCard = ({ period, onDelete }) => {
             borderRadius: "999px",
           }}
         />
-        <DeleteButton tooltip='Delete request' onClick={() => onDelete(period)} />
+        <DeleteButton
+          tooltip='Delete request'
+          onClick={() => onDelete(period)}
+        />
       </Box>
     </Paper>
   );

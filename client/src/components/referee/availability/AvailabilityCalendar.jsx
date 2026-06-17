@@ -49,6 +49,7 @@ const AvailabilityCalendar = ({
         borderRadius: "16px",
         bgcolor: COLORS.card,
         border: `1px solid ${COLORS.border}`,
+        mt: 3,
       }}
     >
       <Box
