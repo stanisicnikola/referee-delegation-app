@@ -102,7 +102,7 @@ const TeamsPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 0, md: 3 }, width: "100%", minWidth: 0 }}>
+    <Box sx={{ width: "100%", minWidth: 0 }}>
       <PageHeader
         title='Teams'
         subtitle='Manage basketball teams and clubs'

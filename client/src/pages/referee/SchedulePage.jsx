@@ -25,27 +25,24 @@ const SchedulePage = () => {
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
 
-  const scheduleQuery = useMemo(
-    () => {
-      const query = {
-        view: "schedule",
-        limit: SCHEDULE_QUERY_LIMIT,
-      };
+  const scheduleQuery = useMemo(() => {
+    const query = {
+      view: "schedule",
+      limit: SCHEDULE_QUERY_LIMIT,
+    };
 
-      if (selectedCompetition !== "all") {
-        query.competitionId = selectedCompetition;
-      }
-      if (selectedRole !== "all") {
-        query.role = selectedRole;
-      }
-      if (selectedPeriod !== "all") {
-        query.period = selectedPeriod;
-      }
+    if (selectedCompetition !== "all") {
+      query.competitionId = selectedCompetition;
+    }
+    if (selectedRole !== "all") {
+      query.role = selectedRole;
+    }
+    if (selectedPeriod !== "all") {
+      query.period = selectedPeriod;
+    }
 
-      return query;
-    },
-    [selectedCompetition, selectedPeriod, selectedRole],
-  );
+    return query;
+  }, [selectedCompetition, selectedPeriod, selectedRole]);
 
   const {
     data: assignmentsData,
@@ -111,11 +108,8 @@ const SchedulePage = () => {
   if (assignmentsLoading) return <LoadingSpinner fullPage />;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, width: "100%", minWidth: 0 }}>
-      <PageHeader
-        title='My Schedule'
-        subtitle='Overview of all your matches'
-      />
+    <Box sx={{ width: "100%", minWidth: 0 }}>
+      <PageHeader title='My Schedule' subtitle='Overview of all your matches' />
 
       <ScheduleFilters
         competitions={competitions}

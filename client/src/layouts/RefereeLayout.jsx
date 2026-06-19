@@ -1,41 +1,30 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  IconButton,
-  Menu,
-  MenuItem,
-  Divider,
-  ListItemIcon,
-  ListItemText,
-  Drawer,
-  AppBar,
-  Toolbar,
-  useMediaQuery,
-  ThemeProvider,
-} from "@mui/material";
+import { Box, Drawer, useMediaQuery, ThemeProvider } from "@mui/material";
 import {
   Home as HomeIcon,
   CalendarMonth as CalendarIcon,
   Assignment as AssignmentIcon,
   AccessTime as ClockIcon,
   History as HistoryIcon,
-  Person as PersonIcon,
-  Settings as SettingsIcon,
-  Logout as LogoutIcon,
-  Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
+  Public as LogoIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context";
-import SidebarUserMenu from "../components/ui/SidebarUserMenu";
 import { refereeTheme } from "../theme";
 import {
   useMyAssignments,
   useMyPendingAssignments,
 } from "../hooks/useReferees";
+import PanelMobileDrawerHeader from "./shared/PanelMobileDrawerHeader";
+import PanelSidebar from "./shared/PanelSidebar";
+import PanelTopBar from "./shared/PanelTopBar";
+import PanelUserMenu from "./shared/PanelUserMenu";
+import {
+  PANEL_DRAWER_PAPER_SX,
+  PANEL_SIDEBAR_WIDTH,
+} from "./shared/panelLayoutConstants";
 
-const SIDEBAR_WIDTH = 256;
+const SIDEBAR_WIDTH = PANEL_SIDEBAR_WIDTH;
 const SCHEDULE_BADGE_QUERY = {
   view: "schedule",
   period: "upcoming",
@@ -52,8 +41,13 @@ const RefereeLayout = () => {
   const { data: assignmentsData } = useMyAssignments(SCHEDULE_BADGE_QUERY);
   const { data: pendingAssignmentsData } = useMyPendingAssignments();
 
+  useEffect(() => {
+    setAnchorEl(null);
+  }, [isMobile]);
+
   const scheduleBadgeCount = useMemo(() => {
-    if (Array.isArray(assignmentsData?.data)) return assignmentsData.data.length;
+    if (Array.isArray(assignmentsData?.data))
+      return assignmentsData.data.length;
 
     return (assignmentsData?.groups || []).reduce(
       (count, group) => count + (group.matches?.length || 0),
@@ -64,12 +58,18 @@ const RefereeLayout = () => {
   const pendingDelegationCount = pendingAssignmentsData?.data?.length || 0;
 
   const navItems = [
-    { path: "/referee/dashboard", label: "Dashboard", icon: HomeIcon },
+    {
+      path: "/referee/dashboard",
+      label: "Dashboard",
+      icon: HomeIcon,
+      exact: true,
+    },
     {
       path: "/referee/schedule",
       label: "My Schedule",
       icon: CalendarIcon,
       badge: scheduleBadgeCount,
+      exact: true,
     },
     {
       path: "/referee/pending",
@@ -78,17 +78,27 @@ const RefereeLayout = () => {
       badge: pendingDelegationCount || null,
       badgeColor: "#eab308",
       badgePulse: pendingDelegationCount > 0,
+      exact: true,
     },
-    { path: "/referee/availability", label: "Availability", icon: ClockIcon },
+    {
+      path: "/referee/availability",
+      label: "Availability",
+      icon: ClockIcon,
+      exact: true,
+    },
   ];
 
   const bottomNavItems = [
-    { path: "/referee/history", label: "History", icon: HistoryIcon },
+    {
+      path: "/referee/history",
+      label: "History",
+      icon: HistoryIcon,
+      exact: true,
+    },
   ];
 
   const handleLogout = () => {
-    handleMenuClose();
-    setMobileOpen(false);
+    handleDrawerClose();
     logout();
     navigate("/login");
   };
@@ -101,247 +111,45 @@ const RefereeLayout = () => {
     setAnchorEl(null);
   };
 
+  const handleDrawerOpen = () => {
+    setMobileOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setMobileOpen(false);
+    setAnchorEl(null);
+  };
+
   const handleNavigation = (path) => {
     navigate(path);
-    if (isMobile) setMobileOpen(false);
+    if (isMobile) handleDrawerClose();
   };
-
-  const shouldPadSharedPage = ["/referee/profile", "/referee/settings"].some(
-    (path) => location.pathname.startsWith(path),
-  );
-
-  const getCurrentDate = () => {
-    const date = new Date();
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = date.toLocaleString("en-US", { month: "short" });
-    const year = date.getFullYear();
-    return `${day}. ${month} ${year}`;
-  };
-
-  const isActive = (path) => location.pathname === path;
-
-  const shouldShowBadge = (badge) => Number(badge) > 0;
 
   const sidebarContent = (
-    <Box
-      sx={{
-        width: SIDEBAR_WIDTH,
-        height: "100%",
-        bgcolor: "#121214",
-        borderRight: "1px solid #242428",
-        display: "flex",
-        flexDirection: "column",
+    <PanelSidebar
+      brand={{
+        subtitle: "Referee Panel",
+        icon: LogoIcon,
+        iconBackground: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
       }}
-    >
-      {/* Logo */}
-      <Box
-        sx={{
-          height: 97,
-          px: 3,
-          borderBottom: "1px solid #242428",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg
-              width='24'
-              height='24'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='white'
-              strokeWidth='2'
-            >
-              <circle cx='12' cy='12' r='10' />
-              <path d='M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20M2 12h20M12 2c2.5 2.5 4 6 4 10s-1.5 7.5-4 10M12 2c-2.5 2.5-4 6-4 10s1.5 7.5 4 10' />
-            </svg>
-          </Box>
-          <Box>
-            <Typography
-              sx={{ fontWeight: 700, fontSize: "18px", color: "#fff" }}
-            >
-              RefDelegate
-            </Typography>
-            <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-              Referee Panel
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Navigation */}
-      <Box sx={{ flex: 1, p: 2 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            return (
-              <Box
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  px: 2,
-                  py: 1.5,
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  color: active ? "#fff" : "#9ca3af",
-                  bgcolor: active ? "#242428" : "transparent",
-                  transition: "all 0.15s",
-                  "&:hover": {
-                    bgcolor: "#242428",
-                    color: "#fff",
-                  },
-                }}
-              >
-                <Icon sx={{ fontSize: 20 }} />
-                <Typography sx={{ fontWeight: 500, fontSize: "14px", flex: 1 }}>
-                  {item.label}
-                </Typography>
-                {shouldShowBadge(item.badge) && (
-                  <Box
-                    sx={{
-                      position: "relative",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {item.badgePulse && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: "999px",
-                          bgcolor: item.badgeColor,
-                          animation: "ping 1s cubic-bezier(0,0,0.2,1) infinite",
-                          opacity: 0.7,
-                          "@keyframes ping": {
-                            "75%, 100%": {
-                              transform: "scale(1.6)",
-                              opacity: 0,
-                            },
-                          },
-                        }}
-                      />
-                    )}
-                    <Box
-                      sx={{
-                        position: "relative",
-                        minWidth: 22,
-                        height: 22,
-                        px: 0.75,
-                        borderRadius: "999px",
-                        bgcolor: item.badgeColor
-                          ? `${item.badgeColor}20`
-                          : "rgba(34, 197, 94, 0.18)",
-                        color: item.badgeColor || "#22c55e",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        lineHeight: 1,
-                      }}
-                    >
-                      {item.badge}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            );
-          })}
-        </Box>
-
-        {/* Bottom Nav Items */}
-        <Box
-          sx={{
-            mt: 4,
-            pt: 4,
-            borderTop: "1px solid #242428",
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-          }}
-        >
-          {bottomNavItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            return (
-              <Box
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  px: 2,
-                  py: 1.5,
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  color: active ? "#fff" : "#9ca3af",
-                  bgcolor: active ? "#242428" : "transparent",
-                  transition: "all 0.15s",
-                  "&:hover": {
-                    bgcolor: "#242428",
-                    color: "#fff",
-                  },
-                }}
-              >
-                <Icon sx={{ fontSize: 20 }} />
-                <Typography sx={{ fontWeight: 500, fontSize: "14px" }}>
-                  {item.label}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* User Section */}
-      <Box sx={{ p: 2, borderTop: "1px solid #242428" }}>
-        <SidebarUserMenu
-          user={user}
-          roleLabel={`Category ${user?.referee?.licenseCategory || "N/A"}`}
-          onMenuOpen={handleMenuOpen}
-          onLogout={handleLogout}
-          rowSx={{
-            borderRadius: "8px",
-            transition: "all 0.2s",
-            "&:hover": { bgcolor: "#1a1a1d" },
-          }}
-          avatarSx={{
-            width: 40,
-            height: 40,
-            background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-            fontSize: "14px",
-          }}
-          nameTextSx={{
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#fff",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-          roleTextSx={{ fontSize: "12px", color: "#6b7280" }}
-          logoutButtonSx={{ color: "#6b7280" }}
-        />
-      </Box>
-    </Box>
+      sections={[{ items: navItems }]}
+      bottomSections={[
+        {
+          items: bottomNavItems,
+          divider: true,
+        },
+      ]}
+      pathname={location.pathname}
+      onNavigate={handleNavigation}
+      accentColor={refereeTheme.palette.primary.main}
+      userMenu={{
+        user,
+        roleLabel: `Category ${user?.referee?.licenseCategory || "N/A"}`,
+        onMenuOpen: handleMenuOpen,
+        onLogout: handleLogout,
+        avatarBackground: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+      }}
+    />
   );
 
   return (
@@ -354,55 +162,42 @@ const RefereeLayout = () => {
           bgcolor: "#0a0a0b",
         }}
       >
-        {/* Sidebar - Desktop */}
-        {!isMobile && (
-          <Box
+        <Box
+          component='nav'
+          sx={{ width: { md: SIDEBAR_WIDTH }, flexShrink: { md: 0 } }}
+        >
+          <Drawer
+            variant='temporary'
+            open={mobileOpen}
+            onClose={handleDrawerClose}
+            ModalProps={{ keepMounted: true }}
             sx={{
-              width: SIDEBAR_WIDTH,
-              flexShrink: 0,
-              position: "fixed",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              zIndex: 50,
+              display: { xs: "block", md: "none" },
+              "& .MuiDrawer-paper": PANEL_DRAWER_PAPER_SX,
             }}
           >
-            {sidebarContent}
-          </Box>
-        )}
+            <PanelMobileDrawerHeader onClose={handleDrawerClose} />
+            <Box sx={{ flex: 1, minHeight: 0 }}>{sidebarContent}</Box>
+          </Drawer>
 
-        {/* Sidebar - Mobile Drawer */}
-        <Drawer
-          variant='temporary'
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: "block", md: "none" },
-            "& .MuiDrawer-paper": {
-              width: SIDEBAR_WIDTH,
-              bgcolor: "#121214",
-              borderRight: "1px solid #242428",
-            },
-          }}
-        >
-          <Box sx={{ p: 1, display: "flex", justifyContent: "flex-end" }}>
-            <IconButton
-              onClick={() => setMobileOpen(false)}
-              sx={{ color: "#9ca3af" }}
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-          </Box>
-          {sidebarContent}
-        </Drawer>
+          <Drawer
+            variant='permanent'
+            sx={{
+              display: { xs: "none", md: "block" },
+              "& .MuiDrawer-paper": PANEL_DRAWER_PAPER_SX,
+            }}
+            open
+          >
+            {sidebarContent}
+          </Drawer>
+        </Box>
 
         {/* Main Content */}
         <Box
           component='main'
           sx={{
             flexGrow: 1,
-            ml: { xs: 0, md: `${SIDEBAR_WIDTH}px` },
+            width: { xs: "100%", md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
             minHeight: 0,
             minWidth: 0,
             height: "100vh",
@@ -410,58 +205,14 @@ const RefereeLayout = () => {
             flexDirection: "column",
           }}
         >
-          <AppBar
-            position='sticky'
-            elevation={0}
-            sx={{
-              bgcolor: "#0a0a0b",
-              borderBottom: "1px solid #242428",
-              flexShrink: 0,
-            }}
-          >
-            <Toolbar
-              sx={{
-                height: { xs: 56, md: 96 },
-                minHeight: { xs: "56px", md: "96px" },
-                px: { xs: 2, md: 4 },
-                justifyContent: "space-between",
-              }}
-            >
-              <IconButton
-                onClick={() => setMobileOpen(true)}
-                sx={{
-                  color: "#fff",
-                  mr: 2,
-                  display: { md: "none" },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-
-              <Box sx={{ flexGrow: 1 }} />
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CalendarIcon sx={{ color: "#9ca3af", fontSize: 24 }} />
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: "text.secondary",
-                    fontWeight: 500,
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                  }}
-                >
-                  {getCurrentDate()}
-                </Typography>
-              </Box>
-            </Toolbar>
-          </AppBar>
+          <PanelTopBar onMenuClick={handleDrawerOpen} />
 
           <Box
             sx={{
               flex: 1,
               minHeight: 0,
               minWidth: 0,
-              p: shouldPadSharedPage ? { xs: 2, md: 4 } : 0,
+              p: { xs: 2, md: 4 },
               overflowY: "auto",
               overflowX: "hidden",
               scrollbarGutter: "stable",
@@ -470,60 +221,14 @@ const RefereeLayout = () => {
             <Outlet />
           </Box>
         </Box>
-        <Menu
+        <PanelUserMenu
           anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
+          basePath='/referee'
+          accentColor={refereeTheme.palette.primary.main}
           onClose={handleMenuClose}
-          transformOrigin={{ horizontal: "left", vertical: "bottom" }}
-          anchorOrigin={{ horizontal: "left", vertical: "top" }}
-          PaperProps={{
-            sx: {
-              mt: -1,
-              minWidth: 200,
-              bgcolor: "#1a1a1d",
-              border: "1px solid",
-              borderColor: "#242428",
-            },
-          }}
-        >
-          <MenuItem
-            onClick={() => {
-              handleMenuClose();
-              setMobileOpen(false);
-              navigate("/referee/profile");
-            }}
-          >
-            <ListItemIcon>
-              <PersonIcon fontSize='small' sx={{ color: "#22c55e" }} />
-            </ListItemIcon>
-            <ListItemText primary='Profile' />
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              handleMenuClose();
-              setMobileOpen(false);
-              navigate("/referee/settings");
-            }}
-          >
-            <ListItemIcon>
-              <SettingsIcon fontSize='small' sx={{ color: "#22c55e" }} />
-            </ListItemIcon>
-            <ListItemText primary='Settings' />
-          </MenuItem>
-          <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.05)" }} />
-          <MenuItem
-            onClick={handleLogout}
-            sx={(theme) => ({ color: theme.palette.error.main })}
-          >
-            <ListItemIcon>
-              <LogoutIcon
-                fontSize='small'
-                sx={(theme) => ({ color: theme.palette.error.main })}
-              />
-            </ListItemIcon>
-            <ListItemText primary='Logout' />
-          </MenuItem>
-        </Menu>
+          onNavigate={handleNavigation}
+          onLogout={handleLogout}
+        />
       </Box>
     </ThemeProvider>
   );

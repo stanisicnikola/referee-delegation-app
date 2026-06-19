@@ -243,7 +243,7 @@ const AvailabilityPage = () => {
 
   if (error && !calendarData && !availabilityData) {
     return (
-      <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <Box sx={{ width: "100%" }}>
         <Alert severity='error'>
           Failed to load availability data: {error.message}
         </Alert>
@@ -252,7 +252,7 @@ const AvailabilityPage = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, width: "100%" }}>
+    <Box sx={{ width: "100%" }}>
       {error && (
         <Alert severity='error' sx={{ mb: 3 }}>
           Failed to refresh availability data: {error.message}

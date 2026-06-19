@@ -97,7 +97,7 @@ const VenuesPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 0, md: 3 }, width: "100%", minWidth: 0 }}>
+    <Box sx={{ width: "100%", minWidth: 0 }}>
       <PageHeader
         title='Venues'
         subtitle='Manage sports halls and arenas'

@@ -104,7 +104,7 @@ const UsersPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 0, md: 3 }, width: "100%", minWidth: 0 }}>
+    <Box sx={{ width: "100%", minWidth: 0 }}>
       {/* Header */}
       <PageHeader
         title='Users Management'

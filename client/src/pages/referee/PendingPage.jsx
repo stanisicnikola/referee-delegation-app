@@ -90,8 +90,6 @@ const PendingPage = () => {
     <Box sx={{ minHeight: "100%", bgcolor: COLORS.bg, color: COLORS.text }}>
       <Box
         sx={{
-          px: { xs: 2, sm: 3, lg: 4 },
-          py: { xs: 2.5, md: 3 },
           maxWidth: 1800,
           mx: "auto",
         }}

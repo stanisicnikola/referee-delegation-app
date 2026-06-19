@@ -83,7 +83,7 @@ const HistoryPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, width: "100%", minWidth: 0 }}>
+    <Box sx={{ width: "100%", minWidth: 0 }}>
       <PageHeader title='History' subtitle='Completed matches you officiated' />
 
       <StatsGrid

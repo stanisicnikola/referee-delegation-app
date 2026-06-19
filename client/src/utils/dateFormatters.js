@@ -89,6 +89,16 @@ export const formatDateTimeLabel = (
   };
 };
 
+export const formatPanelHeaderDate = (dateInput = new Date()) => {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return `${String(date.getDate()).padStart(2, "0")}. ${
+    MONTH_SHORT_NAMES[date.getMonth()]
+  } ${date.getFullYear()}`;
+};
+
 export const formatMatchSummaryDate = (dateString) => {
   const date = new Date(dateString);
 

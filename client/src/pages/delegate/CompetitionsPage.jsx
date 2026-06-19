@@ -616,7 +616,6 @@ const CompetitionsPage = () => {
                       </Button>
 
                       <Box
-                        s
                         sx={{
                           display: "grid",
                           gridTemplateColumns: "1fr 1fr",
