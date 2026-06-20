@@ -14,6 +14,8 @@ const PostponeMatchDialog = ({
   open,
   editMatch,
   isLoading,
+  accentColor = "#8b5cf6",
+  primaryButtonVariant = "admin-primary",
   onClose,
   onSubmit,
 }) => {
@@ -127,6 +129,7 @@ const PostponeMatchDialog = ({
               type='date'
               label='New date *'
               value={postponeDate}
+              accentColor={accentColor}
               onChange={(event) => setPostponeDate(event.target.value)}
               sx={{
                 "& input::-webkit-calendar-picker-indicator": {
@@ -143,6 +146,7 @@ const PostponeMatchDialog = ({
               type='time'
               label='New time *'
               value={postponeTime}
+              accentColor={accentColor}
               onChange={(event) => setPostponeTime(event.target.value)}
               sx={{
                 "& input::-webkit-calendar-picker-indicator": {
@@ -158,6 +162,7 @@ const PostponeMatchDialog = ({
             multiline
             rows={3}
             value={reason}
+            accentColor={accentColor}
             onChange={(event) => setReason(event.target.value)}
           />
         </Box>
@@ -182,6 +187,7 @@ const PostponeMatchDialog = ({
             Cancel
           </CustomButton>
           <CustomButton
+            variant={primaryButtonVariant}
             onClick={handleSubmit}
             loading={isLoading}
             disabled={disabled}

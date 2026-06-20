@@ -15,6 +15,7 @@ import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
 import { useAuth } from "../../context";
 import { CancelMatchDialog, PostponeMatchDialog } from "./match";
+import { panelVariantColors } from "../../theme/theme";
 
 const getTodayDateValue = () => {
   const now = new Date();
@@ -30,6 +31,11 @@ const MatchModal = ({
   editMatch = null,
 }) => {
   const { user } = useAuth();
+  const panelVariant = user?.role === "delegate" ? "delegate" : "admin";
+  const accentColor =
+    panelVariantColors[panelVariant] || panelVariantColors.admin;
+  const primaryButtonVariant =
+    panelVariant === "delegate" ? "delegate-primary" : "admin-primary";
   const canChangeDelegate = user?.role === "admin";
   const { data: teamsData } = useTeams({ limit: 100 });
   const { data: venuesData } = useVenues({ limit: 100 });
@@ -320,6 +326,7 @@ const MatchModal = ({
                   label='Competition *'
                   placeholder='Select competition'
                   options={competitions}
+                  variant={panelVariant}
                   error={errors.competitionId?.message}
                   {...field}
                 />
@@ -334,6 +341,7 @@ const MatchModal = ({
                   {...field}
                   label='Round *'
                   placeholder='Enter round'
+                  accentColor={accentColor}
                   error={errors?.round?.message}
                 />
               )}
@@ -356,6 +364,7 @@ const MatchModal = ({
                   label='Home Team *'
                   placeholder='Select home team'
                   options={homeTeamOptions}
+                  variant={panelVariant}
                   error={errors.homeTeamId?.message}
                   {...field}
                   onChange={handleHomeTeamChange(field)}
@@ -370,6 +379,7 @@ const MatchModal = ({
                   label='Away Team *'
                   placeholder='Select away team'
                   options={awayTeamOptions}
+                  variant={panelVariant}
                   error={errors.awayTeamId?.message}
                   {...field}
                 />
@@ -392,6 +402,7 @@ const MatchModal = ({
                 <CustomInput
                   type='date'
                   label='Date *'
+                  accentColor={accentColor}
                   error={errors.date?.message}
                   {...field}
                   sx={{
@@ -415,6 +426,7 @@ const MatchModal = ({
                 <CustomInput
                   type='time'
                   label='Time *'
+                  accentColor={accentColor}
                   error={errors.time?.message}
                   {...field}
                   sx={{
@@ -442,6 +454,7 @@ const MatchModal = ({
                   label='Venue *'
                   placeholder='Select venue'
                   options={venueOptions}
+                  variant={panelVariant}
                   error={errors.venueId?.message}
                   {...field}
                   onChange={handleVenueChange(field)}
@@ -457,6 +470,7 @@ const MatchModal = ({
                     label='Delegate *'
                     placeholder='Select delegate'
                     options={delegates}
+                    variant={panelVariant}
                     error={errors.delegateId?.message}
                     {...field}
                   />
@@ -475,6 +489,7 @@ const MatchModal = ({
                 placeholder='Additional notes about the match...'
                 multiline
                 rows={3}
+                accentColor={accentColor}
                 error={errors.notes?.message}
                 {...field}
               />
@@ -544,6 +559,7 @@ const MatchModal = ({
           <CustomButton
             onClick={handleSubmit(onFormSubmit)}
             loading={isLoading}
+            variant={primaryButtonVariant}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {editMatch ? "Update Match" : "Create Match"}
@@ -556,6 +572,8 @@ const MatchModal = ({
           <CancelMatchDialog
             open={statusAction === "cancelled"}
             isLoading={isLoading}
+            accentColor={accentColor}
+            primaryButtonVariant={primaryButtonVariant}
             onClose={() => setStatusAction(null)}
             onSubmit={handleStatusSubmit}
           />
@@ -563,6 +581,8 @@ const MatchModal = ({
             open={statusAction === "postponed"}
             editMatch={editMatch}
             isLoading={isLoading}
+            accentColor={accentColor}
+            primaryButtonVariant={primaryButtonVariant}
             onClose={() => setStatusAction(null)}
             onSubmit={handleStatusSubmit}
           />

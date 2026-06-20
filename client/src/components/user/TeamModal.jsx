@@ -89,7 +89,6 @@ export const TeamModal = ({
           position: "absolute",
           inset: 0,
           bgcolor: "rgba(0,0,0,0.8)",
-          backdropFilter: "blur(4px)",
         }}
       />
       <Box

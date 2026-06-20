@@ -30,9 +30,10 @@ const ScheduleAssignmentCard = ({
 }) => {
   const isPending = assignment.status === "pending";
   const showColleagues = assignment.status === "accepted";
-  const footerItems = [assignment.roundLabel, assignment.matchNumberLabel].filter(
-    Boolean,
-  );
+  const footerItems = [
+    assignment.roundLabel,
+    assignment.matchNumberLabel,
+  ].filter(Boolean);
 
   return (
     <Paper
@@ -86,7 +87,10 @@ const ScheduleAssignmentCard = ({
               mb: 1.35,
             }}
           >
-            <ScheduleChip label={assignment.competitionLabel} tone='competition' />
+            <ScheduleChip
+              label={assignment.competitionLabel}
+              tone='competition'
+            />
             <RefereeRoleBadge
               role={assignment.role}
               sx={{
@@ -289,7 +293,10 @@ const Actions = ({
         </CustomButton>
       </Box>
     ) : (
-      <RefereeAssignmentStatusBadge status={assignment.status} showAcceptedIcon />
+      <RefereeAssignmentStatusBadge
+        status={assignment.status}
+        showAcceptedIcon
+      />
     )}
   </Box>
 );

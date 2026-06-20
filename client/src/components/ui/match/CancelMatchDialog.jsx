@@ -4,7 +4,14 @@ import { Close as CloseIcon } from "@mui/icons-material";
 import CustomButton from "../CustomButton";
 import CustomInput from "../CustomInput";
 
-const CancelMatchDialog = ({ open, isLoading, onClose, onSubmit }) => {
+const CancelMatchDialog = ({
+  open,
+  isLoading,
+  accentColor = "#8b5cf6",
+  primaryButtonVariant = "admin-primary",
+  onClose,
+  onSubmit,
+}) => {
   const [reason, setReason] = useState("");
 
   useEffect(() => {
@@ -84,6 +91,7 @@ const CancelMatchDialog = ({ open, isLoading, onClose, onSubmit }) => {
             multiline
             rows={3}
             value={reason}
+            accentColor={accentColor}
             onChange={(event) => setReason(event.target.value)}
           />
         </Box>
@@ -108,6 +116,7 @@ const CancelMatchDialog = ({ open, isLoading, onClose, onSubmit }) => {
             Cancel
           </CustomButton>
           <CustomButton
+            variant={primaryButtonVariant}
             onClick={handleSubmit}
             loading={isLoading}
             disabled={isLoading || !reason.trim()}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   refereeSchema,
@@ -86,7 +86,8 @@ const UserModal = ({
     [editUser],
   );
   const adminDelegateResolver = useMemo(
-    () => zodResolver(editUser ? adminDelegateSchema : createAdminDelegateSchema),
+    () =>
+      zodResolver(editUser ? adminDelegateSchema : createAdminDelegateSchema),
     [editUser],
   );
   const resolver = useCallback(
@@ -104,7 +105,6 @@ const UserModal = ({
     control,
     handleSubmit,
     formState: { errors },
-    watch,
     setValue,
     reset,
     clearErrors,
@@ -113,7 +113,7 @@ const UserModal = ({
     defaultValues: getFormValues(editUser),
   });
 
-  const watchedRole = watch("role");
+  const watchedRole = useWatch({ control, name: "role" });
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -161,6 +161,13 @@ const UserModal = ({
     onClose();
   };
 
+  const handleRoleChange = (value) => {
+    setValue("role", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
   if (!open) return null;
 
   return (
@@ -182,7 +189,6 @@ const UserModal = ({
           position: "absolute",
           inset: 0,
           bgcolor: "rgba(0, 0, 0, 0.8)",
-          backdropFilter: "blur(4px)",
         }}
       />
 
@@ -246,12 +252,7 @@ const UserModal = ({
           {/* Role Selection */}
           <RoleSelection
             watchedRole={watchedRole}
-            onChange={(value) =>
-              setValue("role", value, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
-            }
+            onChange={handleRoleChange}
             editUser={editUser}
             allowedRoles={allowedRoles}
             variant={panelVariant}
