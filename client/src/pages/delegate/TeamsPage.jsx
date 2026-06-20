@@ -1,24 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Box,
-  Typography,
-  Avatar,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   Menu,
   MenuItem,
-  Button,
   TablePagination,
+  Typography,
 } from "@mui/material";
 import {
-  LocationOn as LocationIcon,
-  MoreVert as MoreIcon,
   Groups as GroupsIcon,
   Add as AddIcon,
   Edit as EditIcon,
@@ -30,11 +19,18 @@ import {
   useCreateTeam,
   useUpdateTeam,
   useDeleteTeam,
+  useTeamStats,
 } from "../../hooks";
 import TeamDetailsDialog from "../../components/delegate/TeamDetailsDialog";
 import TeamMatchesDialog from "../../components/delegate/TeamMatchesDialog";
-import { ConfirmDialog, FilterSearch } from "../../components/ui";
+import { ConfirmDialog, CustomButton, FilterSearch } from "../../components/ui";
 import { TeamModal } from "../../components/user/TeamModal";
+import {
+  DelegateTeamsTable,
+  TeamMobileCard,
+} from "../../components/delegate/teams";
+
+const DELEGATE_ACCENT = "#f97316";
 
 const TeamsPage = () => {
   const [page, setPage] = useState(0);
@@ -58,6 +54,7 @@ const TeamsPage = () => {
     limit: rowsPerPage,
     search: search || undefined,
   });
+  const { data: teamStatsData } = useTeamStats();
   const { data: matchesData, isLoading: isMatchesLoading } = useMatches({
     limit: 500,
   });
@@ -66,29 +63,33 @@ const TeamsPage = () => {
   const deleteTeam = useDeleteTeam();
   const teams = teamsData?.data || [];
   const totalTeams = teamsData?.pagination?.total || 0;
+  const teamCount = teamStatsData?.data?.totalTeams || totalTeams;
   const matches = useMemo(() => matchesData?.data || [], [matchesData?.data]);
+  const isSavingTeam = createTeam.isPending || updateTeam.isPending;
 
-  const paginationFooter = (
-    <TablePagination
-      component='div'
-      count={totalTeams}
-      page={page}
-      rowsPerPage={rowsPerPage}
-      onPageChange={(_, newPage) => setPage(newPage)}
-      onRowsPerPageChange={(e) => {
-        setRowsPerPage(parseInt(e.target.value, 10));
-        setPage(0);
-      }}
-      rowsPerPageOptions={[5, 10, 25, 50]}
-      sx={{
-        borderTop: "1px solid #242428",
-        color: "#6b7280",
-        "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
-        "& .MuiIconButton-root": { color: "#6b7280" },
-        "& .Mui-disabled": { color: "#3f3f46 !important" },
-      }}
-    />
-  );
+  const matchesByTeamId = useMemo(() => {
+    return matches.reduce((acc, match) => {
+      const homeId = match.homeTeamId;
+      const awayId = match.awayTeamId;
+      if (homeId) acc[homeId] = [...(acc[homeId] || []), match];
+      if (awayId) acc[awayId] = [...(acc[awayId] || []), match];
+      return acc;
+    }, {});
+  }, [matches]);
+
+  const selectedTeamMatches = selectedTeam
+    ? (matchesByTeamId[selectedTeam.id] || []).slice().sort((a, b) => {
+        return new Date(a.scheduledAt) - new Date(b.scheduledAt);
+      })
+    : [];
+
+  const getTeamMatchesCount = (teamId) =>
+    (matchesByTeamId[teamId] || []).length;
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
+  };
 
   const handleMenuOpen = (event, team) => {
     setAnchorEl(event.currentTarget);
@@ -113,9 +114,6 @@ const TeamsPage = () => {
     setMatchesOpen(true);
     handleMenuClose();
   };
-
-  const handleCloseDetails = () => setDetailsOpen(false);
-  const handleCloseMatches = () => setMatchesOpen(false);
 
   const handleOpenModal = (team = null) => {
     setEditingTeam(team);
@@ -148,6 +146,8 @@ const TeamsPage = () => {
   };
 
   const handleDelete = async () => {
+    if (!teamToDelete?.id) return;
+
     try {
       await deleteTeam.mutateAsync(teamToDelete.id);
     } catch (error) {
@@ -157,52 +157,30 @@ const TeamsPage = () => {
     }
   };
 
-  const getTeamColor = (index) => {
-    const colors = [
-      "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-      "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-      "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-      "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
-      "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-      "linear-gradient(135deg, #facc15 0%, #eab308 100%)",
-      "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-      "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
-    ];
-    return colors[index % colors.length];
-  };
-
-  const tableCellStyles = {
-    borderBottom: "1px solid #242428",
-    py: 2,
-    px: 2,
-  };
-
-  const matchesByTeamId = useMemo(() => {
-    return matches.reduce((acc, match) => {
-      const homeId = match.homeTeamId;
-      const awayId = match.awayTeamId;
-      if (homeId) acc[homeId] = [...(acc[homeId] || []), match];
-      if (awayId) acc[awayId] = [...(acc[awayId] || []), match];
-      return acc;
-    }, {});
-  }, [matches]);
-
-  const selectedTeamMatches = selectedTeam
-    ? (matchesByTeamId[selectedTeam.id] || []).slice().sort((a, b) => {
-        return new Date(a.scheduledAt) - new Date(b.scheduledAt);
-      })
-    : [];
-  const getTeamMatchesCount = (teamId) =>
-    (matchesByTeamId[teamId] || []).length;
+  const paginationFooter = (
+    <TablePagination
+      component='div'
+      count={totalTeams}
+      page={page}
+      rowsPerPage={rowsPerPage}
+      onPageChange={(_, newPage) => setPage(newPage)}
+      onRowsPerPageChange={(event) => {
+        handleRowsPerPageChange(parseInt(event.target.value, 10));
+      }}
+      rowsPerPageOptions={[5, 10, 25, 50]}
+      sx={{
+        borderTop: "1px solid #242428",
+        color: "#6b7280",
+        "& .MuiTablePagination-selectIcon": { color: "#6b7280" },
+        "& .MuiIconButton-root": { color: "#6b7280" },
+        "& .Mui-disabled": { color: "#3f3f46 !important" },
+      }}
+    />
+  );
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
-      <Box
-        sx={{
-          mb: 3,
-        }}
-      >
+      <Box sx={{ mb: 3 }}>
         <Box
           sx={{
             display: "flex",
@@ -250,39 +228,27 @@ const TeamsPage = () => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <GroupsIcon sx={{ color: "#f97316", fontSize: 20 }} />
+                <GroupsIcon sx={{ color: DELEGATE_ACCENT, fontSize: 20 }} />
                 <Typography sx={{ fontWeight: 600, color: "#fff" }}>
-                  {totalTeams}
+                  {teamCount}
                 </Typography>
                 <Typography sx={{ fontSize: "14px", color: "#6b7280" }}>
                   teams
                 </Typography>
               </Box>
             </Box>
-            <Button
+            <CustomButton
+              variant='delegate-primary'
               startIcon={<AddIcon />}
               onClick={() => handleOpenModal()}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 1.25,
-                borderRadius: "12px",
-                bgcolor: "#f97316",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: 600,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#ea580c" },
-              }}
             >
               New team
-            </Button>
+            </CustomButton>
           </Box>
         </Box>
       </Box>
 
       <Box>
-        {/* Search */}
         <Box
           sx={{
             display: "flex",
@@ -294,11 +260,10 @@ const TeamsPage = () => {
             variant='delegate'
             placeholder='Search teams...'
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
         </Box>
 
-        {/* Mobile team cards */}
         <Box
           sx={{
             display: { xs: "grid", md: "none" },
@@ -307,153 +272,18 @@ const TeamsPage = () => {
         >
           {isLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-              <CircularProgress sx={{ color: "#f97316" }} />
+              <CircularProgress sx={{ color: DELEGATE_ACCENT }} />
             </Box>
           ) : (
             <>
-              {teams.map((team, index) => (
-                <Box
+              {teams.map((team) => (
+                <TeamMobileCard
                   key={team.id}
-                  sx={{
-                    bgcolor: "#121214",
-                    borderRadius: "14px",
-                    border: "1px solid #242428",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      p: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      minWidth: 0,
-                    }}
-                  >
-                    {team.logoUrl ? (
-                      <Avatar
-                        src={team.logoUrl}
-                        sx={{ width: 48, height: 48, borderRadius: "12px" }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: "12px",
-                          background: getTeamColor(index),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#fff",
-                          fontWeight: 700,
-                          fontSize: "14px",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {team.shortName ||
-                          team.name?.substring(0, 3).toUpperCase()}
-                      </Box>
-                    )}
-
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        sx={{
-                          fontWeight: 700,
-                          color: "#fff",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {team.name}
-                      </Typography>
-                      <Typography sx={{ color: "#6b7280", fontSize: "13px" }}>
-                        {team.shortName ||
-                          team.name?.substring(0, 3).toUpperCase()}
-                      </Typography>
-                    </Box>
-
-                    <IconButton
-                      size='small'
-                      onClick={(e) => handleMenuOpen(e, team)}
-                      sx={{
-                        color: "#6b7280",
-                        flexShrink: 0,
-                        "&:hover": { bgcolor: "#242428" },
-                      }}
-                    >
-                      <MoreIcon />
-                    </IconButton>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      px: 2,
-                      py: 1.5,
-                      borderTop: "1px solid #242428",
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      gap: 1.5,
-                      alignItems: "center",
-                    }}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          color: "#9ca3af",
-                          mb: 0.75,
-                          minWidth: 0,
-                        }}
-                      >
-                        <LocationIcon sx={{ fontSize: 16, flexShrink: 0 }} />
-                        <Typography
-                          sx={{
-                            fontSize: "14px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {team.city || "N/A"}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        sx={{
-                          fontSize: "13px",
-                          color: "#6b7280",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {team.primaryVenue?.name || "N/A"}
-                      </Typography>
-                    </Box>
-                    <Box
-                      sx={{
-                        textAlign: "center",
-                        px: 1.5,
-                        py: 0.75,
-                        borderRadius: "10px",
-                        bgcolor: "#0a0a0b",
-                        border: "1px solid #1a1a1d",
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 700, color: "#fff" }}>
-                        {isMatchesLoading
-                          ? "..."
-                          : getTeamMatchesCount(team.id)}
-                      </Typography>
-                      <Typography sx={{ fontSize: "11px", color: "#6b7280" }}>
-                        matches
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
+                  team={team}
+                  matchesCount={getTeamMatchesCount(team.id)}
+                  isMatchesLoading={isMatchesLoading}
+                  onMenuOpen={handleMenuOpen}
+                />
               ))}
               {totalTeams > 0 && (
                 <Box
@@ -471,218 +301,21 @@ const TeamsPage = () => {
           )}
         </Box>
 
-        {/* Desktop teams table */}
-        <Box
-          sx={{
-            bgcolor: "#121214",
-            borderRadius: "16px",
-            border: "1px solid #242428",
-            overflow: "hidden",
-            maxWidth: "100%",
-            display: { xs: "none", md: "block" },
-          }}
-        >
-          {isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-              <CircularProgress sx={{ color: "#f97316" }} />
-            </Box>
-          ) : (
-            <TableContainer
-              sx={{
-                overflowX: "auto",
-                WebkitOverflowScrolling: "touch",
-                "&::-webkit-scrollbar": { height: 8 },
-                "&::-webkit-scrollbar-thumb": {
-                  bgcolor: "#2e2e33",
-                  borderRadius: "9999px",
-                },
-              }}
-            >
-              <Table sx={{ minWidth: 820 }}>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "#0a0a0b" }}>
-                    <TableCell
-                      sx={{
-                        ...tableCellStyles,
-                        color: "#6b7280",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        minWidth: 260,
-                      }}
-                    >
-                      Team
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        ...tableCellStyles,
-                        color: "#6b7280",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        minWidth: 96,
-                      }}
-                    >
-                      Short
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        ...tableCellStyles,
-                        color: "#6b7280",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        minWidth: 150,
-                      }}
-                    >
-                      City
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        ...tableCellStyles,
-                        color: "#6b7280",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        minWidth: 180,
-                      }}
-                    >
-                      Venue
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        ...tableCellStyles,
-                        color: "#6b7280",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        textAlign: "center",
-                      }}
-                    >
-                      Matches
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        ...tableCellStyles,
-                        color: "#6b7280",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        width: 50,
-                      }}
-                    ></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {teams.map((team, index) => (
-                    <TableRow
-                      key={team.id}
-                      sx={{
-                        transition: "background 0.15s",
-                        "&:hover": { bgcolor: "rgba(249, 115, 22, 0.05)" },
-                        "&:last-child td": { borderBottom: "none" },
-                      }}
-                    >
-                      <TableCell sx={tableCellStyles}>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
-                        >
-                          {team.logoUrl ? (
-                            <Avatar
-                              src={team.logoUrl}
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: "10px",
-                              }}
-                            />
-                          ) : (
-                            <Box
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: "10px",
-                                background: getTeamColor(index),
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#fff",
-                                fontWeight: 700,
-                                fontSize: "14px",
-                              }}
-                            >
-                              {team.shortName ||
-                                team.name?.substring(0, 3).toUpperCase()}
-                            </Box>
-                          )}
-                          <Typography sx={{ fontWeight: 500, color: "#fff" }}>
-                            {team.name}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={tableCellStyles}>
-                        <Typography sx={{ color: "#9ca3af", fontWeight: 500 }}>
-                          {team.shortName ||
-                            team.name?.substring(0, 3).toUpperCase()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={tableCellStyles}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            color: "#9ca3af",
-                          }}
-                        >
-                          <LocationIcon sx={{ fontSize: 16 }} />
-                          <Typography sx={{ fontSize: "14px" }}>
-                            {team.city || "N/A"}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={tableCellStyles}>
-                        <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                          {team.primaryVenue?.name || "N/A"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell
-                        sx={{ ...tableCellStyles, textAlign: "center" }}
-                      >
-                        <Typography sx={{ fontWeight: 500, color: "#fff" }}>
-                          {isMatchesLoading
-                            ? "..."
-                            : getTeamMatchesCount(team.id)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={tableCellStyles}>
-                        <IconButton
-                          size='small'
-                          onClick={(e) => handleMenuOpen(e, team)}
-                          sx={{
-                            color: "#6b7280",
-                            "&:hover": { bgcolor: "#242428" },
-                          }}
-                        >
-                          <MoreIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-          {!isLoading && totalTeams > 0 && paginationFooter}
+        <Box sx={{ display: { xs: "none", md: "block" } }}>
+          <DelegateTeamsTable
+            teams={teams}
+            loading={isLoading}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalRows={totalTeams}
+            isMatchesLoading={isMatchesLoading}
+            getTeamMatchesCount={getTeamMatchesCount}
+            onPageChange={setPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            onMenuOpen={handleMenuOpen}
+          />
         </Box>
 
-        {/* Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -740,9 +373,10 @@ const TeamsPage = () => {
             Delete
           </MenuItem>
         </Menu>
+
         <TeamDetailsDialog
           open={detailsOpen}
-          onClose={handleCloseDetails}
+          onClose={() => setDetailsOpen(false)}
           team={selectedTeam}
           matchesCount={selectedTeam ? getTeamMatchesCount(selectedTeam.id) : 0}
           isMatchesLoading={isMatchesLoading}
@@ -750,7 +384,7 @@ const TeamsPage = () => {
 
         <TeamMatchesDialog
           open={matchesOpen}
-          onClose={handleCloseMatches}
+          onClose={() => setMatchesOpen(false)}
           team={selectedTeam}
           matches={selectedTeamMatches}
           isLoading={isMatchesLoading}
@@ -760,8 +394,11 @@ const TeamsPage = () => {
           open={modalOpen}
           onClose={handleCloseModal}
           onSubmit={handleSubmit}
-          isLoading={createTeam.isPending || updateTeam.isPending}
+          isLoading={isSavingTeam}
           editTeam={editingTeam}
+          panelVariant='delegate'
+          accentColor={DELEGATE_ACCENT}
+          primaryButtonVariant='delegate-primary'
         />
 
         <ConfirmDialog

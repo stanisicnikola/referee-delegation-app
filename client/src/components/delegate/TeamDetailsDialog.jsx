@@ -89,7 +89,7 @@ const TeamDetailsDialog = ({
             }}
           >
             {!team?.logoUrl &&
-              (team?.shortName?.slice(0, 2).toUpperCase() || (
+              (team?.shortName || (
                 <GroupsIcon sx={{ fontSize: 28, color: "#f97316" }} />
               ))}
           </Avatar>

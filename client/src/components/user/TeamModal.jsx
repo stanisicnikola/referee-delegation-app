@@ -1,11 +1,18 @@
 import { Box, IconButton, Typography } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { teamSchema } from "../../validations/teamSchema";
 import { useVenues } from "../../hooks";
 import { CustomSelect, CustomInput, CustomButton } from "../../components/ui";
+import { panelVariantColors } from "../../theme/theme";
+
+const PRIMARY_BUTTON_VARIANTS = {
+  admin: "admin-primary",
+  delegate: "delegate-primary",
+  referee: "referee-primary",
+};
 
 export const TeamModal = ({
   open,
@@ -13,6 +20,10 @@ export const TeamModal = ({
   onSubmit,
   isLoading,
   editTeam = null,
+  panelVariant = "admin",
+  accentColor = panelVariantColors[panelVariant] || panelVariantColors.admin,
+  primaryButtonVariant = PRIMARY_BUTTON_VARIANTS[panelVariant] ||
+    PRIMARY_BUTTON_VARIANTS.admin,
 }) => {
   const {
     control,
@@ -30,7 +41,14 @@ export const TeamModal = ({
   });
 
   const { data: venuesData } = useVenues();
-  const venues = venuesData?.data || [];
+  const venueOptions = useMemo(
+    () =>
+      (venuesData?.data || []).map((venue) => ({
+        label: venue.name,
+        value: venue.id,
+      })),
+    [venuesData?.data],
+  );
   const isSuspended = editTeam?.status === "suspended";
 
   useEffect(() => {
@@ -141,6 +159,7 @@ export const TeamModal = ({
                 label='Team Name *'
                 placeholder='e.g. KK Bosna'
                 error={errors.name?.message}
+                accentColor={accentColor}
               />
             )}
           />
@@ -160,6 +179,7 @@ export const TeamModal = ({
                   label='Short Name'
                   placeholder='BOS'
                   error={errors.shortName?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -172,6 +192,7 @@ export const TeamModal = ({
                   label='City *'
                   placeholder='Sarajevo'
                   error={errors.city?.message}
+                  accentColor={accentColor}
                 />
               )}
             />
@@ -222,10 +243,11 @@ export const TeamModal = ({
               render={({ field }) => (
                 <CustomSelect
                   {...field}
-                  options={venues.map((v) => ({ label: v.name, value: v.id }))}
+                  options={venueOptions}
                   label='Home Venue *'
                   placeholder='Select Home Venue'
                   error={errors.primaryVenueId?.message}
+                  variant={panelVariant}
                 />
               )}
             />
@@ -256,6 +278,7 @@ export const TeamModal = ({
           <CustomButton
             onClick={handleSubmit(onFormSubmit)}
             loading={isLoading}
+            variant={primaryButtonVariant}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {editTeam ? "Update Team" : "Create Team"}
