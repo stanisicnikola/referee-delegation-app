@@ -119,17 +119,6 @@ const RefereesPage = () => {
     }
   };
 
-  const inputStyles = {
-    "& .MuiOutlinedInput-root": {
-      bgcolor: "#121214",
-      borderRadius: "12px",
-      "& fieldset": { borderColor: "#242428" },
-      "&:hover fieldset": { borderColor: "#3f3f46" },
-      "&.Mui-focused fieldset": { borderColor: "#f97316" },
-    },
-    "& .MuiInputBase-input": { color: "#fff", fontSize: "14px" },
-  };
-
   // Stats
   const totalReferees = stats.total ?? refereesData?.pagination?.total ?? 0;
   const availableCount =
@@ -252,11 +241,6 @@ const RefereesPage = () => {
               variant='delegate-primary'
               startIcon={<AddIcon />}
               onClick={() => handleOpenModal()}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 1.25,
-              }}
             >
               New referee
             </CustomButton>
@@ -280,11 +264,6 @@ const RefereesPage = () => {
             placeholder='Search by name...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{
-              ...inputStyles,
-              width: "100%",
-              maxWidth: { xs: "100%", md: 400 },
-            }}
           />
           <Box
             sx={{
@@ -307,20 +286,13 @@ const RefereesPage = () => {
               return (
                 <CustomButton
                   key={category.value}
-                  variant={selected ? "delegate-primary" : "outline"}
+                  variant={"outline"}
                   onClick={() => setCategoryFilter(category.value)}
                   sx={{
-                    px: 2.5,
-                    py: 1,
-                    borderRadius: "10px",
+                    whiteSpace: "nowrap",
                     bgcolor: selected ? "#f97316" : "#121214",
                     borderColor: selected ? "#f97316" : "#242428",
                     color: selected ? "#fff" : "#9ca3af",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    minWidth: "auto",
                     "&:hover": {
                       bgcolor: selected ? "#ea580c" : "#1a1a1d",
                     },

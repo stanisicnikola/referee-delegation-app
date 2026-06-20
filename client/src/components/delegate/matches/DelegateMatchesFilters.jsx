@@ -29,10 +29,6 @@ const DelegateMatchesFilters = ({
       placeholder='Search matches...'
       value={search}
       onChange={onSearchChange}
-      sx={{
-        flex: { sm: "1 1 280px" },
-        maxWidth: { xs: "none", sm: 460 },
-      }}
     />
 
     <FilterSelect
