@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { SportsBasketball as BasketballIcon } from "@mui/icons-material";
 import { authApi } from "../api";
-import { PasswordInput } from "../components/ui";
+import { CustomButton, PasswordInput } from "../components/ui";
 
 const resetPasswordSchema = z
   .object({
@@ -165,14 +165,13 @@ const ResetPasswordPage = () => {
                 )}
               />
 
-              <Button
+              <CustomButton
                 type='submit'
-                variant='contained'
+                variant='delegate-primary'
                 disabled={isLoading || success}
-                sx={{ py: 1.25, mt: 1, fontWeight: 700 }}
               >
                 {isLoading ? "Saving..." : "Save password"}
-              </Button>
+              </CustomButton>
             </Box>
 
             <Box sx={{ textAlign: "center", mt: 3 }}>

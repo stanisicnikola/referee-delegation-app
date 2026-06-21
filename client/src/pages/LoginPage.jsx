@@ -6,30 +6,21 @@ import {
   Box,
   Card,
   CardContent,
-  TextField,
-  Button,
   Typography,
   Link,
   InputAdornment,
-  IconButton,
-  FormControlLabel,
-  Checkbox,
   Alert,
-  CircularProgress,
 } from "@mui/material";
 import {
   Email as EmailIcon,
-  Lock as LockIcon,
-  Visibility,
-  VisibilityOff,
   Check as CheckIcon,
   SportsBasketball as BasketballIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import { loginSchema } from "../hooks/useAuthValidation";
 import { CustomButton, CustomInput, PasswordInput } from "../components/ui";
+import ForgotPasswordDialog from "../components/auth/ForgotPasswordDialog";
 
-// Feature item component
 const FeatureItem = ({ text }) => (
   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
     <Box
@@ -51,24 +42,13 @@ const FeatureItem = ({ text }) => (
   </Box>
 );
 
-// Stat item component
-const StatItem = ({ value, label }) => (
-  <Box>
-    <Typography variant='h4' sx={{ fontWeight: 700, color: "primary.main" }}>
-      {value}
-    </Typography>
-    <Typography variant='body2' sx={{ color: "grey.500" }}>
-      {label}
-    </Typography>
-  </Box>
-);
-
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const [loginError, setLoginError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   const {
     control,
@@ -108,7 +88,6 @@ const LoginPage = () => {
         bgcolor: "background.default",
       }}
     >
-      {/* Left Side - Branding (hidden on mobile) */}
       <Box
         sx={{
           display: { xs: "none", lg: "flex" },
@@ -122,7 +101,6 @@ const LoginPage = () => {
             "linear-gradient(135deg, #0a0a0b 0%, #121214 50%, #0a0a0b 100%)",
         }}
       >
-        {/* Floating shapes */}
         <Box
           sx={{
             position: "absolute",
@@ -153,7 +131,6 @@ const LoginPage = () => {
           }}
         />
 
-        {/* Logo */}
         <Box
           sx={{ display: "flex", alignItems: "center", gap: 1.5, zIndex: 1 }}
         >
@@ -181,7 +158,6 @@ const LoginPage = () => {
           </Box>
         </Box>
 
-        {/* Main content */}
         <Box sx={{ zIndex: 1 }}>
           <Typography
             variant='h2'
@@ -218,13 +194,12 @@ const LoginPage = () => {
           </Typography>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <FeatureItem text='Automatic notifications and reminders' />
+            <FeatureItem text='Referee assignments and confirmations' />
             <FeatureItem text='Real-time availability tracking' />
             <FeatureItem text='Full control over schedule' />
           </Box>
         </Box>
 
-        {/* Stats */}
         <Box
           sx={{
             display: "grid",
@@ -234,7 +209,6 @@ const LoginPage = () => {
           }}
         ></Box>
 
-        {/* Basketball illustration */}
         <Box
           sx={{
             position: "absolute",
@@ -251,7 +225,6 @@ const LoginPage = () => {
         </Box>
       </Box>
 
-      {/* Right Side - Login Form */}
       <Box
         sx={{
           width: { xs: "100%", lg: "50%" },
@@ -262,7 +235,6 @@ const LoginPage = () => {
           position: "relative",
         }}
       >
-        {/* Background pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -298,7 +270,6 @@ const LoginPage = () => {
         </Box>
 
         <Box sx={{ width: "100%", maxWidth: 440, zIndex: 1 }}>
-          {/* Mobile logo */}
           <Box
             sx={{
               display: { xs: "flex", lg: "none" },
@@ -326,7 +297,6 @@ const LoginPage = () => {
             </Typography>
           </Box>
 
-          {/* Form Card */}
           <Card elevation={0}>
             <CardContent sx={{ p: 4 }}>
               <Typography variant='h5' sx={{ fontWeight: 700, mb: 1 }}>
@@ -388,29 +358,24 @@ const LoginPage = () => {
                 <Box
                   sx={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-end",
                     alignItems: "center",
                   }}
                 >
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        sx={{
-                          color: "grey.600",
-                          "&.Mui-checked": { color: "primary.main" },
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant='body2' sx={{ color: "grey.400" }}>
-                        Remember me
-                      </Typography>
-                    }
-                  />
                   <Link
-                    href='#'
+                    component='button'
+                    type='button'
                     underline='hover'
-                    sx={{ fontSize: "0.875rem" }}
+                    onClick={() => setForgotPasswordOpen(true)}
+                    sx={{
+                      border: 0,
+                      bgcolor: "transparent",
+                      color: "primary.main",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      fontSize: "0.875rem",
+                      p: 0,
+                    }}
                   >
                     Forgot password?
                   </Link>
@@ -428,15 +393,19 @@ const LoginPage = () => {
             </CardContent>
           </Card>
 
-          {/* Footer */}
           <Typography
             variant='body2'
             sx={{ textAlign: "center", color: "grey.500", mt: 4 }}
           >
-            © 2025 RefDelegate. All rights reserved.
+            © 2026 RefDelegate. All rights reserved.
           </Typography>
         </Box>
       </Box>
+
+      <ForgotPasswordDialog
+        open={forgotPasswordOpen}
+        onClose={() => setForgotPasswordOpen(false)}
+      />
     </Box>
   );
 };
