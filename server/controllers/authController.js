@@ -97,6 +97,21 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Request password reset link
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const result = await authService.requestPasswordReset(email);
+
+  res.json({
+    success: true,
+    message: result.message,
+  });
+});
+
+/**
  * @desc    Reset password with one-time token
  * @route   POST /api/auth/reset-password
  * @access  Public
@@ -147,6 +162,7 @@ module.exports = {
   getMe,
   updateMe,
   changePassword,
+  forgotPassword,
   resetPassword,
   verifyPassword,
   deleteMe,

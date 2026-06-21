@@ -7,6 +7,11 @@ const { authSchemas } = require("../validators");
 // Public routes
 router.post("/login", validate(authSchemas.login), authController.login);
 router.post(
+  "/forgot-password",
+  validate(authSchemas.forgotPassword),
+  authController.forgotPassword,
+);
+router.post(
   "/reset-password",
   validate(authSchemas.resetPassword),
   authController.resetPassword,

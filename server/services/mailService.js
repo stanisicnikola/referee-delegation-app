@@ -140,6 +140,50 @@ class MailService {
       html: this.buildWelcomeHtml({ user, resetUrl }),
     });
   }
+
+  buildPasswordResetText({ user, resetUrl }) {
+    return [
+      `Hello ${user.firstName || "there"},`,
+      "",
+      "We received a request to reset your RefDelegate password.",
+      "Use the link below to choose a new password:",
+      resetUrl,
+      "",
+      "If you did not request this, you can ignore this email.",
+      "",
+      "RefDelegate",
+    ].join("\n");
+  }
+
+  buildPasswordResetHtml({ user, resetUrl }) {
+    return `
+      <div style="margin:0;padding:32px;background:#0f0f11;font-family:Inter,Arial,sans-serif;color:#ffffff">
+        <div style="max-width:560px;margin:0 auto;background:#18181b;border:1px solid #27272a;border-radius:12px;padding:28px">
+          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.25">Reset your password</h1>
+          <p style="margin:0 0 20px;color:#d4d4d8;line-height:1.6">
+            Hello ${user.firstName || "there"}, we received a request to reset your RefDelegate password.
+          </p>
+          <a href="${resetUrl}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">
+            Reset password
+          </a>
+          <p style="margin:26px 0 0;color:#71717a;font-size:13px;line-height:1.6">
+            If you did not request this, you can ignore this email.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  async sendPasswordResetEmail({ user, resetToken }) {
+    const resetUrl = `${this.getClientUrl()}/reset-password/${resetToken}`;
+
+    return this.sendMail({
+      to: user.email,
+      subject: "Reset your RefDelegate password",
+      text: this.buildPasswordResetText({ user, resetUrl }),
+      html: this.buildPasswordResetHtml({ user, resetUrl }),
+    });
+  }
 }
 
 module.exports = new MailService();

@@ -4,6 +4,10 @@ const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const { User, Referee, sequelize } = require("../models");
 const { AppError } = require("../middlewares");
+const mailService = require("./mailService");
+
+const PASSWORD_RESET_REQUEST_MESSAGE =
+  "If an account with that email exists, a password reset link has been sent.";
 
 class AuthService {
   // Generate JWT token
@@ -200,6 +204,33 @@ class AuthService {
 
   hashPasswordResetToken(token) {
     return crypto.createHash("sha256").update(token).digest("hex");
+  }
+
+  getPasswordResetExpiry() {
+    const hours = Number(process.env.PASSWORD_RESET_TOKEN_TTL_HOURS || 168);
+    return new Date(Date.now() + hours * 60 * 60 * 1000);
+  }
+
+  async requestPasswordReset(email) {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user || user.status !== "active") {
+      return { message: PASSWORD_RESET_REQUEST_MESSAGE };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    await user.update({
+      passwordResetTokenHash: this.hashPasswordResetToken(resetToken),
+      passwordResetExpiresAt: this.getPasswordResetExpiry(),
+    });
+
+    try {
+      await mailService.sendPasswordResetEmail({ user, resetToken });
+    } catch (error) {
+      console.error("Password reset email delivery failed:", error);
+    }
+
+    return { message: PASSWORD_RESET_REQUEST_MESSAGE };
   }
 
   async resetPasswordWithToken(token, newPassword) {

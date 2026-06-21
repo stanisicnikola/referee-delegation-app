@@ -74,6 +74,12 @@ const changePassword = z.object({
     .regex(/[0-9]/, "Password must contain at least one number."),
 });
 
+const forgotPassword = z.object({
+  email: z
+    .string({ required_error: "Email is required." })
+    .email("Invalid email format."),
+});
+
 const resetPassword = z.object({
   token: z
     .string({ required_error: "Reset token is required." })
@@ -136,6 +142,7 @@ module.exports = {
   register,
   registerReferee,
   changePassword,
+  forgotPassword,
   resetPassword,
   verifyPassword,
   updateMe,
