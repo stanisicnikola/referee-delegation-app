@@ -7,13 +7,6 @@ import {
 import { CustomButton, RefereeRoleBadge } from "../../ui";
 import { PENDING_COLORS as COLORS } from "./constants";
 
-const pendingActionButtonSx = {
-  minHeight: 56,
-  fontSize: 15,
-  borderRadius: "12px",
-  fontWeight: 850,
-};
-
 const PendingAssignmentCard = ({
   assignment,
   isActionPending,
@@ -84,7 +77,6 @@ const PendingAssignmentCard = ({
         disabled={isActionPending}
         startIcon={isDeclining ? null : <DeclineIcon />}
         onClick={(event) => onDecline(event, assignment)}
-        sx={pendingActionButtonSx}
       >
         Decline
       </CustomButton>
@@ -94,7 +86,6 @@ const PendingAssignmentCard = ({
         disabled={isActionPending}
         startIcon={isAccepting ? null : <AcceptIcon />}
         onClick={() => onAccept(assignment)}
-        sx={pendingActionButtonSx}
       >
         Accept
       </CustomButton>

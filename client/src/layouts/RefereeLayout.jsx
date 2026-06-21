@@ -7,7 +7,7 @@ import {
   Assignment as AssignmentIcon,
   AccessTime as ClockIcon,
   History as HistoryIcon,
-  Public as LogoIcon,
+  Sports as LogoIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import { refereeTheme } from "../theme";
