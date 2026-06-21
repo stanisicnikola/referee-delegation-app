@@ -140,7 +140,6 @@ const TeamsPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -162,7 +161,6 @@ const TeamsPage = () => {
         />
       </Box>
 
-      {/* Table */}
       <DataTable
         columns={[
           {

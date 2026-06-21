@@ -1,8 +1,5 @@
 import { Box, IconButton, Typography } from "@mui/material";
-import {
-  ArrowBack as BackIcon,
-  Check as CheckIcon,
-} from "@mui/icons-material";
+import { ArrowBack as BackIcon, Check as CheckIcon } from "@mui/icons-material";
 import { CustomButton } from "../../ui";
 
 const getProgressTone = (assignedCount) => {
@@ -61,9 +58,7 @@ const ActionProgress = ({ assignedCount }) => {
           />
         ))}
       </Box>
-      <Typography
-        sx={{ fontSize: "13px", fontWeight: 600, color: tone.color }}
-      >
+      <Typography sx={{ fontSize: "13px", fontWeight: 600, color: tone.color }}>
         {assignedCount}/3 assigned
       </Typography>
     </Box>

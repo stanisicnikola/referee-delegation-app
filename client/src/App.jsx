@@ -7,7 +7,6 @@ import theme from "./theme";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

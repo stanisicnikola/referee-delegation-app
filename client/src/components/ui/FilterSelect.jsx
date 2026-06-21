@@ -11,8 +11,7 @@ const FilterSelect = ({
   sx = {},
   ...props
 }) => {
-  const accentColor =
-    panelVariantColors[variant] || panelVariantColors.admin;
+  const accentColor = panelVariantColors[variant] || panelVariantColors.admin;
 
   const inputStyles = {
     bgcolor: "#1a1a1d",

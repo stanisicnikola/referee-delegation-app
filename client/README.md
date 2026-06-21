@@ -60,6 +60,7 @@ Page -> Hook (React Query) -> API module (axios) -> Backend
 ```
 
 Examples:
+
 - Delegations: `src/api/delegations.js` -> `src/hooks/useDelegations.js` -> `src/pages/delegate/DelegationPage.jsx`
 - Availability: `src/api/availability.js` -> `src/hooks/useAvailability.js` -> `src/pages/referee/AvailabilityPage.jsx`
 

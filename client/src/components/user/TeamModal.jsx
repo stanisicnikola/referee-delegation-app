@@ -71,7 +71,6 @@ export const TeamModal = ({
     }
   }, [editTeam, open, reset]);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";

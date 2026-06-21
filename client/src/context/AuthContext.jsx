@@ -9,20 +9,17 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const queryClient = useQueryClient();
 
-  // Use React Query for user data
   const { data: userData, isLoading: isQueryLoading } = useMe({
     enabled: !!token,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Sync userData with localStorage when it changes
   useEffect(() => {
     if (userData) {
       localStorage.setItem("user", JSON.stringify(userData));
     }
   }, [userData]);
 
-  // Combined loading state
   const isLoading = isQueryLoading && !!token;
 
   const login = useCallback(
@@ -36,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(newUserData));
 
         setToken(newToken);
-        queryClient.setQueryData(authKeys.me, newUserData); // Update React Query cache
+        queryClient.setQueryData(authKeys.me, newUserData);
 
         return { success: true, user: newUserData };
       }
@@ -57,7 +54,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(newUserData));
 
         setToken(newToken);
-        queryClient.setQueryData(authKeys.me, newUserData); // Update React Query cache
+        queryClient.setQueryData(authKeys.me, newUserData);
 
         return { success: true, user: newUserData };
       }
@@ -71,8 +68,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setToken(null);
-    queryClient.setQueryData(authKeys.me, null); // Clear user data in cache
-    queryClient.removeQueries(); // Invalidate all queries
+    queryClient.setQueryData(authKeys.me, null);
+    queryClient.removeQueries();
   }, [queryClient]);
 
   const value = {

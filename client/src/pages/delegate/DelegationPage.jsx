@@ -172,10 +172,9 @@ const DelegationPage = () => {
   const availableReferees = useMemo(() => {
     return candidateReferees
       .filter((referee) => {
-        const fullName =
-          `${referee.user?.firstName || ""} ${
-            referee.user?.lastName || ""
-          }`.toLowerCase();
+        const fullName = `${referee.user?.firstName || ""} ${
+          referee.user?.lastName || ""
+        }`.toLowerCase();
         const matchesSearch =
           search.trim() === "" || fullName.includes(search.toLowerCase());
         const notAssigned = !Object.values(assignedReferees).some(
@@ -357,7 +356,9 @@ const DelegationPage = () => {
             />
           </Box>
 
-          {isMatchFinished && <MatchReportCard reportNotes={match.reportNotes} />}
+          {isMatchFinished && (
+            <MatchReportCard reportNotes={match.reportNotes} />
+          )}
         </Box>
       </Box>
 

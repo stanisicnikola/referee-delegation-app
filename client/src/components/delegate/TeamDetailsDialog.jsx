@@ -65,7 +65,6 @@ const TeamDetailsDialog = ({
         },
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           px: 3,
@@ -119,7 +118,6 @@ const TeamDetailsDialog = ({
         </Box>
       </Box>
 
-      {/* Body */}
       <DialogContent sx={{ p: 3, bgcolor: "#121214" }}>
         {sections.length === 0 ? (
           <Typography

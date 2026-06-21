@@ -137,7 +137,6 @@ const MatchesPage = () => {
 
   return (
     <Box sx={{ width: "100%", minWidth: 0 }}>
-      {/* Header */}
       <PageHeader
         title='Matches'
         subtitle='Manage scheduled matches and referee assignments'
@@ -193,7 +192,6 @@ const MatchesPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -410,7 +408,6 @@ const MatchesPage = () => {
         />
       </Box>
 
-      {/* Match Modal */}
       {modalOpen && (
         <MatchModal
           open={modalOpen}

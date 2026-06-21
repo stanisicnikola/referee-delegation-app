@@ -192,7 +192,6 @@ const RefereeLayout = () => {
           </Drawer>
         </Box>
 
-        {/* Main Content */}
         <Box
           component='main'
           sx={{

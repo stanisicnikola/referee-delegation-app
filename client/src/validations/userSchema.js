@@ -18,7 +18,6 @@ export const adminDelegateSchema = z
     phone: phoneSchema,
     role: z.enum(["admin", "delegate"], "Invalid role."),
     status: z.enum(["active", "inactive", "suspended"]),
-    // Password fields for creation
     password: z.string().optional(),
     confirmPassword: z.string().optional(),
   })

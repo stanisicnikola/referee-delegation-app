@@ -115,7 +115,6 @@ const UserModal = ({
 
   const watchedRole = useWatch({ control, name: "role" });
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -127,7 +126,6 @@ const UserModal = ({
     };
   }, [open]);
 
-  // Reset form when modal opens or editUser changes
   useEffect(() => {
     if (open) {
       reset(getFormValues(editUser), {
@@ -138,13 +136,11 @@ const UserModal = ({
     }
   }, [open, editUser, reset, getFormValues]);
 
-  // Handle role change - reset validation errors for the other schema
   useEffect(() => {
     clearErrors();
   }, [watchedRole, clearErrors]);
 
   const onSubmit = (data) => {
-    // If not referee, strip referee fields before sending
     if (data.role !== "referee") {
       const cleanData = { ...data };
       delete cleanData.licenseNumber;
@@ -182,7 +178,6 @@ const UserModal = ({
         p: { xs: 1, sm: 2 },
       }}
     >
-      {/* Backdrop */}
       <Box
         onClick={handleClose}
         sx={{
@@ -192,7 +187,6 @@ const UserModal = ({
         }}
       />
 
-      {/* Modal */}
       <Box
         component='form'
         onSubmit={handleSubmit(onSubmit)}
@@ -208,7 +202,6 @@ const UserModal = ({
           overflow: "auto",
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             position: "sticky",
@@ -240,7 +233,6 @@ const UserModal = ({
           </IconButton>
         </Box>
 
-        {/* Content */}
         <Box
           sx={{
             p: { xs: 2, sm: 3 },
@@ -249,7 +241,6 @@ const UserModal = ({
             gap: { xs: 2, sm: 3 },
           }}
         >
-          {/* Role Selection */}
           <RoleSelection
             watchedRole={watchedRole}
             onChange={handleRoleChange}
@@ -258,7 +249,6 @@ const UserModal = ({
             variant={panelVariant}
           />
 
-          {/* Dynamic Form Content */}
           {watchedRole === "referee" ? (
             <RefereeForm
               control={control}
@@ -278,7 +268,6 @@ const UserModal = ({
           )}
         </Box>
 
-        {/* Footer */}
         <Box
           sx={{
             position: "sticky",

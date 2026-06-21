@@ -45,7 +45,11 @@ const MatchesPage = () => {
     setPage(0);
   }, [search, competitionFilter, statusFilter]);
 
-  const { data: matchesData, isLoading, isFetching } = useMatches({
+  const {
+    data: matchesData,
+    isLoading,
+    isFetching,
+  } = useMatches({
     page: page + 1,
     limit: rowsPerPage,
     search: search || undefined,
@@ -128,7 +132,9 @@ const MatchesPage = () => {
         statusFilter={statusFilter}
         competitions={competitions}
         onSearchChange={(event) => setSearch(event.target.value)}
-        onCompetitionChange={(event) => setCompetitionFilter(event.target.value)}
+        onCompetitionChange={(event) =>
+          setCompetitionFilter(event.target.value)
+        }
         onStatusChange={(event) => setStatusFilter(event.target.value)}
       />
 
@@ -146,7 +152,10 @@ const MatchesPage = () => {
               match={match}
               onClick={handleOpenMatch}
               status={
-                <DelegationStatusBadge status={match.delegationStatus} compact />
+                <DelegationStatusBadge
+                  status={match.delegationStatus}
+                  compact
+                />
               }
               primaryAction={
                 <DelegationActionButton

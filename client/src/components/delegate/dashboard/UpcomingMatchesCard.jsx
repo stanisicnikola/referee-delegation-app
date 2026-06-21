@@ -102,12 +102,7 @@ const EmptyState = () => (
   </Box>
 );
 
-const UpcomingMatchesCard = ({
-  matches,
-  loading,
-  onViewAll,
-  onOpenMatch,
-}) => (
+const UpcomingMatchesCard = ({ matches, loading, onViewAll, onOpenMatch }) => (
   <Paper
     elevation={0}
     sx={{

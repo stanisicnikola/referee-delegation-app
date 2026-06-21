@@ -83,8 +83,7 @@ export const getRefereeRoleBadge = (role) => {
   };
 };
 
-export const getRefereeRoleNumber = (role) =>
-  getRefereeRoleBadge(role).number;
+export const getRefereeRoleNumber = (role) => getRefereeRoleBadge(role).number;
 
 export const getRefereeAssignmentStatusBadge = (status) => ({
   key: status,

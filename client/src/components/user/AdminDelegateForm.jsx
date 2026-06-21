@@ -17,7 +17,6 @@ const AdminDelegateForm = ({
 }) => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* General Information */}
       <Box
         sx={{
           p: { xs: 1.5, sm: 2 },
@@ -131,7 +130,6 @@ const AdminDelegateForm = ({
         )}
       </Box>
 
-      {/* Password Section (Only on create) */}
       {!editUser && (
         <Box
           sx={{
@@ -175,7 +173,6 @@ const AdminDelegateForm = ({
         </Box>
       )}
 
-      {/* Options */}
       {!editUser && (
         <Box
           sx={{

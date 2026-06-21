@@ -3,15 +3,7 @@ import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Link,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Card, CardContent, Link, Typography } from "@mui/material";
 import { SportsBasketball as BasketballIcon } from "@mui/icons-material";
 import { authApi } from "../api";
 import { CustomButton, PasswordInput } from "../components/ui";

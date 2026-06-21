@@ -46,7 +46,6 @@ const DashboardPage = () => {
 
   const distribution = stats.distribution || {};
 
-  // Stats configuration for the StatsGrid
   const statCards = [
     {
       label: "Total users",
@@ -82,10 +81,8 @@ const DashboardPage = () => {
 
   return (
     <Box sx={{ color: "#fff", width: "100%", minWidth: 0 }}>
-      {/* Stats Grid */}
       <StatsGrid stats={statCards} loading={isLoading} columns={4} />
 
-      {/* Charts & Distribution Row */}
       <Box
         sx={{
           display: "grid",
@@ -94,7 +91,6 @@ const DashboardPage = () => {
           mb: { xs: 2.5, md: 4 },
         }}
       >
-        {/* Activity Chart */}
         <Box
           sx={{
             bgcolor: "#121214",
@@ -145,7 +141,6 @@ const DashboardPage = () => {
           <MatchActivityChart data={chartData} loading={isLoading} />
         </Box>
 
-        {/* User Distribution */}
         <Box
           sx={{
             bgcolor: "#121214",
@@ -191,7 +186,6 @@ const DashboardPage = () => {
         </Box>
       </Box>
 
-      {/* Recent Activity & Quick Actions / Upcoming */}
       <Box
         sx={{
           display: "grid",
@@ -199,7 +193,6 @@ const DashboardPage = () => {
           gap: { xs: 2, md: 3 },
         }}
       >
-        {/* Recent Activities */}
         <Box
           sx={{
             bgcolor: "#121214",
@@ -236,9 +229,7 @@ const DashboardPage = () => {
           )}
         </Box>
 
-        {/* Right Column: Quick Actions + Upcoming */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {/* Quick Actions */}
           <Box
             sx={{
               bgcolor: "#121214",
@@ -320,7 +311,6 @@ const DashboardPage = () => {
             </Box>
           </Box>
 
-          {/* Upcoming Matches */}
           <Box
             sx={{
               bgcolor: "#121214",
@@ -442,7 +432,6 @@ const DashboardPage = () => {
         </Box>
       </Box>
 
-      {/* Modals */}
       <UserModal
         open={userModalOpen}
         onClose={() => setUserModalOpen(false)}

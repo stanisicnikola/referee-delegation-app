@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import {
-  Box,
-  Drawer,
-  useMediaQuery,
-  ThemeProvider,
-} from "@mui/material";
+import { Box, Drawer, useMediaQuery, ThemeProvider } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
   CalendarMonth as MatchesIcon,

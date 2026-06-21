@@ -105,7 +105,6 @@ const UsersPage = () => {
 
   return (
     <Box sx={{ width: "100%", minWidth: 0 }}>
-      {/* Header */}
       <PageHeader
         title='Users Management'
         subtitle='Manage system users, referees, and administrators'
@@ -143,7 +142,6 @@ const UsersPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -187,7 +185,6 @@ const UsersPage = () => {
         />
       </Box>
 
-      {/* Table */}
       <DataTable
         columns={[
           {
@@ -286,7 +283,6 @@ const UsersPage = () => {
         emptyMessage='No users found'
       />
 
-      {/* User Modal */}
       <UserModal
         open={modalOpen}
         onClose={handleCloseModal}

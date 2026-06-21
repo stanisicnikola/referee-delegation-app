@@ -2,12 +2,7 @@ import { Box, Button, Typography } from "@mui/material";
 import { ArrowForward as ArrowForwardIcon } from "@mui/icons-material";
 import { delegatePanelColors as COLORS } from "../../../theme/theme";
 
-const DashboardSectionHeader = ({
-  title,
-  subtitle,
-  actionLabel,
-  onAction,
-}) => (
+const DashboardSectionHeader = ({ title, subtitle, actionLabel, onAction }) => (
   <Box
     sx={{
       px: { xs: 2.25, md: 3 },

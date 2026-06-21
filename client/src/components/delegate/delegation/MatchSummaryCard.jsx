@@ -300,12 +300,7 @@ const DesktopMatchupTeam = ({ team, sideLabel, color }) => (
   </Box>
 );
 
-const DesktopMatchup = ({
-  match,
-  dateInfo,
-  matchStatus,
-  isMatchFinished,
-}) => (
+const DesktopMatchup = ({ match, dateInfo, matchStatus, isMatchFinished }) => (
   <Box
     sx={{
       display: { xs: "none", md: "grid" },

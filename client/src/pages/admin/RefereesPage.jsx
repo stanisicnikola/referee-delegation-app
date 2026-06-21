@@ -167,7 +167,6 @@ const RefereesPage = () => {
         addLabel='New Referee'
       />
 
-      {/* Stats Cards */}
       <StatsGrid
         stats={[
           {
@@ -220,7 +219,6 @@ const RefereesPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -254,7 +252,6 @@ const RefereesPage = () => {
         />
       </Box>
 
-      {/* Table */}
       <DataTable
         columns={[
           {
@@ -374,7 +371,6 @@ const RefereesPage = () => {
         emptyMessage='No referees found'
       />
 
-      {/* User Modal */}
       <UserModal
         open={modalOpen}
         onClose={handleCloseModal}

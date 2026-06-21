@@ -23,7 +23,7 @@ export const delegationsApi = {
 
   getAvailableReferees: async (matchId) => {
     const response = await api.get(
-      `/delegations/matches/${matchId}/available-referees`
+      `/delegations/matches/${matchId}/available-referees`,
     );
     return response.data;
   },
@@ -36,14 +36,14 @@ export const delegationsApi = {
   updateRefereeRole: async (matchId, refereeId, data) => {
     const response = await api.put(
       `/delegations/matches/${matchId}/referees/${refereeId}/role`,
-      data
+      data,
     );
     return response.data;
   },
 
   removeReferee: async (matchId, refereeId) => {
     const response = await api.delete(
-      `/delegations/matches/${matchId}/referees/${refereeId}`
+      `/delegations/matches/${matchId}/referees/${refereeId}`,
     );
     return response.data;
   },
@@ -61,7 +61,7 @@ export const delegationsApi = {
   rejectAssignment: async (matchId, data) => {
     const response = await api.put(
       `/delegations/matches/${matchId}/reject`,
-      data
+      data,
     );
     return response.data;
   },

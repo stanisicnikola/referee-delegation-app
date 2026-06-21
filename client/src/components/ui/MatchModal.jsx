@@ -143,7 +143,6 @@ const MatchModal = ({
     [homeTeamId, teams],
   );
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -348,7 +347,6 @@ const MatchModal = ({
             />
           </Box>
 
-          {/* Teams */}
           <Box
             sx={{
               display: "grid",
@@ -387,7 +385,6 @@ const MatchModal = ({
             />
           </Box>
 
-          {/* Venue and Date/Time */}
           <Box
             sx={{
               display: "grid",
@@ -479,7 +476,6 @@ const MatchModal = ({
             )}
           </Box>
 
-          {/* Notes */}
           <Controller
             name='notes'
             control={control}

@@ -69,10 +69,7 @@ const DashboardPage = () => {
   return (
     <Box sx={{ width: "100%", color: COLORS.text }}>
       <Box sx={{ maxWidth: 1800, mx: "auto", containerType: "inline-size" }}>
-        <PageHeader
-          title='Dashboard'
-          subtitle='Delegation overview'
-        />
+        <PageHeader title='Dashboard' subtitle='Delegation overview' />
 
         {error && (
           <Alert severity='error' sx={{ mb: 3 }}>

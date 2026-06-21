@@ -39,7 +39,6 @@ const AdminLayout = () => {
     setAnchorEl(null);
   }, [isMobile]);
 
-  // Fetch counts for sidebar badges
   const { data: usersStatisticsData } = useUserStatistics();
   const { data: refereesData } = useReferees();
   const userStats = usersStatisticsData?.data || {};
@@ -178,12 +177,10 @@ const AdminLayout = () => {
           bgcolor: "#0a0a0b",
         }}
       >
-        {/* Sidebar */}
         <Box
           component='nav'
           sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
         >
-          {/* Mobile drawer */}
           <Drawer
             variant='temporary'
             open={mobileOpen}
@@ -198,7 +195,6 @@ const AdminLayout = () => {
             <Box sx={{ flex: 1, minHeight: 0 }}>{sidebarContent}</Box>
           </Drawer>
 
-          {/* Desktop drawer */}
           <Drawer
             variant='permanent'
             sx={{
@@ -211,7 +207,6 @@ const AdminLayout = () => {
           </Drawer>
         </Box>
 
-        {/* Main content */}
         <Box
           component='main'
           sx={{
@@ -226,7 +221,6 @@ const AdminLayout = () => {
         >
           <PanelTopBar onMenuClick={handleDrawerOpen} />
 
-          {/* Page content */}
           <Box
             sx={{
               p: { xs: 2, md: 4 },

@@ -1,10 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Paper, Typography } from "@mui/material";
 import { EventBusy as EventBusyIcon } from "@mui/icons-material";
 import {
   useAvailabilityRequests,

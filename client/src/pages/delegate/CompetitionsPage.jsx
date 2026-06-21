@@ -106,7 +106,6 @@ const CompetitionsPage = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Box
         sx={{
           mb: 3,
@@ -180,7 +179,6 @@ const CompetitionsPage = () => {
       </Box>
 
       <Box>
-        {/* Filters */}
         <Box
           sx={{
             display: "flex",
@@ -235,7 +233,6 @@ const CompetitionsPage = () => {
           </Box>
         </Box>
 
-        {/* Competitions Grid */}
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress sx={{ color: "#f97316" }} />

@@ -41,16 +41,13 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
     );
   }
 
-  // Find the max value to scale bars
   const maxValue = Math.max(
     ...data.map((d) => Math.max(d.matches, d.pending || 0)),
     1,
   );
 
-  // Responsive: compact when many bars
   const isCompact = data.length > 16;
 
-  // Only show every Nth label when very compact to avoid label crowding.
   const showEveryNthLabel = data.length > 20 ? Math.ceil(data.length / 14) : 1;
 
   const now = new Date();
@@ -76,7 +73,6 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
           );
           const isToday = item.date === todayKey;
 
-          // Format tooltip date nicely
           const tooltipDate = new Date(item.date + "T12:00:00");
           const dateStr = tooltipDate.toLocaleDateString("en-US", {
             weekday: "short",
@@ -154,7 +150,6 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
                   cursor: "pointer",
                 }}
               >
-                {/* Bar group */}
                 <Box
                   sx={{
                     display: "flex",
@@ -165,7 +160,6 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
                     height: 170,
                   }}
                 >
-                  {/* Matches column (purple) */}
                   <Box
                     sx={{
                       flex: 1,
@@ -202,7 +196,6 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
                       }}
                     />
                   </Box>
-                  {/* Pending column (orange) */}
                   <Box
                     sx={{
                       flex: 1,
@@ -243,7 +236,6 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
                     />
                   </Box>
                 </Box>
-                {/* Day label — skip some in compact mode */}
                 <Typography
                   sx={{
                     fontSize: isCompact ? "8px" : "11px",
@@ -261,7 +253,6 @@ const MatchActivityChart = ({ data = [], loading = false }) => {
         })}
       </Box>
 
-      {/* Legend */}
       <Box
         sx={{
           display: "flex",

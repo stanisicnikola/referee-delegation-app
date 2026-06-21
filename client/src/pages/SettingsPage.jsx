@@ -24,15 +24,12 @@ const SettingsPage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Hooks
   const verifyPasswordMutation = useVerifyPassword();
   const changePasswordMutation = useChangePassword();
   const deleteMeMutation = useDeleteMe();
 
-  // Password Change Modal State
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
-  // Delete Account Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const roleVariants = {
@@ -59,7 +56,6 @@ const SettingsPage = () => {
     verifyPasswordMutation.isPending || changePasswordMutation.isPending;
   const deleteLoading = deleteMeMutation.isPending;
 
-  // Password logic
   const handleOpenPasswordModal = () => {
     setPasswordModalOpen(true);
   };
@@ -70,7 +66,6 @@ const SettingsPage = () => {
     }
   }, [user?.mustChangePassword]);
 
-  // Delete account logic
   const handleDeleteAccount = async () => {
     try {
       await deleteMeMutation.mutateAsync();
@@ -97,7 +92,6 @@ const SettingsPage = () => {
       />
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Account Info */}
         <Box>
           <Paper
             elevation={0}
@@ -157,7 +151,6 @@ const SettingsPage = () => {
           </Paper>
         </Box>
 
-        {/* Security */}
         <Box>
           <Paper
             elevation={0}
@@ -204,7 +197,6 @@ const SettingsPage = () => {
           </Paper>
         </Box>
 
-        {/* Danger Zone */}
         <Box>
           <Paper
             elevation={0}
@@ -266,7 +258,6 @@ const SettingsPage = () => {
         accentColor={roleVariant.accent}
       />
 
-      {/* Delete Account Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => !deleteLoading && setDeleteDialogOpen(false)}

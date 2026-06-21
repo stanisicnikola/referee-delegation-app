@@ -10,8 +10,7 @@ const FilterSearch = ({
   sx = {},
   ...props
 }) => {
-  const accentColor =
-    panelVariantColors[variant] || panelVariantColors.admin;
+  const accentColor = panelVariantColors[variant] || panelVariantColors.admin;
 
   const inputStyles = {
     "& .MuiOutlinedInput-root": {

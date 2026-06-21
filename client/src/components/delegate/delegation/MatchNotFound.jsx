@@ -1,8 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import {
-  ArrowBack as BackIcon,
-  Event as EventIcon,
-} from "@mui/icons-material";
+import { ArrowBack as BackIcon, Event as EventIcon } from "@mui/icons-material";
 import { CustomButton } from "../../ui";
 
 const MatchNotFound = ({ onBack }) => (

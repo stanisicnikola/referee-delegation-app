@@ -18,12 +18,7 @@ const formatDate = (value) => {
   return date.toLocaleDateString("en-GB");
 };
 
-const RefereeDetailsModal = ({
-  open,
-  referee,
-  onClose,
-  avatarColor,
-}) => {
+const RefereeDetailsModal = ({ open, referee, onClose, avatarColor }) => {
   return (
     <Dialog
       open={open}
@@ -39,7 +34,6 @@ const RefereeDetailsModal = ({
         },
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           px: 3,
@@ -91,7 +85,6 @@ const RefereeDetailsModal = ({
         </Box>
       </Box>
 
-      {/* Body */}
       <DialogContent sx={{ p: 3, bgcolor: "#121214" }}>
         {(() => {
           const contactFields = [

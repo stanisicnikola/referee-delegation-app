@@ -116,7 +116,6 @@ const CompetitionsPage = () => {
         addLabel='New Competition'
       />
 
-      {/* Stats Cards */}
       <StatsGrid
         stats={[
           {
@@ -152,7 +151,6 @@ const CompetitionsPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -185,7 +183,6 @@ const CompetitionsPage = () => {
         />
       </Box>
 
-      {/* Table */}
       <DataTable
         columns={[
           {

@@ -4,12 +4,10 @@ import { getRefereeRoleBadge } from "../../utils/refereeAssignmentBadges";
 
 const getRoleColor = (theme, tone) => {
   const roleColors = {
-    first:
-      theme.palette.refereeRoleColors?.first || theme.palette.primary.main,
+    first: theme.palette.refereeRoleColors?.first || theme.palette.primary.main,
     second:
       theme.palette.refereeRoleColors?.second || theme.palette.secondary.main,
-    third:
-      theme.palette.refereeRoleColors?.third || theme.palette.success.main,
+    third: theme.palette.refereeRoleColors?.third || theme.palette.success.main,
   };
 
   return roleColors[tone] || theme.palette.text.secondary;

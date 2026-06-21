@@ -74,7 +74,6 @@ const ProfilePage = () => {
       />
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Profile Card */}
         <Box>
           <Paper
             sx={{
@@ -117,7 +116,6 @@ const ProfilePage = () => {
           </Paper>
         </Box>
 
-        {/* Details and Info */}
         <Box>
           <Paper
             elevation={0}

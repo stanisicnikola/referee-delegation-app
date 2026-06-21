@@ -25,7 +25,6 @@ const RefereeForm = ({
 }) => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* General Information */}
       <Box
         sx={{
           p: { xs: 1.5, sm: 2 },
@@ -140,7 +139,6 @@ const RefereeForm = ({
         )}
       </Box>
 
-      {/* Referee Details */}
       <Box
         sx={{
           p: { xs: 1.5, sm: 2 },
@@ -237,7 +235,6 @@ const RefereeForm = ({
         </Box>
       </Box>
 
-      {/* Password Section (Only on create) */}
       {!editUser && (
         <Box
           sx={{
@@ -281,7 +278,6 @@ const RefereeForm = ({
         </Box>
       )}
 
-      {/* Options */}
       {!editUser && (
         <Box
           sx={{

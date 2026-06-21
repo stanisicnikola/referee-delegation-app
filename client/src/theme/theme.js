@@ -1,6 +1,5 @@
 import { createTheme, alpha } from "@mui/material/styles";
 
-// Login theme (orange accent)
 const loginTheme = createTheme({
   palette: {
     mode: "dark",
@@ -469,14 +468,12 @@ const createPanelTheme = (primary) =>
     },
   });
 
-// Admin theme (purple accent)
 const adminTheme = createPanelTheme({
   main: "#8b5cf6",
   light: "#a78bfa",
   dark: "#7c3aed",
 });
 
-// Delegate theme (orange accent)
 const delegateTheme = createPanelTheme({
   main: "#f97316",
   light: "#fb923c",
@@ -491,17 +488,14 @@ const delegatePanelColors = {
   cyan: sharedPanelPalette.secondary.main,
 };
 
-// Referee theme (green accent)
 const refereeTheme = createPanelTheme({
   main: "#22c55e",
   light: "#4ade80",
   dark: "#16a34a",
 });
 
-// Default export for backwards compatibility (login)
 export default loginTheme;
 
-// Named exports
 export {
   loginTheme,
   adminTheme,

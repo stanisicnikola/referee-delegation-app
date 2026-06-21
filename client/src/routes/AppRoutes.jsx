@@ -36,20 +36,18 @@ import {
   TeamsPage as DelegateTeams,
 } from "../pages/delegate";
 
-// Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   if (!isAuthenticated) {
     return <Navigate to='/login' replace />;
   }
 
-  // Check role-based access
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to='/login' replace />;
   }
@@ -66,7 +64,6 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   return children;
 };
 
-// Public Route component (redirect to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -75,7 +72,6 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    // Redirect based on user role
     if (user?.role === "admin") {
       return <Navigate to='/admin/dashboard' replace />;
     } else if (user?.role === "delegate") {
@@ -93,7 +89,6 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public routes */}
         <Route
           path='/login'
           element={
@@ -104,7 +99,6 @@ const AppRoutes = () => {
         />
         <Route path='/reset-password/:token' element={<ResetPasswordPage />} />
 
-        {/* Admin routes */}
         <Route
           path='/admin'
           element={
@@ -126,7 +120,6 @@ const AppRoutes = () => {
           <Route path='profile' element={<ProfilePage />} />
         </Route>
 
-        {/* Delegate routes */}
         <Route
           path='/delegate'
           element={
@@ -153,7 +146,6 @@ const AppRoutes = () => {
           <Route path='profile' element={<ProfilePage />} />
         </Route>
 
-        {/* Referee routes */}
         <Route
           path='/referee'
           element={
@@ -172,7 +164,6 @@ const AppRoutes = () => {
           <Route path='profile' element={<ProfilePage />} />
         </Route>
 
-        {/* Default redirects */}
         <Route path='/' element={<Navigate to='/login' replace />} />
         <Route
           path='/dashboard'

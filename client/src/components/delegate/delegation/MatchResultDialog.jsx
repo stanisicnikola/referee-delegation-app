@@ -127,10 +127,7 @@ const MatchResultDialog = ({ open, onClose, onSubmit, isLoading, match }) => {
                   label={`${match?.homeTeam?.name || "Home"} score`}
                   type='text'
                   placeholder='0'
-                  error={getVisibleScoreError(
-                    field.value,
-                    errors.homeScore,
-                  )}
+                  error={getVisibleScoreError(field.value, errors.homeScore)}
                   accentColor='#22c55e'
                   inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
                   onChange={(event) =>
@@ -149,10 +146,7 @@ const MatchResultDialog = ({ open, onClose, onSubmit, isLoading, match }) => {
                   label={`${match?.awayTeam?.name || "Away"} score`}
                   type='text'
                   placeholder='0'
-                  error={getVisibleScoreError(
-                    field.value,
-                    errors.awayScore,
-                  )}
+                  error={getVisibleScoreError(field.value, errors.awayScore)}
                   accentColor='#22c55e'
                   inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
                   onChange={(event) =>

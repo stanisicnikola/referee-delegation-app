@@ -26,7 +26,6 @@ export const availabilityKeys = {
   requests: (params) => [...availabilityKeys.all, "requests", params],
 };
 
-// Get my availability (for logged in referee)
 export const useMyAvailability = (params = {}) => {
   return useQuery({
     queryKey: availabilityKeys.myAvailability(params),
@@ -34,7 +33,6 @@ export const useMyAvailability = (params = {}) => {
   });
 };
 
-// Get my calendar
 export const useMyCalendar = (params = {}) => {
   return useQuery({
     queryKey: availabilityKeys.myCalendar(params),
@@ -44,7 +42,6 @@ export const useMyCalendar = (params = {}) => {
   });
 };
 
-// Set my availability
 export const useSetMyAvailability = () => {
   const queryClient = useQueryClient();
 
@@ -70,7 +67,6 @@ export const useSetMyAvailability = () => {
   });
 };
 
-// Set my availability range
 export const useSetMyAvailabilityRange = () => {
   const queryClient = useQueryClient();
 
@@ -94,7 +90,6 @@ export const useSetMyAvailabilityRange = () => {
   });
 };
 
-// Delete my availability records
 export const useDeleteMyAvailability = () => {
   const queryClient = useQueryClient();
 
@@ -117,7 +112,6 @@ export const useDeleteMyAvailability = () => {
   });
 };
 
-// Get referee availability
 export const useRefereeAvailability = (refereeId, params = {}) => {
   return useQuery({
     queryKey: availabilityKeys.refereeAvailability(refereeId),
@@ -126,7 +120,6 @@ export const useRefereeAvailability = (refereeId, params = {}) => {
   });
 };
 
-// Get referee calendar
 export const useRefereeCalendar = (refereeId, params = {}) => {
   return useQuery({
     queryKey: availabilityKeys.refereeCalendar(refereeId, params),
@@ -135,7 +128,6 @@ export const useRefereeCalendar = (refereeId, params = {}) => {
   });
 };
 
-// Set referee availability (admin only)
 export const useSetRefereeAvailability = () => {
   const queryClient = useQueryClient();
 
@@ -162,7 +154,6 @@ export const useSetRefereeAvailability = () => {
   });
 };
 
-// Set referee availability range (admin only)
 export const useSetRefereeAvailabilityRange = () => {
   const queryClient = useQueryClient();
 
@@ -189,7 +180,6 @@ export const useSetRefereeAvailabilityRange = () => {
   });
 };
 
-// Get available referees for date
 export const useAvailableRefereesForDate = (date) => {
   return useQuery({
     queryKey: availabilityKeys.availableReferees(date),
@@ -198,7 +188,6 @@ export const useAvailableRefereesForDate = (date) => {
   });
 };
 
-// Get unavailable referees for date
 export const useUnavailableRefereesForDate = (date) => {
   return useQuery({
     queryKey: availabilityKeys.unavailableReferees(date),
@@ -207,7 +196,6 @@ export const useUnavailableRefereesForDate = (date) => {
   });
 };
 
-// Get availability requests for delegate/admin review
 export const useAvailabilityRequests = (params = {}) => {
   return useQuery({
     queryKey: availabilityKeys.requests(params),
@@ -215,7 +203,6 @@ export const useAvailabilityRequests = (params = {}) => {
   });
 };
 
-// Approve/reject availability requests
 export const useReviewAvailabilityRequests = () => {
   const queryClient = useQueryClient();
 
@@ -239,7 +226,6 @@ export const useReviewAvailabilityRequests = () => {
   });
 };
 
-// Delete availability
 export const useDeleteAvailability = () => {
   const queryClient = useQueryClient();
 

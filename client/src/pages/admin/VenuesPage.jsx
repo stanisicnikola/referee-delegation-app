@@ -135,7 +135,6 @@ const VenuesPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -157,7 +156,6 @@ const VenuesPage = () => {
         />
       </Box>
 
-      {/* Table */}
       <DataTable
         columns={[
           {

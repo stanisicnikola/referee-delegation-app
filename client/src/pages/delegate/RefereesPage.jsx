@@ -119,7 +119,6 @@ const RefereesPage = () => {
     }
   };
 
-  // Stats
   const totalReferees = stats.total ?? refereesData?.pagination?.total ?? 0;
   const availableCount =
     stats.availabilityToday?.available ??
@@ -136,7 +135,6 @@ const RefereesPage = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Box
         sx={{
           mb: 3,
@@ -175,7 +173,6 @@ const RefereesPage = () => {
               flexWrap: "wrap",
             }}
           >
-            {/* Stats */}
             <Box
               sx={{
                 display: "flex",
@@ -249,7 +246,6 @@ const RefereesPage = () => {
       </Box>
 
       <Box>
-        {/* Filters */}
         <Box
           sx={{
             display: "flex",
@@ -305,7 +301,6 @@ const RefereesPage = () => {
           </Box>
         </Box>
 
-        {/* Referees Grid */}
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress sx={{ color: "#f97316" }} />
@@ -339,7 +334,6 @@ const RefereesPage = () => {
                     },
                   }}
                 >
-                  {/* Card Header */}
                   <Box
                     sx={{
                       p: { xs: 2, sm: 2.5 },
@@ -441,7 +435,6 @@ const RefereesPage = () => {
                     </Box>
                   </Box>
 
-                  {/* Card Body */}
                   <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
                     <Box
                       sx={{

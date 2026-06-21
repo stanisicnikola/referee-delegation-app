@@ -105,14 +105,12 @@ const DelegatesPage = () => {
 
   return (
     <Box sx={{ width: "100%", minWidth: 0 }}>
-      {/* Header */}
       <PageHeader
         title='Delegates'
         subtitle='Manage registered delegates and their profiles'
         onRefresh={() => refetch()}
       />
 
-      {/* Stats Cards */}
       <StatsGrid
         stats={[
           {
@@ -142,7 +140,6 @@ const DelegatesPage = () => {
         ]}
       />
 
-      {/* Filters */}
       <Box
         sx={{
           p: 2,
@@ -251,7 +248,6 @@ const DelegatesPage = () => {
         )}
       </Box>
 
-      {/* User Modal */}
       <UserModal
         open={modalOpen}
         onClose={handleCloseModal}

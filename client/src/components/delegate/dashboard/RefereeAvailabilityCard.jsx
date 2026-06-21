@@ -55,7 +55,9 @@ const AvailabilityDayRow = ({ day }) => {
         }}
       >
         <Box>
-          <Typography sx={{ color: COLORS.text, fontWeight: 800, fontSize: 14 }}>
+          <Typography
+            sx={{ color: COLORS.text, fontWeight: 800, fontSize: 14 }}
+          >
             {dateInfo.label}
           </Typography>
           <Typography sx={{ color: COLORS.muted, fontSize: 12 }}>

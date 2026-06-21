@@ -10,7 +10,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor - add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -21,14 +20,12 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
-// Response interceptor - handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't redirect on login/auth endpoints - let the component handle the error
     const isAuthEndpoint = error.config?.url?.includes("/auth/login");
 
     if (error.response?.status === 401 && !isAuthEndpoint) {
@@ -37,7 +34,7 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

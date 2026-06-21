@@ -66,7 +66,6 @@ const TeamMatchesDialog = ({
         },
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           px: 3,
@@ -109,7 +108,6 @@ const TeamMatchesDialog = ({
         </Box>
       </Box>
 
-      {/* Body */}
       <DialogContent sx={{ p: 3, bgcolor: "#121214" }}>
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
