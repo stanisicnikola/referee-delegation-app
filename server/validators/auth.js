@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { REFEREE_CATEGORY_VALUES } = require("../constants/refereeCategories");
 
 const digitsOnly = (value = "") => value.replace(/\D/g, "");
 
@@ -54,7 +55,7 @@ const registerReferee = z.object({
     .max(100),
   phone: z.string().optional().nullable(),
   licenseNumber: z.string({ required_error: "License number is required." }),
-  licenseCategory: z.enum(["A", "B", "C", "D"]).optional(),
+  licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   dateOfBirth: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),

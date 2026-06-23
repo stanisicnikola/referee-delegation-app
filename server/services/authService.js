@@ -10,7 +10,6 @@ const PASSWORD_RESET_REQUEST_MESSAGE =
   "If an account with that email exists, a password reset link has been sent.";
 
 class AuthService {
-  // Generate JWT token
   generateToken(user) {
     return jwt.sign(
       {
@@ -23,17 +22,14 @@ class AuthService {
     );
   }
 
-  // Hash password
   async hashPassword(password) {
     return bcrypt.hash(password, 12);
   }
 
-  // Compare password
   async comparePassword(password, hash) {
     return bcrypt.compare(password, hash);
   }
 
-  // Login
   async login(email, password) {
     const user = await User.findOne({
       where: { email },
@@ -95,12 +91,10 @@ class AuthService {
     return user;
   }
 
-  // Register referee (User + Referee)
   async registerReferee(userData) {
     const transaction = await sequelize.transaction();
 
     try {
-      // Check if email already exists
       const existingUser = await User.findOne({
         where: { email: userData.email },
         transaction,
@@ -110,7 +104,6 @@ class AuthService {
         throw new AppError("User with this email already exists.", 400);
       }
 
-      // Check if license already exists
       const existingLicense = await Referee.findOne({
         where: { licenseNumber: userData.licenseNumber },
         transaction,
@@ -125,7 +118,6 @@ class AuthService {
 
       const passwordHash = await this.hashPassword(userData.password);
 
-      // Create user
       const user = await User.create(
         {
           email: userData.email,
@@ -139,12 +131,11 @@ class AuthService {
         { transaction },
       );
 
-      // Create referee
       const referee = await Referee.create(
         {
           userId: user.id,
           licenseNumber: userData.licenseNumber,
-          licenseCategory: userData.licenseCategory,
+          licenseCategory: userData.licenseCategory || "none",
           dateOfBirth: userData.dateOfBirth,
           city: userData.city,
           address: userData.address,
@@ -156,7 +147,6 @@ class AuthService {
 
       await transaction.commit();
 
-      // Return user with referee data
       const result = await User.findByPk(user.id, {
         include: [{ model: Referee, as: "referee" }],
       });
@@ -170,7 +160,6 @@ class AuthService {
     }
   }
 
-  // Change password
   async changePassword(userId, currentPassword, newPassword) {
     const user = await User.findByPk(userId);
 
@@ -259,7 +248,6 @@ class AuthService {
     return { message: "Password has been updated successfully." };
   }
 
-  // Verify current password
   async verifyPassword(userId, password) {
     const user = await User.findByPk(userId);
 
@@ -294,7 +282,6 @@ class AuthService {
     return this.getCurrentUser(userId);
   }
 
-  // Delete user account
   async deleteAccount(userId) {
     const user = await User.findByPk(userId);
 
@@ -307,7 +294,6 @@ class AuthService {
     return { message: "Account deleted successfully." };
   }
 
-  // Get current user
   async getCurrentUser(userId) {
     const user = await User.findByPk(userId, {
       include: [{ model: Referee, as: "referee" }],

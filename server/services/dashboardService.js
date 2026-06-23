@@ -10,6 +10,7 @@ const {
   sequelize,
 } = require("../models");
 const { WEEKDAY_SHORT_NAMES } = require("../constants/date");
+const { getRefereeCategoryLabel } = require("../constants/refereeCategories");
 
 class DashboardService {
   /**
@@ -33,9 +34,6 @@ class DashboardService {
     };
   }
 
-  /**
-   * Aggregate stat card numbers
-   */
   async _getStats() {
     const [
       totalUsers,
@@ -87,11 +85,6 @@ class DashboardService {
     };
   }
 
-  /**
-   * Get match activity data grouped by day for the chart
-   * - matches: all matches scheduled on that day (any status)
-   * - pending: matches where delegation_status is pending or partial
-   */
   async _getChartData(period) {
     let startDate, endDate;
     const now = new Date();
@@ -111,7 +104,6 @@ class DashboardService {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
     } else {
-      // "current" — 7 days back + 7 days forward
       startDate = new Date();
       startDate.setDate(startDate.getDate() - 7);
       startDate.setHours(0, 0, 0, 0);
@@ -120,7 +112,6 @@ class DashboardService {
       endDate.setHours(23, 59, 59, 999);
     }
 
-    // Get all matches in this date window
     const matches = await Match.findAll({
       where: {
         scheduledAt: { [Op.between]: [startDate, endDate] },
@@ -129,7 +120,6 @@ class DashboardService {
       raw: true,
     });
 
-    // Build day map using LOCAL timezone dates (not UTC)
     const dayMap = {};
     const isMonthView = period === "thisMonth" || period === "lastMonth";
     const current = new Date(startDate);
@@ -147,7 +137,6 @@ class DashboardService {
       current.setDate(current.getDate() + 1);
     }
 
-    // Fill in real data — use local date key for matching
     for (const match of matches) {
       const key = this._toLocalDateKey(new Date(match.scheduledAt));
       if (dayMap[key]) {
@@ -165,9 +154,6 @@ class DashboardService {
     return Object.values(dayMap);
   }
 
-  /**
-   * Get recent activity from matches and users
-   */
   async _getRecentActivity() {
     const [recentMatches, recentUsers] = await Promise.all([
       Match.findAll({
@@ -205,7 +191,6 @@ class DashboardService {
       }),
     ]);
 
-    // Combine and sort by creation date
     const activities = [];
 
     for (const match of recentMatches) {
@@ -240,7 +225,9 @@ class DashboardService {
         title: "New user added",
         description: `${user.firstName} ${user.lastName} (${user.role}${
           user.referee?.licenseCategory
-            ? ` - Category ${user.referee.licenseCategory}`
+            ? ` - Category: ${getRefereeCategoryLabel(
+                user.referee.licenseCategory,
+              )}`
             : ""
         })`,
         time: user.created_at,
@@ -259,7 +246,6 @@ class DashboardService {
       }
     }
 
-    // Sort by time descending and take latest 8
     activities.sort((a, b) => b.rawTime - a.rawTime);
 
     return activities.slice(0, 8).map(({ rawTime, ...rest }) => ({
@@ -268,9 +254,6 @@ class DashboardService {
     }));
   }
 
-  /**
-   * Get upcoming matches
-   */
   async _getUpcomingMatches() {
     const matches = await Match.findAll({
       where: {
@@ -290,10 +273,6 @@ class DashboardService {
     return matches;
   }
 
-  /**
-   * Convert a Date to a local-timezone YYYY-MM-DD key
-   * Using getFullYear/getMonth/getDate (local) instead of toISOString (UTC)
-   */
   _toLocalDateKey(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -301,9 +280,6 @@ class DashboardService {
     return `${y}-${m}-${d}`;
   }
 
-  /**
-   * Format a date as relative time string
-   */
   _formatRelativeTime(date) {
     const now = new Date();
     const diffMs = now - date;

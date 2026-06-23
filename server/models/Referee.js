@@ -1,22 +1,20 @@
 "use strict";
 const { Model } = require("sequelize");
+const { REFEREE_CATEGORY_VALUES } = require("../constants/refereeCategories");
 
 module.exports = (sequelize, DataTypes) => {
   class Referee extends Model {
     static associate(models) {
-      // Referee belongs to user (1:1)
       Referee.belongsTo(models.User, {
         foreignKey: "userId",
         as: "user",
       });
 
-      // Referee can be assigned to many matches
       Referee.hasMany(models.MatchReferee, {
         foreignKey: "refereeId",
         as: "matchAssignments",
       });
 
-      // Referee has availability
       Referee.hasMany(models.RefereeAvailability, {
         foreignKey: "refereeId",
         as: "availability",
@@ -44,8 +42,9 @@ module.exports = (sequelize, DataTypes) => {
         field: "license_number",
       },
       licenseCategory: {
-        type: DataTypes.ENUM("international", "A", "B", "C", "regional"),
+        type: DataTypes.ENUM(...REFEREE_CATEGORY_VALUES),
         allowNull: false,
+        defaultValue: "none",
         field: "license_category",
       },
       dateOfBirth: {
@@ -85,7 +84,7 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-    }
+    },
   );
 
   return Referee;

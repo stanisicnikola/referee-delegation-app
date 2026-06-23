@@ -74,7 +74,6 @@ class UserService {
       throw new AppError("User with this email already exists.", 400);
     }
 
-    // Use transaction to ensure both user and referee are created together
     const transaction = await sequelize.transaction();
     let committed = false;
 
@@ -82,9 +81,10 @@ class UserService {
       const passwordHash = await bcrypt.hash(userData.password, 12);
       const requirePasswordChange = Boolean(userData.requirePasswordChange);
       const sendWelcomeEmail = Boolean(userData.sendWelcomeEmail);
-      const passwordResetToken = sendWelcomeEmail && requirePasswordChange
-        ? crypto.randomBytes(32).toString("hex")
-        : null;
+      const passwordResetToken =
+        sendWelcomeEmail && requirePasswordChange
+          ? crypto.randomBytes(32).toString("hex")
+          : null;
       const passwordResetTokenHash = passwordResetToken
         ? this.hashPasswordResetToken(passwordResetToken)
         : null;
@@ -92,7 +92,6 @@ class UserService {
         ? this.getPasswordResetExpiry()
         : null;
 
-      // Extract referee-specific data
       const {
         licenseNumber,
         licenseCategory,
@@ -119,13 +118,12 @@ class UserService {
         { transaction },
       );
 
-      // If user is a referee, create referee profile automatically
       if (userData.role === "referee") {
         await Referee.create(
           {
             userId: user.id,
             licenseNumber: licenseNumber || `REF-${Date.now()}`, // Generate temporary if not provided
-            licenseCategory: licenseCategory || "C", // Default category
+            licenseCategory: licenseCategory || "none",
             dateOfBirth: dateOfBirth || null,
             city: city || null,
             address: address || null,
@@ -140,7 +138,6 @@ class UserService {
       await transaction.commit();
       committed = true;
 
-      // Return user with referee data
       const createdUser = await this.findById(user.id);
       let welcomeEmail = null;
 
@@ -204,7 +201,6 @@ class UserService {
     const transaction = await sequelize.transaction();
 
     try {
-      // Extract referee-specific data
       const {
         licenseNumber,
         licenseCategory,
@@ -219,13 +215,11 @@ class UserService {
 
       await user.update(userOnlyData, { transaction });
 
-      // Handle role changes
       const newRole = userData.role || user.role;
       const hadRefereeProfile = user.referee !== null;
 
       if (newRole === "referee") {
         if (hadRefereeProfile) {
-          // Update existing referee profile
           await user.referee.update(
             {
               licenseNumber: licenseNumber || user.referee.licenseNumber,
@@ -249,12 +243,11 @@ class UserService {
             { transaction },
           );
         } else {
-          // Create new referee profile
           await Referee.create(
             {
               userId: user.id,
               licenseNumber: licenseNumber || `REF-${Date.now()}`,
-              licenseCategory: licenseCategory || "C",
+              licenseCategory: licenseCategory || "none",
               dateOfBirth: dateOfBirth || null,
               city: city || null,
               address: address || null,
@@ -294,7 +287,6 @@ class UserService {
     const transaction = await sequelize.transaction();
 
     try {
-      // Delete referee profile first if exists (due to foreign key)
       if (user.referee) {
         await user.referee.destroy({ transaction });
       }

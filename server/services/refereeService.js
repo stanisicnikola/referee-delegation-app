@@ -1120,21 +1120,19 @@ class RefereeService {
   async getOverallStatistics() {
     const [
       total,
-      international,
-      A,
-      B,
-      C,
-      regional,
+      black,
+      green,
+      white,
+      none,
       active,
       inactive,
       suspended,
     ] = await Promise.all([
       Referee.count(),
-      Referee.count({ where: { licenseCategory: "international" } }),
-      Referee.count({ where: { licenseCategory: "A" } }),
-      Referee.count({ where: { licenseCategory: "B" } }),
-      Referee.count({ where: { licenseCategory: "C" } }),
-      Referee.count({ where: { licenseCategory: "regional" } }),
+      Referee.count({ where: { licenseCategory: "black" } }),
+      Referee.count({ where: { licenseCategory: "green" } }),
+      Referee.count({ where: { licenseCategory: "white" } }),
+      Referee.count({ where: { licenseCategory: "none" } }),
       Referee.count({
         include: [{ model: User, as: "user", where: { status: "active" } }],
       }),
@@ -1210,12 +1208,11 @@ class RefereeService {
 
     return {
       total,
-      byCategory: {
-        international,
-        A,
-        B,
-        C,
-        regional,
+      byLicenseCategory: {
+        black,
+        green,
+        white,
+        none,
       },
       byStatus: {
         active,

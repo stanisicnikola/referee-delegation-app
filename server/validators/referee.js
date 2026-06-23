@@ -1,9 +1,10 @@
 const { z } = require("zod");
+const { REFEREE_CATEGORY_VALUES } = require("../constants/refereeCategories");
 
 const create = z.object({
   userId: z.string().uuid("Invalid ID format."),
   licenseNumber: z.string({ required_error: "License number is required." }),
-  licenseCategory: z.enum(["international", "A", "B", "C", "regional"]),
+  licenseCategory: z.enum(REFEREE_CATEGORY_VALUES),
   dateOfBirth: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
@@ -13,7 +14,7 @@ const create = z.object({
 
 const update = z.object({
   licenseNumber: z.string().optional(),
-  licenseCategory: z.enum(["international", "A", "B", "C", "regional"]),
+  licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   dateOfBirth: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
@@ -24,9 +25,7 @@ const update = z.object({
 const query = z.object({
   page: z.string().transform(Number).optional(),
   limit: z.string().transform(Number).optional(),
-  licenseCategory: z
-    .enum(["international", "A", "B", "C", "regional"])
-    .optional(),
+  licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   city: z.string().optional(),
   search: z.string().optional(),
 });
