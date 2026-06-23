@@ -14,7 +14,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context";
 import { adminTheme } from "../theme";
-import { useReferees, useUserStatistics } from "../hooks";
+import { useRefereesStatistics, useUserStatistics } from "../hooks";
 import PanelMobileDrawerHeader from "./shared/PanelMobileDrawerHeader";
 import PanelSidebar from "./shared/PanelSidebar";
 import PanelTopBar from "./shared/PanelTopBar";
@@ -40,11 +40,12 @@ const AdminLayout = () => {
   }, [isMobile]);
 
   const { data: usersStatisticsData } = useUserStatistics();
-  const { data: refereesData } = useReferees();
+  const { data: refereesStatisticsData } = useRefereesStatistics();
   const userStats = usersStatisticsData?.data || {};
+  const refereeStats = refereesStatisticsData?.data || {};
 
   const userCount = userStats.total || 0;
-  const refereeCount = refereesData?.pagination?.total || 0;
+  const refereeCount = refereeStats.total || 0;
   const delegatesCount = userStats.byRole?.delegates || 0;
 
   const menuSections = [

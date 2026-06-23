@@ -65,7 +65,7 @@ const UserModal = ({
         phone: user?.phone || "",
         status: user?.status || "active",
         licenseNumber: user?.referee?.licenseNumber || "",
-        licenseCategory: user?.referee?.licenseCategory || "international",
+        licenseCategory: user?.referee?.licenseCategory || "none",
         city: user?.referee?.city || "",
         experienceYears:
           user?.referee?.experienceYears !== undefined &&

@@ -9,7 +9,7 @@ import {
   DialogActions,
 } from "@mui/material";
 import { Star as StarIcon } from "@mui/icons-material";
-import StatusBadge from "../user/StatusBadge";
+import { getRefereeCategoryLabel } from "../../constants/refereeCategories";
 
 const formatDate = (value) => {
   if (!value) return null;
@@ -66,7 +66,7 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor }) => {
               {referee?.licenseCategory && (
                 <Chip
                   icon={<StarIcon sx={{ fontSize: "14px !important" }} />}
-                  label={`Category ${referee.licenseCategory}`}
+                  label={getRefereeCategoryLabel(referee.licenseCategory)}
                   size='small'
                   sx={{
                     bgcolor: "rgba(249, 115, 22, 0.1)",
@@ -79,7 +79,6 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor }) => {
                   }}
                 />
               )}
-              <StatusBadge status={referee?.user?.status} />
             </Box>
           </Box>
         </Box>

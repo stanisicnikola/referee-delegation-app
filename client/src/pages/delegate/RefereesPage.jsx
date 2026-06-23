@@ -20,15 +20,10 @@ import {
 import { ConfirmDialog, CustomButton, FilterSearch } from "../../components/ui";
 import UserModal from "../../components/user/UserModal";
 import StatusBadge from "../../components/user/StatusBadge";
-
-const CATEGORY_FILTERS = [
-  { value: "all", label: "All categories" },
-  { value: "international", label: "International" },
-  { value: "A", label: "Category A" },
-  { value: "B", label: "Category B" },
-  { value: "C", label: "Category C" },
-  { value: "regional", label: "Regional" },
-];
+import {
+  REFEREE_CATEGORY_FILTERS,
+  getRefereeCategoryLabel,
+} from "../../constants/refereeCategories";
 
 const REFEREE_ONLY_ROLES = ["referee"];
 
@@ -276,7 +271,7 @@ const RefereesPage = () => {
               },
             }}
           >
-            {CATEGORY_FILTERS.map((category) => {
+            {REFEREE_CATEGORY_FILTERS.map((category) => {
               const selected = categoryFilter === category.value;
 
               return (
@@ -418,7 +413,9 @@ const RefereesPage = () => {
                             icon={
                               <StarIcon sx={{ fontSize: "14px !important" }} />
                             }
-                            label={`Cat. ${referee.licenseCategory || "N/A"}`}
+                            label={getRefereeCategoryLabel(
+                              referee.licenseCategory,
+                            )}
                             size='small'
                             sx={{
                               bgcolor: "rgba(40, 36, 33, 0.1)",

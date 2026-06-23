@@ -90,6 +90,7 @@ const DataTable = ({
                         borderColor: "#242428",
                         width: column.width,
                         minWidth: column.minWidth,
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {column.label}
@@ -110,6 +111,7 @@ const DataTable = ({
                             onRowClick ? () => onRowClick(row) : undefined
                           }
                           sx={{
+                            whiteSpace: "nowrap",
                             cursor: isClickable ? "pointer" : "default",
                             "&:hover": { bgcolor: "#1a1a1d" },
                             "& td": { borderColor: "#242428" },

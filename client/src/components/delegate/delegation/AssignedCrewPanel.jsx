@@ -1,6 +1,7 @@
 import { Avatar, Box, IconButton, Typography } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { SLOT_CONFIG } from "./constants";
+import { getRefereeCategoryLabel } from "../../../constants/refereeCategories";
 
 const AssignmentSlot = ({ config, referee, assignment, locked, onRemove }) => {
   const response = assignment?.status;
@@ -138,7 +139,7 @@ const AssignmentSlot = ({ config, referee, assignment, locked, onRemove }) => {
             )}
           </Box>
           <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
-            Category {referee.licenseCategory || "N/A"} -{" "}
+            Category: {getRefereeCategoryLabel(referee.licenseCategory)} -{" "}
             {referee.city || "N/A"}
           </Typography>
         </Box>

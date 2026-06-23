@@ -10,6 +10,7 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import { SLOT_CONFIG } from "./constants";
+import { getRefereeCategoryLabel } from "../../../constants/refereeCategories";
 
 const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
   const declinedAssignment = referee.declinedAssignment;
@@ -83,7 +84,8 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
           )}
         </Box>
         <Typography sx={{ color: "#6b7280", fontSize: 11 }}>
-          Cat. {referee.licenseCategory || "-"} - {referee.city || "-"}
+          Category: {getRefereeCategoryLabel(referee.licenseCategory)} -{" "}
+          {referee.city || "-"}
         </Typography>
         {hasDeclined && (
           <Typography sx={{ color: "#fca5a5", fontSize: 11, mt: 0.35 }}>

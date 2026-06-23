@@ -25,12 +25,16 @@ import {
   FilterSearch,
   FilterSelect,
 } from "../../components/ui";
+import {
+  REFEREE_CATEGORY_OPTIONS,
+  getRefereeCategoryMeta,
+} from "../../constants/refereeCategories";
 
 const RefereesPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [licenseFilter, setLicenseFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -40,7 +44,7 @@ const RefereesPage = () => {
     page: page + 1,
     limit: rowsPerPage,
     search,
-    licenseCategory: categoryFilter !== "all" ? categoryFilter : undefined,
+    licenseCategory: licenseFilter !== "all" ? licenseFilter : undefined,
   });
 
   const { data: statisticsData } = useRefereesStatistics();
@@ -52,7 +56,7 @@ const RefereesPage = () => {
   const referees = data?.data || [];
   const stats = statisticsData?.data || {};
   const totalReferees = stats.total ?? data?.pagination?.total ?? 0;
-  const categoryStats = stats.byCategory || {};
+  const licenseCategoryStats = stats.byLicenseCategory || {};
 
   const handleOpenModal = (referee = null) => {
     if (referee) {
@@ -105,38 +109,8 @@ const RefereesPage = () => {
   };
 
   const getCategoryBadge = (category) => {
-    const config = {
-      international: {
-        label: "International",
-        color: "#f59e0b",
-        bg: "rgba(245, 158, 11, 0.15)",
-      },
-      A: {
-        label: "Category A",
-        color: "#22c55e",
-        bg: "rgba(34, 197, 94, 0.15)",
-      },
-      B: {
-        label: "Category B",
-        color: "#3b82f6",
-        bg: "#3b82f626",
-      },
-      C: {
-        label: "Category C",
-        color: "#8b5cf6",
-        bg: "rgba(139, 92, 246, 0.15)",
-      },
-      regional: {
-        label: "Regional",
-        color: "#d3f127",
-        bg: "rgba(211, 241, 39, 0.15)",
-      },
-    };
-    const { label, color, bg } = config[category] || {
-      label: category,
-      color: "#6b7280",
-      bg: "rgba(107, 114, 128, 0.15)",
-    };
+    const { label, color, bg } = getRefereeCategoryMeta(category);
+
     return (
       <Box
         sx={{
@@ -176,45 +150,36 @@ const RefereesPage = () => {
             color: "#8b5cf6",
           },
           {
-            label: "International",
+            label: "Black Category",
             value:
-              categoryStats.international ??
-              referees.filter((r) => r.licenseCategory === "international")
-                .length,
+              licenseCategoryStats.black ??
+              referees.filter((r) => r.licenseCategory === "black").length,
             icon: StarIcon,
-            color: "#f59e0b",
+            color: "#f8fafc",
           },
           {
-            label: "Category A",
+            label: "Green Category",
             value:
-              categoryStats.A ??
-              referees.filter((r) => r.licenseCategory === "A").length,
+              licenseCategoryStats.green ??
+              referees.filter((r) => r.licenseCategory === "green").length,
             icon: StarIcon,
             color: "#22c55e",
           },
           {
-            label: "Category B",
+            label: "White Category",
             value:
-              categoryStats.B ??
-              referees.filter((r) => r.licenseCategory === "B").length,
+              licenseCategoryStats.white ??
+              referees.filter((r) => r.licenseCategory === "white").length,
             icon: StarIcon,
-            color: "#3b82f6",
+            color: "#e5e7eb",
           },
           {
-            label: "Category C",
+            label: "No License Category",
             value:
-              categoryStats.C ??
-              referees.filter((r) => r.licenseCategory === "C").length,
+              licenseCategoryStats.none ??
+              referees.filter((r) => r.licenseCategory === "none").length,
             icon: StarIcon,
-            color: "#8b5cf6",
-          },
-          {
-            label: "Regional",
-            value:
-              categoryStats.regional ??
-              referees.filter((r) => r.licenseCategory === "regional").length,
-            icon: StarIcon,
-            color: "#d3f127",
+            color: "#9ca3af",
           },
         ]}
       />
@@ -240,15 +205,10 @@ const RefereesPage = () => {
         />
 
         <FilterSelect
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          placeholder='All Categories'
-          options={[
-            { value: "international", label: "International" },
-            { value: "A", label: "Category A" },
-            { value: "B", label: "Category B" },
-            { value: "C", label: "Category C" },
-          ]}
+          value={licenseFilter}
+          onChange={(e) => setLicenseFilter(e.target.value)}
+          placeholder='All categories'
+          options={REFEREE_CATEGORY_OPTIONS}
         />
       </Box>
 
@@ -291,7 +251,7 @@ const RefereesPage = () => {
           },
           {
             id: "licenseNumber",
-            label: "License",
+            label: "License Number",
             render: (license) => (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <BadgeIcon sx={{ fontSize: 16, color: "#6b7280" }} />
@@ -309,8 +269,8 @@ const RefereesPage = () => {
           },
           {
             id: "licenseCategory",
-            label: "Category",
-            render: (category) => getCategoryBadge(category),
+            label: "License Category",
+            render: (license) => getCategoryBadge(license),
           },
           {
             id: "city",

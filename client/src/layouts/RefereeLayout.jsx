@@ -144,7 +144,7 @@ const RefereeLayout = () => {
       accentColor={refereeTheme.palette.primary.main}
       userMenu={{
         user,
-        roleLabel: `Category ${user?.referee?.licenseCategory || "N/A"}`,
+        roleLabel: user?.referee?.role || "Referee",
         onMenuOpen: handleMenuOpen,
         onLogout: handleLogout,
         avatarBackground: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",

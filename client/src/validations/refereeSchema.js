@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { phoneSchema } from "./sharedSchemas";
+import { REFEREE_CATEGORY_VALUES } from "../constants/refereeCategories";
 
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])(?!.*\s).{8,}$/;
@@ -35,16 +36,11 @@ export const baseRefereeSchema = z.object({
   role: z.literal("referee"),
   status: z.enum(["active", "inactive", "suspended"]),
   licenseNumber: z.string().min(1, "License number is required."),
-  licenseCategory: z.enum(["international", "A", "B", "C", "regional"], {
-    required_error: "Category is required.",
+  licenseCategory: z.enum(REFEREE_CATEGORY_VALUES, {
+    required_error: "License category is required.",
   }),
   city: z.string().min(1, "City is required."),
-  experienceYears: experienceYearsSchema.refine(
-    (value) => value !== undefined,
-    {
-      message: "Experience years is required.",
-    },
-  ),
+  experienceYears: experienceYearsSchema,
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
 });

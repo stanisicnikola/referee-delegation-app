@@ -1,19 +1,12 @@
 import { Box, Typography, Checkbox, FormControlLabel } from "@mui/material";
 import { Controller } from "react-hook-form";
 import { CustomInput, CustomSelect, PasswordInput } from "../ui";
+import { REFEREE_CATEGORY_OPTIONS } from "../../constants/refereeCategories";
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
   { value: "suspended", label: "Suspended" },
-];
-
-const LICENSE_CATEGORY_OPTIONS = [
-  { value: "international", label: "International" },
-  { value: "A", label: "Category A" },
-  { value: "B", label: "Category B" },
-  { value: "C", label: "Category C" },
-  { value: "regional", label: "Regional" },
 ];
 
 const RefereeForm = ({
@@ -184,8 +177,8 @@ const RefereeForm = ({
               render={({ field }) => (
                 <CustomSelect
                   {...field}
-                  label='Category *'
-                  options={LICENSE_CATEGORY_OPTIONS}
+                  label='License Category *'
+                  options={REFEREE_CATEGORY_OPTIONS}
                   variant={variant}
                   error={errors?.licenseCategory?.message}
                 />
