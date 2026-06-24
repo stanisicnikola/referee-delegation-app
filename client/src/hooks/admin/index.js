@@ -1,4 +1,3 @@
-// Re-export all hooks for admin pages
 export * from "../useUsers";
 export * from "../useReferees";
 export * from "../useTeams";
