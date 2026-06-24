@@ -94,18 +94,6 @@ class TeamService {
     return { message: "Team deleted successfully." };
   }
 
-  async updateLogo(id, logoUrl) {
-    const team = await Team.findByPk(id);
-
-    if (!team) {
-      throw new AppError("Team not found.", 404);
-    }
-
-    await team.update({ logoUrl });
-
-    return this.findById(id);
-  }
-
   async getStats() {
     const totalTeams = await Team.count();
     const cities = await Team.findAll({

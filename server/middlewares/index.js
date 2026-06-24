@@ -6,7 +6,6 @@ const {
   validateQuery,
   validateParams,
 } = require("./validate");
-const { uploadTeamLogo, uploadAvatar } = require("./upload");
 
 module.exports = {
   authenticate,
@@ -19,6 +18,4 @@ module.exports = {
   validateBody,
   validateQuery,
   validateParams,
-  uploadTeamLogo,
-  uploadAvatar,
 };

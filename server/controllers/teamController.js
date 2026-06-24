@@ -72,28 +72,6 @@ const deleteTeam = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Upload team logo
- * @route   PUT /api/teams/:id/logo
- * @access  Private/Admin
- */
-const uploadLogo = asyncHandler(async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      success: false,
-      message: "Please upload an image.",
-    });
-  }
-
-  const logoPath = `/uploads/teams/${req.file.filename}`;
-  const team = await teamService.updateLogo(req.params.id, logoPath);
-
-  res.json({
-    success: true,
-    data: team,
-  });
-});
-
-/**
  * @desc    Get team statistics
  * @route   GET /api/teams/stats
  * @access  Private
@@ -113,6 +91,5 @@ module.exports = {
   createTeam,
   updateTeam,
   deleteTeam,
-  uploadLogo,
   getTeamStats,
 };

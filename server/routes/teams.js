@@ -1,12 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { teamController } = require("../controllers");
-const {
-  authenticate,
-  authorize,
-  validate,
-  uploadTeamLogo,
-} = require("../middlewares");
+const { authenticate, authorize, validate } = require("../middlewares");
 const { teamSchemas } = require("../validators");
 
 router.use(authenticate);
@@ -38,14 +33,6 @@ router.delete(
   authorize("admin", "delegate"),
   validate(teamSchemas.params, "params"),
   teamController.deleteTeam,
-);
-
-router.put(
-  "/:id/logo",
-  authorize("admin", "delegate"),
-  validate(teamSchemas.params, "params"),
-  uploadTeamLogo,
-  teamController.uploadLogo,
 );
 
 module.exports = router;
