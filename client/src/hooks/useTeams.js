@@ -87,27 +87,6 @@ export const useDeleteTeam = () => {
   });
 };
 
-export const useUploadTeamLogo = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, file }) => teamsApi.uploadLogo(id, file),
-    onSuccess: (data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: teamKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: teamKeys.detail(id) });
-      toast.success(data?.message || "Team logo uploaded successfully!", {
-        toastId: "team-logo-upload",
-      });
-    },
-    onError: (error) => {
-      toast.error(
-        error.response?.data?.message || "Failed to upload team logo.",
-        { toastId: "team-logo-upload-error" },
-      );
-    },
-  });
-};
-
 export const useTeamStats = () => {
   return useQuery({
     queryKey: teamKeys.stats(),

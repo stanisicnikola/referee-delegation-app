@@ -26,17 +26,6 @@ export const teamsApi = {
     return response.data;
   },
 
-  uploadLogo: async (id, file) => {
-    const formData = new FormData();
-    formData.append("logo", file);
-    const response = await api.put(`/teams/${id}/logo`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
-  },
-
   getStats: async () => {
     const response = await api.get("/teams/stats");
     return response.data;
