@@ -13,6 +13,7 @@ referee-delegation-app/
 ## Tech Stack
 
 ### Backend (`server/`)
+
 - Express 5
 - Sequelize 6 + sequelize-cli
 - MySQL (`mysql2`)
@@ -22,6 +23,7 @@ referee-delegation-app/
 - File uploads (`multer`)
 
 ### Frontend (`client/`)
+
 - React 19 + Vite
 - React Router
 - TanStack React Query
@@ -32,6 +34,7 @@ referee-delegation-app/
 ## Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - MySQL
 
@@ -43,6 +46,7 @@ npm install
 ```
 
 Create/update `server/.env` with:
+
 - `DB_HOST`
 - `DB_USER`
 - `DB_PASS`

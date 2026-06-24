@@ -9,6 +9,7 @@ Referee Delegation App — a system for managing referee assignments to sports m
 ## Commands
 
 ### Server (from `server/`)
+
 ```bash
 npm start                # Start dev server with nodemon (default port 8000)
 npm run db:migrate       # Run Sequelize migrations
@@ -19,6 +20,7 @@ npm run db:reset         # Full reset: undo migrations → migrate → seed
 ```
 
 ### Client (from `client/`)
+
 ```bash
 npm run dev      # Start Vite dev server
 npm run build    # Production build
