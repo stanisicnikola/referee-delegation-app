@@ -122,7 +122,7 @@ class UserService {
         await Referee.create(
           {
             userId: user.id,
-            licenseNumber: licenseNumber || `REF-${Date.now()}`, // Generate temporary if not provided
+            licenseNumber: licenseNumber || `REF-${Date.now()}`,
             licenseCategory: licenseCategory || "none",
             dateOfBirth: dateOfBirth || null,
             city: city || null,

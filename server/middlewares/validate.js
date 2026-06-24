@@ -36,7 +36,6 @@ const validate = (schema, type = "body") => {
         });
       }
 
-      // Set validated data
       switch (type) {
         case "query":
           req.validatedQuery = result.data;
@@ -57,7 +56,6 @@ const validate = (schema, type = "body") => {
   };
 };
 
-// Aliases for simpler usage
 const validateBody = (schema) => validate(schema, "body");
 const validateQuery = (schema) => validate(schema, "query");
 const validateParams = (schema) => validate(schema, "params");

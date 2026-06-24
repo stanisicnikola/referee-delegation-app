@@ -78,7 +78,13 @@ module.exports = (sequelize, DataTypes) => {
         field: "scheduled_at",
       },
       status: {
-        type: DataTypes.ENUM("scheduled", "in_progress", "completed", "postponed", "cancelled"),
+        type: DataTypes.ENUM(
+          "scheduled",
+          "in_progress",
+          "completed",
+          "postponed",
+          "cancelled",
+        ),
         allowNull: false,
         defaultValue: "scheduled",
       },
@@ -131,7 +137,7 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-    }
+    },
   );
 
   return Match;

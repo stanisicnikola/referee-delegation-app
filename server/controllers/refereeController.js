@@ -149,7 +149,6 @@ const getMyDashboard = asyncHandler(async (req, res) => {
  * @access  Private/Referee
  */
 const getMyAssignments = asyncHandler(async (req, res) => {
-  // Get referee linked to current user
   const referee = await refereeService.findByUserId(req.user.id);
   const result = await refereeService.getAssignments(referee.id, req.query);
 

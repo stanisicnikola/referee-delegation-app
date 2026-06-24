@@ -9,7 +9,7 @@ const { asyncHandler } = require("../middlewares");
 const getRefereeAvailability = asyncHandler(async (req, res) => {
   const result = await availabilityService.getByReferee(
     req.params.refereeId,
-    req.query
+    req.query,
   );
 
   res.json({
@@ -26,7 +26,7 @@ const getRefereeAvailability = asyncHandler(async (req, res) => {
 const setAvailability = asyncHandler(async (req, res) => {
   const availability = await availabilityService.setAvailability(
     req.params.refereeId,
-    req.body
+    req.body,
   );
 
   res.json({
@@ -43,7 +43,7 @@ const setAvailability = asyncHandler(async (req, res) => {
 const setAvailabilityRange = asyncHandler(async (req, res) => {
   const result = await availabilityService.setAvailabilityRange(
     req.params.refereeId,
-    req.body
+    req.body,
   );
 
   res.json({
@@ -75,7 +75,7 @@ const reviewAvailabilityRequests = asyncHandler(async (req, res) => {
   const result = await availabilityService.reviewRequests(
     req.body.ids,
     req.body.approvalStatus,
-    req.user.id
+    req.user.id,
   );
 
   res.json({
@@ -119,7 +119,7 @@ const deleteAvailabilityByDate = asyncHandler(async (req, res) => {
  */
 const getUnavailableReferees = asyncHandler(async (req, res) => {
   const referees = await availabilityService.getUnavailableReferees(
-    req.params.date
+    req.params.date,
   );
 
   res.json({
@@ -135,7 +135,7 @@ const getUnavailableReferees = asyncHandler(async (req, res) => {
  */
 const getAvailableReferees = asyncHandler(async (req, res) => {
   const referees = await availabilityService.getAvailableReferees(
-    req.params.date
+    req.params.date,
   );
 
   res.json({
@@ -154,7 +154,7 @@ const getCalendar = asyncHandler(async (req, res) => {
   const calendar = await availabilityService.getCalendar(
     req.params.refereeId,
     parseInt(year),
-    parseInt(month)
+    parseInt(month),
   );
 
   res.json({
@@ -173,7 +173,7 @@ const copyFromPreviousMonth = asyncHandler(async (req, res) => {
   const result = await availabilityService.copyFromPreviousMonth(
     req.params.refereeId,
     parseInt(year),
-    parseInt(month)
+    parseInt(month),
   );
 
   res.json({
@@ -211,7 +211,7 @@ const setMyAvailability = asyncHandler(async (req, res) => {
       defaultApprovalStatus: req.body.isAvailable ? "approved" : "pending",
       disallowPast: true,
       disallowAcceptedAssignments: !req.body.isAvailable,
-    }
+    },
   );
 
   res.json({
@@ -234,7 +234,7 @@ const setMyAvailabilityRange = asyncHandler(async (req, res) => {
       defaultApprovalStatus: req.body.isAvailable ? "approved" : "pending",
       disallowPast: true,
       disallowAcceptedAssignments: !req.body.isAvailable,
-    }
+    },
   );
 
   res.json({
@@ -269,7 +269,7 @@ const getMyCalendar = asyncHandler(async (req, res) => {
   const calendar = await availabilityService.getCalendar(
     referee.id,
     parseInt(year),
-    parseInt(month)
+    parseInt(month),
   );
 
   res.json({

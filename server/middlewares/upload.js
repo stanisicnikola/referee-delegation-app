@@ -2,7 +2,6 @@ const multer = require("multer");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
-// Storage configuration for team logos
 const teamLogoStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/teams/");
@@ -13,7 +12,6 @@ const teamLogoStorage = multer.diskStorage({
   },
 });
 
-// Storage configuration for user avatars
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/avatars/");
@@ -24,11 +22,10 @@ const avatarStorage = multer.diskStorage({
   },
 });
 
-// Image filter
 const imageFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
+    path.extname(file.originalname).toLowerCase(),
   );
   const mimetype = allowedTypes.test(file.mimetype);
 
@@ -38,25 +35,22 @@ const imageFilter = (req, file, cb) => {
   cb(new Error("Only image formats are allowed (jpeg, jpg, png, gif, webp)."));
 };
 
-// Upload for team logo
 const uploadTeamLogo = multer({
   storage: teamLogoStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: imageFilter,
 }).single("logo");
 
-// Upload for user avatar
 const uploadAvatar = multer({
   storage: avatarStorage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB
+    fileSize: 2 * 1024 * 1024,
   },
   fileFilter: imageFilter,
 }).single("avatar");
 
-// Middleware wrapper for better error handling
 const handleUpload = (uploadMiddleware) => {
   return (req, res, next) => {
     uploadMiddleware(req, res, (err) => {

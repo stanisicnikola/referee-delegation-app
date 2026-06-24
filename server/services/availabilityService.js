@@ -67,13 +67,15 @@ class AvailabilityService {
 
   getDelegationStatus(assignments) {
     const activeAssignments = assignments.filter((assignment) =>
-      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
     );
 
     if (activeAssignments.length === 0) return "pending";
     if (activeAssignments.length < 3) return "partial";
 
-    return activeAssignments.every((assignment) => assignment.status === "accepted")
+    return activeAssignments.every(
+      (assignment) => assignment.status === "accepted",
+    )
       ? "confirmed"
       : "complete";
   }
@@ -99,7 +101,7 @@ class AvailabilityService {
     });
 
     return assignments.filter((assignment) =>
-      dateKeySet.has(this.toDateKey(assignment.match?.scheduledAt))
+      dateKeySet.has(this.toDateKey(assignment.match?.scheduledAt)),
     );
   }
 
@@ -108,7 +110,7 @@ class AvailabilityService {
       refereeId,
       dateKeys,
       ["accepted"],
-      transaction
+      transaction,
     );
 
     if (acceptedAssignments.length === 0) return;
@@ -117,19 +119,19 @@ class AvailabilityService {
       ...new Set(
         acceptedAssignments
           .map((assignment) => this.toDateKey(assignment.match?.scheduledAt))
-          .filter(Boolean)
+          .filter(Boolean),
       ),
     ].sort();
 
     throw new AppError(
       `You already accepted a match on ${this.formatConflictDates(conflictDates)}. Remove that match assignment before reporting unavailability for that date.`,
-      400
+      400,
     );
   }
 
   getUnavailabilityAssignmentNote(reason, description) {
     const parts = ["Unavailable request", reason, description?.trim()].filter(
-      Boolean
+      Boolean,
     );
     return parts.join(": ");
   }
@@ -139,13 +141,13 @@ class AvailabilityService {
     dateKeys,
     reason,
     description,
-    transaction
+    transaction,
   ) {
     const pendingAssignments = await this.getAssignmentsForDateKeys(
       refereeId,
       dateKeys,
       ["pending"],
-      transaction
+      transaction,
     );
 
     if (pendingAssignments.length === 0) return 0;
@@ -163,7 +165,7 @@ class AvailabilityService {
           declineReason: "unavailable",
           notes: this.getUnavailabilityAssignmentNote(reason, description),
         },
-        { transaction }
+        { transaction },
       );
     }
 
@@ -177,7 +179,7 @@ class AvailabilityService {
       });
       await match.update(
         { delegationStatus: this.getDelegationStatus(assignments) },
-        { transaction }
+        { transaction },
       );
     }
 
@@ -202,7 +204,6 @@ class AvailabilityService {
       where.date = { ...where.date, [Op.lte]: new Date(dateTo) };
     }
 
-    // If month and year are provided, filter by them
     if (month && year) {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0);
@@ -240,7 +241,7 @@ class AvailabilityService {
     const status = this.getApprovalStatus(
       isAvailable,
       approvalStatus,
-      options.defaultApprovalStatus
+      options.defaultApprovalStatus,
     );
 
     if (options.disallowPast && date < this.toLocalDateKey()) {
@@ -258,10 +259,13 @@ class AvailabilityService {
       const dateKeys = this.getDateKeysBetween(date);
 
       if (options.disallowAcceptedAssignments && isAvailable === false) {
-        await this.assertNoAcceptedAssignments(refereeId, dateKeys, transaction);
+        await this.assertNoAcceptedAssignments(
+          refereeId,
+          dateKeys,
+          transaction,
+        );
       }
 
-      // Upsert - create or update
       const [availability, created] = await RefereeAvailability.findOrCreate({
         where: { refereeId, date },
         defaults: {
@@ -282,10 +286,12 @@ class AvailabilityService {
             reason: isAvailable ? null : reason || null,
             description: isAvailable ? null : description || null,
             approvalStatus: status,
-            reviewedBy: status === "pending" ? null : options.reviewedBy || null,
-            reviewedAt: status === "pending" ? null : options.reviewedAt || null,
+            reviewedBy:
+              status === "pending" ? null : options.reviewedBy || null,
+            reviewedAt:
+              status === "pending" ? null : options.reviewedAt || null,
           },
-          { transaction }
+          { transaction },
         );
       }
 
@@ -295,7 +301,7 @@ class AvailabilityService {
           dateKeys,
           reason,
           description,
-          transaction
+          transaction,
         );
       }
 
@@ -314,12 +320,18 @@ class AvailabilityService {
    * @param {object} data - Availability data
    */
   async setAvailabilityRange(refereeId, data, options = {}) {
-    const { dateFrom, dateTo, isAvailable, reason, description, approvalStatus } =
-      data;
+    const {
+      dateFrom,
+      dateTo,
+      isAvailable,
+      reason,
+      description,
+      approvalStatus,
+    } = data;
     const status = this.getApprovalStatus(
       isAvailable,
       approvalStatus,
-      options.defaultApprovalStatus
+      options.defaultApprovalStatus,
     );
 
     const referee = await Referee.findByPk(refereeId);
@@ -343,7 +355,11 @@ class AvailabilityService {
 
     try {
       if (options.disallowAcceptedAssignments && isAvailable === false) {
-        await this.assertNoAcceptedAssignments(refereeId, dateKeys, transaction);
+        await this.assertNoAcceptedAssignments(
+          refereeId,
+          dateKeys,
+          transaction,
+        );
       }
 
       const dates = [];
@@ -354,7 +370,6 @@ class AvailabilityService {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Delete existing records for this range
       await RefereeAvailability.destroy({
         where: {
           refereeId,
@@ -363,7 +378,6 @@ class AvailabilityService {
         transaction,
       });
 
-      // Create new records
       const availabilities = dates.map((date) => ({
         refereeId,
         date,
@@ -384,7 +398,7 @@ class AvailabilityService {
               dateKeys,
               reason,
               description,
-              transaction
+              transaction,
             )
           : 0;
 
@@ -468,7 +482,6 @@ class AvailabilityService {
    * @param {string} date - Date
    */
   async getAvailableReferees(date) {
-    // Get referees who are explicitly unavailable
     const unavailableReferees = await RefereeAvailability.findAll({
       where: {
         date,
@@ -480,7 +493,6 @@ class AvailabilityService {
 
     const unavailableIds = unavailableReferees.map((a) => a.refereeId);
 
-    // Get all active referees who are not on the unavailable list
     const whereClause = {};
     if (unavailableIds.length > 0) {
       whereClause.id = { [Op.notIn]: unavailableIds };
@@ -524,21 +536,20 @@ class AvailabilityService {
       order: [["date", "ASC"]],
     });
 
-    // Generate calendar for entire month
     const calendar = [];
     let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
       const dateStr = currentDate.toISOString().split("T")[0];
       const availability = availabilities.find(
-        (a) => this.toDateKey(a.date) === dateStr
+        (a) => this.toDateKey(a.date) === dateStr,
       );
 
       calendar.push({
         id: availability?.id || null,
         date: dateStr,
         dayOfWeek: currentDate.getDay(),
-        isAvailable: availability ? availability.isAvailable : true, // Po defaultu dostupan
+        isAvailable: availability ? availability.isAvailable : true,
         reason: availability?.reason || null,
         description: availability?.description || null,
         approvalStatus: availability?.approvalStatus || null,
@@ -567,7 +578,6 @@ class AvailabilityService {
       throw new AppError("Referee not found.", 404);
     }
 
-    // Determine previous month
     let prevMonth = month - 1;
     let prevYear = year;
     if (prevMonth === 0) {
@@ -604,7 +614,6 @@ class AvailabilityService {
       for (const prev of previousAvailabilities) {
         const dayOfMonth = prev.date.getDate();
 
-        // Ako taj dan postoji u ciljnom mjesecu
         if (dayOfMonth <= daysInTargetMonth) {
           const newDate = new Date(year, month - 1, dayOfMonth);
           newAvailabilities.push({
@@ -618,7 +627,6 @@ class AvailabilityService {
         }
       }
 
-      // Delete existing and add new
       const targetEndDate = new Date(year, month, 0);
       await RefereeAvailability.destroy({
         where: {
@@ -645,9 +653,6 @@ class AvailabilityService {
     }
   }
 
-  /**
-   * Get submitted unavailable periods for delegate/admin review.
-   */
   async getRequests(query = {}) {
     const {
       page = 1,
@@ -720,9 +725,6 @@ class AvailabilityService {
     };
   }
 
-  /**
-   * Approve or reject submitted unavailable dates.
-   */
   async reviewRequests(ids, approvalStatus, reviewedBy) {
     if (!["approved", "rejected"].includes(approvalStatus)) {
       throw new AppError("Invalid approval status.", 400);
@@ -755,7 +757,7 @@ class AvailabilityService {
           await this.assertNoAcceptedAssignments(
             refereeId,
             [...new Set(dateKeys)],
-            transaction
+            transaction,
           );
         }
       }
@@ -772,7 +774,7 @@ class AvailabilityService {
             isAvailable: false,
           },
           transaction,
-        }
+        },
       );
 
       let releasedAssignments = 0;
@@ -784,7 +786,7 @@ class AvailabilityService {
             [this.toDateKey(request.date)],
             request.reason,
             request.description,
-            transaction
+            transaction,
           );
         }
       }

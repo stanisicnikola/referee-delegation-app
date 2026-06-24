@@ -4,20 +4,17 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      // User can be a referee (1:1)
       User.hasOne(models.Referee, {
         foreignKey: "userId",
         as: "referee",
       });
 
-      // User (delegate) can delegate matches
       User.hasMany(models.Match, {
         foreignKey: "delegatedBy",
         as: "delegatedMatches",
       });
     }
 
-    // Method for hiding sensitive data
     toJSON() {
       const values = { ...this.get() };
       delete values.passwordHash;
@@ -104,7 +101,7 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-    }
+    },
   );
 
   return User;

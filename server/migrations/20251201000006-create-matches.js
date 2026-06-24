@@ -67,7 +67,7 @@ module.exports = {
           "in_progress",
           "completed",
           "postponed",
-          "cancelled"
+          "cancelled",
         ),
         allowNull: false,
         defaultValue: "scheduled",
@@ -112,12 +112,11 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
 
-    // Add indexes
     await queryInterface.addIndex("matches", ["competition_id"], {
       name: "idx_matches_competition_id",
     });

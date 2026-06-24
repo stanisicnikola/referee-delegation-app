@@ -4,7 +4,6 @@ const { authController } = require("../controllers");
 const { authenticate, authorize, validate } = require("../middlewares");
 const { authSchemas } = require("../validators");
 
-// Public routes
 router.post("/login", validate(authSchemas.login), authController.login);
 router.post(
   "/forgot-password",
@@ -17,7 +16,6 @@ router.post(
   authController.resetPassword,
 );
 
-// Protected routes
 router.get("/me", authenticate, authController.getMe);
 router.put(
   "/me",
@@ -35,7 +33,6 @@ router.put(
 router.post("/verify-password", authenticate, authController.verifyPassword);
 router.delete("/me", authenticate, authController.deleteMe);
 
-// Admin only routes
 router.post(
   "/register",
   authenticate,

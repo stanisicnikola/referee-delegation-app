@@ -34,7 +34,11 @@ module.exports = (sequelize, DataTypes) => {
         field: "referee_id",
       },
       role: {
-        type: DataTypes.ENUM("first_referee", "second_referee", "third_referee"),
+        type: DataTypes.ENUM(
+          "first_referee",
+          "second_referee",
+          "third_referee",
+        ),
         allowNull: false,
       },
       status: {
@@ -74,7 +78,7 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-    }
+    },
   );
 
   return MatchReferee;

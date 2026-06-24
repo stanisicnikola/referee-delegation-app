@@ -41,12 +41,11 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
 
-    // Add indexes
     await queryInterface.addIndex("referee_availability", ["referee_id"], {
       name: "idx_referee_availability_referee_id",
     });
@@ -54,14 +53,13 @@ module.exports = {
       name: "idx_referee_availability_date",
     });
 
-    // Unique constraint - one referee can only have one record per date
     await queryInterface.addIndex(
       "referee_availability",
       ["referee_id", "date"],
       {
         name: "idx_referee_availability_unique",
         unique: true,
-      }
+      },
     );
   },
 

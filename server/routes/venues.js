@@ -4,10 +4,8 @@ const { venueController } = require("../controllers");
 const { authenticate, authorize, validate } = require("../middlewares");
 const { venueSchemas } = require("../validators");
 
-// All routes require authentication
 router.use(authenticate);
 
-// CRUD operacije
 router.get(
   "/",
   validate(venueSchemas.query, "query"),
@@ -20,7 +18,6 @@ router.get(
   venueController.getVenue,
 );
 
-// Admin only
 router.post(
   "/",
   authorize("admin"),

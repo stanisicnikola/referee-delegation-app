@@ -60,7 +60,6 @@ class AuthService {
       );
     }
 
-    // Update last login time
     await user.update({ lastLoginAt: new Date() });
 
     const token = this.generateToken(user);
@@ -71,7 +70,6 @@ class AuthService {
     };
   }
 
-  // Register user (admin creates)
   async register(userData) {
     const existingUser = await User.findOne({
       where: { email: userData.email },

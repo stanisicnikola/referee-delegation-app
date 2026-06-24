@@ -71,7 +71,6 @@ class VenueService {
       throw new AppError("Venue not found.", 404);
     }
 
-    // Check for dependencies (teams using this venue)
     const { Team } = require("../models");
     const teamCount = await Team.count({ where: { primaryVenueId: id } });
 

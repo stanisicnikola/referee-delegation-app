@@ -23,7 +23,10 @@ class MatchService {
     return new Date(`${dateOnly}T${time}`);
   }
 
-  assertMatchDateInFuture(scheduledAt, message = "Match date and time must be in the future.") {
+  assertMatchDateInFuture(
+    scheduledAt,
+    message = "Match date and time must be in the future.",
+  ) {
     if (!scheduledAt) {
       return;
     }
@@ -51,7 +54,7 @@ class MatchService {
     const competitionStart = this.getCompetitionBoundary(competition.startDate);
     const competitionEnd = this.getCompetitionBoundary(
       competition.endDate,
-      true
+      true,
     );
 
     if (matchDate < competitionStart || matchDate > competitionEnd) {
@@ -241,14 +244,12 @@ class MatchService {
       data.delegatedBy = delegateId;
     }
 
-    // Check if teams exist
     const homeTeam = await Team.findByPk(matchData.homeTeamId);
     if (!homeTeam) throw new AppError("Home team not found.", 400);
 
     const awayTeam = await Team.findByPk(matchData.awayTeamId);
     if (!awayTeam) throw new AppError("Away team not found.", 400);
 
-    // Check if competition exists
     const competition = await Competition.findByPk(matchData.competitionId);
     if (!competition) throw new AppError("Competition not found.", 400);
     this.assertMatchDateInFuture(matchData.scheduledAt);
@@ -267,7 +268,6 @@ class MatchService {
 
     this.assertDelegateCanAccessMatch(match, actor);
 
-    // Map delegateId to delegatedBy
     const { delegateId, ...data } = matchData;
     if (actor?.role === "admin" && delegateId) {
       const delegate = await User.findOne({
@@ -339,7 +339,7 @@ class MatchService {
               status: { [Op.in]: ACTIVE_ASSIGNMENT_STATUSES },
             },
             transaction,
-          }
+          },
         );
 
         await transaction.commit();

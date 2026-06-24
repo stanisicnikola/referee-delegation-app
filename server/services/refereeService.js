@@ -1118,31 +1118,25 @@ class RefereeService {
   }
 
   async getOverallStatistics() {
-    const [
-      total,
-      black,
-      green,
-      white,
-      none,
-      active,
-      inactive,
-      suspended,
-    ] = await Promise.all([
-      Referee.count(),
-      Referee.count({ where: { licenseCategory: "black" } }),
-      Referee.count({ where: { licenseCategory: "green" } }),
-      Referee.count({ where: { licenseCategory: "white" } }),
-      Referee.count({ where: { licenseCategory: "none" } }),
-      Referee.count({
-        include: [{ model: User, as: "user", where: { status: "active" } }],
-      }),
-      Referee.count({
-        include: [{ model: User, as: "user", where: { status: "inactive" } }],
-      }),
-      Referee.count({
-        include: [{ model: User, as: "user", where: { status: "suspended" } }],
-      }),
-    ]);
+    const [total, black, green, white, none, active, inactive, suspended] =
+      await Promise.all([
+        Referee.count(),
+        Referee.count({ where: { licenseCategory: "black" } }),
+        Referee.count({ where: { licenseCategory: "green" } }),
+        Referee.count({ where: { licenseCategory: "white" } }),
+        Referee.count({ where: { licenseCategory: "none" } }),
+        Referee.count({
+          include: [{ model: User, as: "user", where: { status: "active" } }],
+        }),
+        Referee.count({
+          include: [{ model: User, as: "user", where: { status: "inactive" } }],
+        }),
+        Referee.count({
+          include: [
+            { model: User, as: "user", where: { status: "suspended" } },
+          ],
+        }),
+      ]);
 
     const today = new Date();
     const todayKey = this.toLocalDateKey(today);

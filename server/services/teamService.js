@@ -75,7 +75,6 @@ class TeamService {
       throw new AppError("Team not found.", 404);
     }
 
-    // Check for dependencies (matches)
     const { Match } = require("../models");
     const matchCount = await Match.count({
       where: {

@@ -10,7 +10,7 @@ const delegateReferees = asyncHandler(async (req, res) => {
   const result = await delegationService.delegateReferees(
     req.params.matchId,
     req.body,
-    req.user.id
+    req.user.id,
   );
 
   res.json({
@@ -26,7 +26,7 @@ const delegateReferees = asyncHandler(async (req, res) => {
  */
 const getMatchDelegation = asyncHandler(async (req, res) => {
   const delegation = await delegationService.getMatchDelegation(
-    req.params.matchId
+    req.params.matchId,
   );
 
   res.json({
@@ -43,7 +43,7 @@ const getMatchDelegation = asyncHandler(async (req, res) => {
 const removeRefereeFromMatch = asyncHandler(async (req, res) => {
   const result = await delegationService.removeRefereeFromMatch(
     req.params.matchId,
-    req.params.refereeId
+    req.params.refereeId,
   );
 
   res.json({
@@ -59,7 +59,7 @@ const removeRefereeFromMatch = asyncHandler(async (req, res) => {
  */
 const getAvailableRefereesForMatch = asyncHandler(async (req, res) => {
   const referees = await delegationService.getAvailableRefereesForMatch(
-    req.params.matchId
+    req.params.matchId,
   );
 
   res.json({
@@ -78,7 +78,7 @@ const updateRefereeRole = asyncHandler(async (req, res) => {
   const result = await delegationService.updateRefereeRole(
     req.params.matchId,
     req.params.refereeId,
-    role
+    role,
   );
 
   res.json({
@@ -95,7 +95,7 @@ const updateRefereeRole = asyncHandler(async (req, res) => {
 const getMyDelegations = asyncHandler(async (req, res) => {
   const result = await delegationService.getDelegationsByDelegate(
     req.user.id,
-    req.query
+    req.query,
   );
 
   res.json({
@@ -124,11 +124,10 @@ const getDelegationStatistics = asyncHandler(async (req, res) => {
  * @access  Private/Referee
  */
 const confirmAssignment = asyncHandler(async (req, res) => {
-  // Get referee for current user
   const referee = await refereeService.findByUserId(req.user.id);
   const result = await delegationService.confirmAssignment(
     req.params.matchId,
-    referee.id
+    referee.id,
   );
 
   res.json({
@@ -149,7 +148,7 @@ const rejectAssignment = asyncHandler(async (req, res) => {
     req.params.matchId,
     referee.id,
     reason,
-    notes
+    notes,
   );
 
   res.json({

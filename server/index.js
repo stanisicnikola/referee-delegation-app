@@ -21,15 +21,12 @@ const {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files za uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/referees", refereeRoutes);
@@ -41,7 +38,6 @@ app.use("/api/delegations", delegationRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -50,7 +46,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -58,10 +53,8 @@ app.use((req, res) => {
   });
 });
 
-// Error handler
 app.use(errorHandler);
 
-// Database connection and server start
 const startServer = async () => {
   try {
     await sequelize.authenticate();

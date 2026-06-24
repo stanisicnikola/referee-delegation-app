@@ -12,7 +12,7 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.sequelize.query(
-      "UPDATE match_referees SET status = 'declined' WHERE status = 'cancelled'"
+      "UPDATE match_referees SET status = 'declined' WHERE status = 'cancelled'",
     );
 
     await queryInterface.changeColumn("match_referees", "status", {

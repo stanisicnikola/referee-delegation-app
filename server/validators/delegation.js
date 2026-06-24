@@ -8,7 +8,7 @@ const delegate = z.object({
           .string({ required_error: "Referee ID is required." })
           .uuid(),
         role: z.enum(["first_referee", "second_referee", "third_referee"]),
-      })
+      }),
     )
     .min(1, "At least one referee must be delegated."),
 });

@@ -45,7 +45,7 @@ const createUser = asyncHandler(async (req, res) => {
       ? "User created successfully. Welcome email was not sent because SMTP is not configured."
       : emailFailed
         ? "User created successfully. Welcome email could not be delivered."
-      : "User created successfully.",
+        : "User created successfully.",
     data: result.user,
     meta: {
       welcomeEmailSent: Boolean(

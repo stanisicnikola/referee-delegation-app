@@ -54,7 +54,9 @@ class DelegationService {
         name: match.awayTeam?.name || "away team",
       },
     ].filter((team, index, teams) => {
-      return team.id && teams.findIndex((item) => item.id === team.id) === index;
+      return (
+        team.id && teams.findIndex((item) => item.id === team.id) === index
+      );
     });
   }
 
@@ -65,13 +67,21 @@ class DelegationService {
     return fullName || "Referee";
   }
 
-  async getConsecutiveTeamAssignmentViolations(match, refereeIds, options = {}) {
+  async getConsecutiveTeamAssignmentViolations(
+    match,
+    refereeIds,
+    options = {},
+  ) {
     const currentRound = this.getRoundNumber(match.round);
     if (!currentRound || currentRound <= 3 || refereeIds.length === 0) {
       return new Map();
     }
 
-    const previousRounds = [currentRound - 1, currentRound - 2, currentRound - 3];
+    const previousRounds = [
+      currentRound - 1,
+      currentRound - 2,
+      currentRound - 3,
+    ];
     if (previousRounds.some((round) => round < 1)) return new Map();
 
     const teams = this.getMatchTeams(match);
@@ -118,7 +128,8 @@ class DelegationService {
 
       for (const team of teams) {
         const involved =
-          previousMatch.homeTeamId === team.id || previousMatch.awayTeamId === team.id;
+          previousMatch.homeTeamId === team.id ||
+          previousMatch.awayTeamId === team.id;
         if (!involved) continue;
 
         const key = `${assignment.refereeId}:${team.id}`;
@@ -158,7 +169,7 @@ class DelegationService {
     const violation = violations[0];
     throw new AppError(
       `${this.getRefereeDisplayName(referee)} cannot be assigned to this match because they already officiated ${violation.teamName} in rounds ${violation.rounds.join(", ")} of this competition.`,
-      400
+      400,
     );
   }
 
@@ -166,28 +177,28 @@ class DelegationService {
     if (CLOSED_MATCH_STATUSES.includes(match.status)) {
       throw new AppError(
         "Cannot change referee assignments for a completed or cancelled match.",
-        400
+        400,
       );
     }
 
     if (this.isMatchStarted(match)) {
       throw new AppError(
         "Cannot change referee assignments after the match has started.",
-        400
+        400,
       );
     }
 
     if (match.delegationStatus === "confirmed") {
       throw new AppError(
         "This match delegation is already confirmed by all referees.",
-        400
+        400,
       );
     }
   }
 
   getDelegationStatus(assignments) {
     const activeAssignments = assignments.filter((assignment) =>
-      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
     );
 
     if (activeAssignments.length === 0) return "pending";
@@ -242,18 +253,18 @@ class DelegationService {
         transaction,
       });
       const activeExistingAssignments = existingAssignments.filter(
-        (assignment) => ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)
+        (assignment) => ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
       );
 
       if (activeExistingAssignments.length >= 3) {
         const allAccepted = activeExistingAssignments.every(
-          (assignment) => assignment.status === "accepted"
+          (assignment) => assignment.status === "accepted",
         );
         throw new AppError(
           allAccepted
             ? "All referees have confirmed this match."
             : "A full referee crew is already assigned. Wait for confirmations or a rejection before changing it.",
-          400
+          400,
         );
       }
 
@@ -261,12 +272,12 @@ class DelegationService {
         refereeAssignments.map((assignment) => [
           assignment.refereeId,
           assignment,
-        ])
+        ]),
       );
       const declinedAssignmentByRefereeId = new Map(
         existingAssignments
           .filter((assignment) => assignment.status === "declined")
-          .map((assignment) => [assignment.refereeId, assignment])
+          .map((assignment) => [assignment.refereeId, assignment]),
       );
       const consecutiveTeamViolations =
         await this.getConsecutiveTeamAssignmentViolations(match, refereeIds, {
@@ -275,12 +286,12 @@ class DelegationService {
 
       for (const assignment of refereeAssignments) {
         const declinedAssignment = declinedAssignmentByRefereeId.get(
-          assignment.refereeId
+          assignment.refereeId,
         );
         if (declinedAssignment) {
           throw new AppError(
             "This referee already declined this match and cannot be assigned again.",
-            400
+            400,
           );
         }
       }
@@ -293,21 +304,21 @@ class DelegationService {
         ) {
           throw new AppError(
             "Accepted referee assignments cannot be removed or changed.",
-            400
+            400,
           );
         }
       }
 
       for (const assignment of refereeAssignments) {
         const existingAssignment = activeExistingAssignments.find(
-          (item) => item.refereeId === assignment.refereeId
+          (item) => item.refereeId === assignment.refereeId,
         );
 
         if (existingAssignment) {
           if (existingAssignment.role !== assignment.role) {
             await existingAssignment.update(
               { role: assignment.role },
-              { transaction }
+              { transaction },
             );
           }
           continue;
@@ -320,16 +331,15 @@ class DelegationService {
         if (!referee) {
           throw new AppError(
             `Referee with ID ${assignment.refereeId} not found.`,
-            400
+            400,
           );
         }
 
         this.assertNoConsecutiveTeamAssignmentViolation(
           referee,
-          consecutiveTeamViolations.get(assignment.refereeId)
+          consecutiveTeamViolations.get(assignment.refereeId),
         );
 
-        // Check if referee is available on that date
         const matchDate = match.scheduledAt.toISOString().split("T")[0];
         const availability = await RefereeAvailability.findOne({
           where: {
@@ -344,11 +354,10 @@ class DelegationService {
         if (availability) {
           throw new AppError(
             `Referee ${referee.id} is not available on the match date.`,
-            400
+            400,
           );
         }
 
-        // Check if referee already has a match on that day
         const conflictingAssignment = await MatchReferee.findOne({
           include: [
             {
@@ -359,7 +368,7 @@ class DelegationService {
                 scheduledAt: {
                   [Op.gte]: new Date(matchDate),
                   [Op.lt]: new Date(
-                    new Date(matchDate).getTime() + 24 * 60 * 60 * 1000
+                    new Date(matchDate).getTime() + 24 * 60 * 60 * 1000,
                   ),
                 },
               },
@@ -375,7 +384,7 @@ class DelegationService {
         if (conflictingAssignment) {
           throw new AppError(
             `Referee already has a match on ${matchDate}.`,
-            400
+            400,
           );
         }
 
@@ -385,7 +394,7 @@ class DelegationService {
             refereeId: assignment.refereeId,
             role: assignment.role,
           },
-          { transaction }
+          { transaction },
         );
       }
 
@@ -393,12 +402,14 @@ class DelegationService {
       const removableAssignments = activeExistingAssignments.filter(
         (assignment) =>
           assignment.status !== "accepted" &&
-          !requestedRefereeIdSet.has(assignment.refereeId)
+          !requestedRefereeIdSet.has(assignment.refereeId),
       );
 
       if (removableAssignments.length > 0) {
         await MatchReferee.destroy({
-          where: { id: removableAssignments.map((assignment) => assignment.id) },
+          where: {
+            id: removableAssignments.map((assignment) => assignment.id),
+          },
           transaction,
         });
       }
@@ -408,11 +419,10 @@ class DelegationService {
         transaction,
       });
 
-      // Update delegation status and delegate on match
       const delegationStatus = this.getDelegationStatus(finalAssignments);
       await match.update(
         { delegationStatus, delegatedBy: delegateId, delegatedAt: new Date() },
-        { transaction }
+        { transaction },
       );
 
       await transaction.commit();
@@ -489,12 +499,14 @@ class DelegationService {
     }
 
     if (assignment.status === "accepted") {
-      throw new AppError("Accepted referee assignments cannot be removed.", 400);
+      throw new AppError(
+        "Accepted referee assignments cannot be removed.",
+        400,
+      );
     }
 
     await assignment.destroy();
 
-    // Update delegation status
     const remainingAssignments = await MatchReferee.findAll({
       where: { matchId },
     });
@@ -526,7 +538,6 @@ class DelegationService {
 
     const matchDate = match.scheduledAt.toISOString().split("T")[0];
 
-    // Get referees who are unavailable on that date
     const unavailableReferees = await RefereeAvailability.findAll({
       where: {
         date: matchDate,
@@ -538,7 +549,6 @@ class DelegationService {
 
     const unavailableRefereeIds = unavailableReferees.map((a) => a.refereeId);
 
-    // Get referees who already have a match on that date
     const busyReferees = await MatchReferee.findAll({
       include: [
         {
@@ -549,7 +559,7 @@ class DelegationService {
             scheduledAt: {
               [Op.gte]: new Date(matchDate),
               [Op.lt]: new Date(
-                new Date(matchDate).getTime() + 24 * 60 * 60 * 1000
+                new Date(matchDate).getTime() + 24 * 60 * 60 * 1000,
               ),
             },
           },
@@ -561,7 +571,6 @@ class DelegationService {
 
     const busyRefereeIds = busyReferees.map((a) => a.refereeId);
 
-    // Get all active referees who are not unavailable and not busy
     const excludeIds = [
       ...new Set([...unavailableRefereeIds, ...busyRefereeIds]),
     ];
@@ -580,11 +589,11 @@ class DelegationService {
     const consecutiveTeamViolations =
       await this.getConsecutiveTeamAssignmentViolations(
         match,
-        availableReferees.map((referee) => referee.id)
+        availableReferees.map((referee) => referee.id),
       );
 
     return availableReferees.filter(
-      (referee) => !consecutiveTeamViolations.has(referee.id)
+      (referee) => !consecutiveTeamViolations.has(referee.id),
     );
   }
 
@@ -611,7 +620,10 @@ class DelegationService {
     }
 
     if (assignment.status === "accepted") {
-      throw new AppError("Accepted referee assignments cannot be changed.", 400);
+      throw new AppError(
+        "Accepted referee assignments cannot be changed.",
+        400,
+      );
     }
 
     await assignment.update({ role });
@@ -667,9 +679,6 @@ class DelegationService {
     };
   }
 
-  /**
-   * Get delegation statistics
-   */
   async getDelegationStatistics() {
     const total = await Match.count();
     const pending = await Match.count({
@@ -688,7 +697,6 @@ class DelegationService {
       },
     });
 
-    // Matches awaiting delegation in the next 7 days
     const upcomingPending = await Match.count({
       where: {
         delegationStatus: { [Op.in]: ["pending", "partial"] },
@@ -710,16 +718,11 @@ class DelegationService {
     };
   }
 
-  /**
-   * Get delegate dashboard data
-   * KPI rule: count only future matches (scheduledAt >= now)
-   */
   async getDelegateDashboard(actor = null) {
     const now = new Date();
     const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     const matchScope = this.getDelegateMatchScope(actor);
 
-    // Summary counts for future matches only
     const [
       pendingDelegations,
       upcomingMatchesCount,
@@ -751,7 +754,6 @@ class DelegationService {
           status: { [Op.ne]: "cancelled" },
         },
       }),
-      // Notifications: matches awaiting delegation in next 7 days
       Match.count({
         where: {
           ...matchScope,
@@ -765,7 +767,6 @@ class DelegationService {
       }),
     ]);
 
-    // Upcoming matches (max 4, sorted by scheduledAt ASC)
     const upcomingMatches = await Match.findAll({
       where: {
         ...matchScope,
@@ -782,8 +783,10 @@ class DelegationService {
       limit: 4,
     });
 
-    // Availability for next 7 days (daily counts + sample referees)
-    const availabilityData = await this._getDelegateAvailabilityData(now, next7Days);
+    const availabilityData = await this._getDelegateAvailabilityData(
+      now,
+      next7Days,
+    );
 
     return {
       summary: {
@@ -798,10 +801,6 @@ class DelegationService {
     };
   }
 
-  /**
-   * Helper: get delegate availability data for next 7 days
-   * Returns array of 7 days with counts and sample referees
-   */
   async _getDelegateAvailabilityData(startDate, endDate) {
     const result = [];
     const current = new Date(startDate);
@@ -812,13 +811,16 @@ class DelegationService {
       const nextDay = new Date(current);
       nextDay.setDate(nextDay.getDate() + 1);
 
-      // Total active referees
       const totalActive = await Referee.count({
         include: [{ model: User, as: "user", where: { status: "active" } }],
       });
 
       const unavailableIds = await RefereeAvailability.findAll({
-        where: { date: dateKey, isAvailable: false, approvalStatus: "approved" },
+        where: {
+          date: dateKey,
+          isAvailable: false,
+          approvalStatus: "approved",
+        },
         attributes: ["refereeId"],
         raw: true,
       });
@@ -848,10 +850,7 @@ class DelegationService {
         ...new Set(assignedIds.map((r) => r.refereeId)),
       ];
       const excludeIds = [
-        ...new Set([
-          ...unavailableRefereeIds,
-          ...assignedRefereeIds,
-        ]),
+        ...new Set([...unavailableRefereeIds, ...assignedRefereeIds]),
       ];
       const availableCount = Math.max(0, totalActive - excludeIds.length);
 
@@ -925,7 +924,6 @@ class DelegationService {
 
     await assignment.update({ status: "accepted", responseAt: new Date() });
 
-    // Check if all referees confirmed - update match status
     const allAssignments = await MatchReferee.findAll({ where: { matchId } });
     const delegationStatus = this.getDelegationStatus(allAssignments);
     await match.update({ delegationStatus });

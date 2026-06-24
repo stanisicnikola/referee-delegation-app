@@ -34,25 +34,21 @@ module.exports = {
       after: "reviewed_by",
     });
 
-    await queryInterface.addIndex(
-      "referee_availability",
-      ["approval_status"],
-      {
-        name: "idx_referee_availability_approval_status",
-      }
-    );
+    await queryInterface.addIndex("referee_availability", ["approval_status"], {
+      name: "idx_referee_availability_approval_status",
+    });
   },
 
   async down(queryInterface) {
     await queryInterface.removeIndex(
       "referee_availability",
-      "idx_referee_availability_approval_status"
+      "idx_referee_availability_approval_status",
     );
     await queryInterface.removeColumn("referee_availability", "reviewed_at");
     await queryInterface.removeColumn("referee_availability", "reviewed_by");
     await queryInterface.removeColumn(
       "referee_availability",
-      "approval_status"
+      "approval_status",
     );
     await queryInterface.removeColumn("referee_availability", "description");
   },

@@ -9,12 +9,10 @@ const {
 } = require("../middlewares");
 const { teamSchemas } = require("../validators");
 
-// All routes require authentication
 router.use(authenticate);
 
 router.get("/stats", teamController.getTeamStats);
 
-// CRUD operacije
 router.get("/", validate(teamSchemas.query, "query"), teamController.getTeams);
 router.get(
   "/:id",
@@ -22,7 +20,6 @@ router.get(
   teamController.getTeam,
 );
 
-// Admin only
 router.post(
   "/",
   authorize("admin", "delegate"),
@@ -43,7 +40,6 @@ router.delete(
   teamController.deleteTeam,
 );
 
-// Upload logo
 router.put(
   "/:id/logo",
   authorize("admin", "delegate"),

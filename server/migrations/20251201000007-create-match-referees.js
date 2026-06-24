@@ -33,7 +33,7 @@ module.exports = {
         type: Sequelize.ENUM(
           "first_referee",
           "second_referee",
-          "third_referee"
+          "third_referee",
         ),
         allowNull: false,
       },
@@ -71,12 +71,11 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
 
-    // Add indexes
     await queryInterface.addIndex("match_referees", ["match_id"], {
       name: "idx_match_referees_match_id",
     });
@@ -87,14 +86,13 @@ module.exports = {
       name: "idx_match_referees_status",
     });
 
-    // Unique constraint - one referee can only have one role per match
     await queryInterface.addIndex(
       "match_referees",
       ["match_id", "referee_id"],
       {
         name: "idx_match_referees_unique",
         unique: true,
-      }
+      },
     );
   },
 
