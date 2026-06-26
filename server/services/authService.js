@@ -129,7 +129,7 @@ class AuthService {
         { transaction },
       );
 
-      const referee = await Referee.create(
+      await Referee.create(
         {
           userId: user.id,
           licenseNumber: userData.licenseNumber,

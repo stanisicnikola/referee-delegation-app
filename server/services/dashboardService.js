@@ -1,14 +1,5 @@
 const { Op } = require("sequelize");
-const {
-  User,
-  Match,
-  MatchReferee,
-  Referee,
-  Team,
-  Competition,
-  Venue,
-  sequelize,
-} = require("../models");
+const { User, Match, Referee, Team, Competition, Venue } = require("../models");
 const { WEEKDAY_SHORT_NAMES } = require("../constants/date");
 const { getRefereeCategoryLabel } = require("../constants/refereeCategories");
 

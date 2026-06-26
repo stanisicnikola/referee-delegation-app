@@ -8,7 +8,6 @@ const {
   Competition,
   Team,
   Venue,
-  sequelize,
 } = require("../models");
 const { AppError } = require("../middlewares");
 

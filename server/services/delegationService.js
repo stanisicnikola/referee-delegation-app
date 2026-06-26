@@ -783,10 +783,7 @@ class DelegationService {
       limit: 4,
     });
 
-    const availabilityData = await this._getDelegateAvailabilityData(
-      now,
-      next7Days,
-    );
+    const availabilityData = await this._getDelegateAvailabilityData(now);
 
     return {
       summary: {
@@ -801,7 +798,7 @@ class DelegationService {
     };
   }
 
-  async _getDelegateAvailabilityData(startDate, endDate) {
+  async _getDelegateAvailabilityData(startDate) {
     const result = [];
     const current = new Date(startDate);
     current.setHours(0, 0, 0, 0);
