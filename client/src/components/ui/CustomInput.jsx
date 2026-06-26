@@ -19,8 +19,20 @@ const CustomInput = ({
   error,
   accentColor = "#8b5cf6",
   sx = {},
+  inputProps,
+  slotProps = {},
   ...props
 }) => {
+  const textFieldSlotProps = inputProps
+    ? {
+        ...slotProps,
+        htmlInput: {
+          ...slotProps.htmlInput,
+          ...inputProps,
+        },
+      }
+    : slotProps;
+
   const inputStyles = {
     "& .MuiOutlinedInput-root": {
       bgcolor: "#1a1a1d",
@@ -54,6 +66,7 @@ const CustomInput = ({
         error={!!error}
         sx={loginType ? loginTheme.components.MuiTextField : inputStyles}
         variant='outlined'
+        slotProps={textFieldSlotProps}
         {...props}
       />
       <FormValidationError>{error}</FormValidationError>

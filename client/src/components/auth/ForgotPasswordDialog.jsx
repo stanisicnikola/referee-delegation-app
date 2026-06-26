@@ -70,12 +70,14 @@ const ForgotPasswordDialog = ({ open, onClose }) => {
       onClose={onClose}
       maxWidth='sm'
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: "#121214",
-          backgroundImage: "none",
-          borderRadius: "16px",
-          border: "1px solid #242428",
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "#121214",
+            backgroundImage: "none",
+            borderRadius: "16px",
+            border: "1px solid #242428",
+          },
         },
       }}
     >

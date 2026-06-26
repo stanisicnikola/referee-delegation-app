@@ -56,13 +56,15 @@ const TeamMatchesDialog = ({
       onClose={onClose}
       maxWidth='md'
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: "#0f0f12",
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          color: "#fff",
-          overflow: "hidden",
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "#0f0f12",
+            border: "1px solid #242428",
+            borderRadius: "16px",
+            color: "#fff",
+            overflow: "hidden",
+          },
         },
       }}
     >

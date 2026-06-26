@@ -45,12 +45,14 @@ const DeclineAssignmentDialog = ({
       maxWidth='sm'
       fullWidth
       fullScreen={fullScreen}
-      PaperProps={{
-        sx: {
-          bgcolor: COLORS.card,
-          backgroundImage: "none",
-          border: `1px solid ${COLORS.border}`,
-          borderRadius: fullScreen ? 0 : "16px",
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: COLORS.card,
+            backgroundImage: "none",
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: fullScreen ? 0 : "16px",
+          },
         },
       }}
     >

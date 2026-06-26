@@ -185,12 +185,14 @@ const AvailableRefereesPanel = ({
         onChange={(event) => onSearchChange(event.target.value)}
         fullWidth
         size='small'
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position='start'>
-              <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position='start'>
+                <SearchIcon sx={{ color: "#6b7280", fontSize: 18 }} />
+              </InputAdornment>
+            ),
+          },
         }}
         sx={{
           "& .MuiOutlinedInput-root": {

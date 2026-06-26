@@ -23,16 +23,18 @@ const ConfirmDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: {
-          bgcolor: "background.paper",
-          backgroundImage: "none",
-          borderRadius: { xs: 2, sm: 3 },
-          border: "1px solid",
-          borderColor: "divider",
-          width: { xs: "calc(100vw - 32px)", sm: 400 },
-          maxWidth: "none",
-          m: { xs: 2, sm: 3 },
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "background.paper",
+            backgroundImage: "none",
+            borderRadius: { xs: 2, sm: 3 },
+            border: "1px solid",
+            borderColor: "divider",
+            width: { xs: "calc(100vw - 32px)", sm: 400 },
+            maxWidth: "none",
+            m: { xs: 2, sm: 3 },
+          },
         },
       }}
     >

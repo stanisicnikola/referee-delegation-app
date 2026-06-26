@@ -52,24 +52,26 @@ const FilterSelect = ({
         displayEmpty
         sx={inputStyles}
         MenuProps={{
-          PaperProps: {
-            sx: {
-              bgcolor: "#1a1a1d",
-              border: "1px solid #242428",
-              borderRadius: "12px",
-              mt: 1,
-              "& .MuiMenuItem-root": {
-                color: "#9ca3af",
-                fontSize: "14px",
-                "&:hover": {
-                  bgcolor: "#242428",
-                  color: "#fff",
-                },
-                "&.Mui-selected": {
-                  bgcolor: `${accentColor}20`,
-                  color: accentColor,
+          slotProps: {
+            paper: {
+              sx: {
+                bgcolor: "#1a1a1d",
+                border: "1px solid #242428",
+                borderRadius: "12px",
+                mt: 1,
+                "& .MuiMenuItem-root": {
+                  color: "#9ca3af",
+                  fontSize: "14px",
                   "&:hover": {
-                    bgcolor: `${accentColor}30`,
+                    bgcolor: "#242428",
+                    color: "#fff",
+                  },
+                  "&.Mui-selected": {
+                    bgcolor: `${accentColor}20`,
+                    color: accentColor,
+                    "&:hover": {
+                      bgcolor: `${accentColor}30`,
+                    },
                   },
                 },
               },

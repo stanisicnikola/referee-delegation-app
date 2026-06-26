@@ -122,12 +122,14 @@ const ChangePasswordDialog = ({
       onClose={handleClose}
       maxWidth='sm'
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: "#111114",
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 2,
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "#111114",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+          },
         },
       }}
     >

@@ -42,12 +42,14 @@ const AvailabilityRequestDialog = ({
     onClose={onClose}
     fullWidth
     maxWidth='sm'
-    PaperProps={{
-      sx: {
-        bgcolor: COLORS.card,
-        border: `1px solid ${COLORS.border}`,
-        borderRadius: "18px",
-        overflow: "hidden",
+    slotProps={{
+      paper: {
+        sx: {
+          bgcolor: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: "18px",
+          overflow: "hidden",
+        },
       },
     }}
   >

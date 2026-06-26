@@ -261,8 +261,10 @@ const SettingsPage = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => !deleteLoading && setDeleteDialogOpen(false)}
-        PaperProps={{
-          sx: { borderRadius: 2 },
+        slotProps={{
+          paper: {
+            sx: { borderRadius: 2 },
+          },
         }}
       >
         <DialogTitle sx={{ fontWeight: 700, color: "error.main" }}>

@@ -86,13 +86,15 @@ const MatchResultDialog = ({ open, onClose, onSubmit, isLoading, match }) => {
       onClose={onClose}
       fullWidth
       maxWidth='sm'
-      PaperProps={{
-        sx: {
-          bgcolor: "#121214",
-          color: "#fff",
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          backgroundImage: "none",
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "#121214",
+            color: "#fff",
+            border: "1px solid #242428",
+            borderRadius: "16px",
+            backgroundImage: "none",
+          },
         },
       }}
     >
@@ -129,7 +131,9 @@ const MatchResultDialog = ({ open, onClose, onSubmit, isLoading, match }) => {
                   placeholder='0'
                   error={getVisibleScoreError(field.value, errors.homeScore)}
                   accentColor='#22c55e'
-                  inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                  slotProps={{
+                    htmlInput: { inputMode: "numeric", pattern: "[0-9]*" },
+                  }}
                   onChange={(event) =>
                     field.onChange(normalizeScoreInput(event.target.value))
                   }
@@ -148,7 +152,9 @@ const MatchResultDialog = ({ open, onClose, onSubmit, isLoading, match }) => {
                   placeholder='0'
                   error={getVisibleScoreError(field.value, errors.awayScore)}
                   accentColor='#22c55e'
-                  inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                  slotProps={{
+                    htmlInput: { inputMode: "numeric", pattern: "[0-9]*" },
+                  }}
                   onChange={(event) =>
                     field.onChange(normalizeScoreInput(event.target.value))
                   }

@@ -58,12 +58,14 @@ const PanelUserMenu = ({
       onClose={onClose}
       transformOrigin={{ horizontal: "left", vertical: "bottom" }}
       anchorOrigin={{ horizontal: "left", vertical: "top" }}
-      PaperProps={{
-        sx: {
-          mt: -1,
-          minWidth: 200,
-          bgcolor: "#1a1a1d",
-          border: PANEL_BORDER,
+      slotProps={{
+        paper: {
+          sx: {
+            mt: -1,
+            minWidth: 200,
+            bgcolor: "#1a1a1d",
+            border: PANEL_BORDER,
+          },
         },
       }}
     >

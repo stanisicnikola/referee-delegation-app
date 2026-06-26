@@ -320,13 +320,15 @@ const TeamsPage = () => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
-          PaperProps={{
-            sx: {
-              bgcolor: "#1a1a1d",
-              border: "1px solid #242428",
-              borderRadius: "8px",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-              minWidth: 160,
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: "#1a1a1d",
+                border: "1px solid #242428",
+                borderRadius: "8px",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+                minWidth: 160,
+              },
             },
           }}
         >

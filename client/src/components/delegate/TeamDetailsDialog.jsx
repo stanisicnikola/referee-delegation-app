@@ -56,12 +56,14 @@ const TeamDetailsDialog = ({
       onClose={onClose}
       maxWidth='sm'
       fullWidth
-      PaperProps={{
-        sx: {
-          border: "1px solid #242428",
-          borderRadius: "16px",
-          color: "#fff",
-          overflow: "hidden",
+      slotProps={{
+        paper: {
+          sx: {
+            border: "1px solid #242428",
+            borderRadius: "16px",
+            color: "#fff",
+            overflow: "hidden",
+          },
         },
       }}
     >
