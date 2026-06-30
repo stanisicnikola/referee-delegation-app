@@ -39,7 +39,7 @@ const DelegateMatchesFilters = ({
       minWidth={180}
       options={competitions.map((competition) => ({
         value: competition.id,
-        label: competition.name,
+        label: `${competition.name} · ${competition.season}`,
       }))}
     />
 

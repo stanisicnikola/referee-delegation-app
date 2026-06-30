@@ -20,7 +20,7 @@ const ScheduleFilters = ({
       if (competition?.id) {
         options.set(String(competition.id), {
           value: competition.id,
-          label: competition.name,
+          label: `${competition.name} · ${competition.season}`,
         });
       }
     });

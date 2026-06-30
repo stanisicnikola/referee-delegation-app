@@ -6,6 +6,7 @@ import {
   useVenues,
   useCompetitions,
   useUserStatistics,
+  useMatches,
 } from "../../hooks";
 import { Controller, useForm } from "react-hook-form";
 import CustomSelect from "./CustomSelect";
@@ -22,6 +23,13 @@ const getTodayDateValue = () => {
   const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return localDate.toISOString().split("T")[0];
 };
+
+const TEAM_BLOCKING_MATCH_STATUSES = [
+  "scheduled",
+  "in_progress",
+  "completed",
+  "postponed",
+];
 
 const MatchModal = ({
   open,
@@ -111,6 +119,19 @@ const MatchModal = ({
   const homeTeamId = watch("homeTeamId");
   const awayTeamId = watch("awayTeamId");
   const competitionId = watch("competitionId");
+  const round = watch("round");
+  const normalizedRound = round?.trim();
+  const shouldFilterTeams = Boolean(competitionId && normalizedRound);
+  const { data: roundMatchesData } = useMatches(
+    {
+      competitionId,
+      round: normalizedRound,
+      limit: 500,
+    },
+    {
+      enabled: open && shouldFilterTeams,
+    },
+  );
   const todayDate = getTodayDateValue();
   const selectedCompetition = useMemo(
     () =>
@@ -128,19 +149,37 @@ const MatchModal = ({
     (teamId) => teams.find((team) => team.id === teamId)?.primaryVenueId || "",
     [teams],
   );
+  const unavailableTeamIds = useMemo(() => {
+    if (!shouldFilterTeams) return new Set();
+
+    return new Set(
+      (roundMatchesData?.data || [])
+        .filter((match) => match.id !== editMatch?.id)
+        .filter((match) => TEAM_BLOCKING_MATCH_STATUSES.includes(match.status))
+        .flatMap((match) => [
+          match.homeTeamId || match.homeTeam?.id,
+          match.awayTeamId || match.awayTeam?.id,
+        ])
+        .filter(Boolean),
+    );
+  }, [editMatch?.id, roundMatchesData?.data, shouldFilterTeams]);
   const homeTeamOptions = useMemo(
     () =>
       teams
-        .filter((team) => team.id !== awayTeamId)
+        .filter(
+          (team) => team.id !== awayTeamId && !unavailableTeamIds.has(team.id),
+        )
         .map((team) => ({ label: team.name, value: team.id })),
-    [awayTeamId, teams],
+    [awayTeamId, teams, unavailableTeamIds],
   );
   const awayTeamOptions = useMemo(
     () =>
       teams
-        .filter((team) => team.id !== homeTeamId)
+        .filter(
+          (team) => team.id !== homeTeamId && !unavailableTeamIds.has(team.id),
+        )
         .map((team) => ({ label: team.name, value: team.id })),
-    [homeTeamId, teams],
+    [homeTeamId, teams, unavailableTeamIds],
   );
 
   useEffect(() => {
@@ -220,6 +259,42 @@ const MatchModal = ({
     venueManuallyChangedRef.current =
       event.target.value !== lastAutoVenueIdRef.current;
   };
+
+  useEffect(() => {
+    if (!open || !shouldFilterTeams) return;
+
+    if (homeTeamId && unavailableTeamIds.has(homeTeamId)) {
+      const currentVenueId = getValues("venueId");
+      if (currentVenueId === lastAutoVenueIdRef.current) {
+        setValue("venueId", "", {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        lastAutoVenueIdRef.current = "";
+        venueManuallyChangedRef.current = false;
+      }
+
+      setValue("homeTeamId", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+
+    if (awayTeamId && unavailableTeamIds.has(awayTeamId)) {
+      setValue("awayTeamId", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    awayTeamId,
+    getValues,
+    homeTeamId,
+    open,
+    setValue,
+    shouldFilterTeams,
+    unavailableTeamIds,
+  ]);
 
   const onFormSubmit = (data) => {
     const { date, time, delegateId, ...rest } = data;

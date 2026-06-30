@@ -18,7 +18,9 @@ const CompetitionBadge = ({ competition }) => (
       textOverflow: "ellipsis",
     }}
   >
-    {competition?.name || "N/A"}
+    {competition?.name && competition?.season
+      ? `${competition.name} · ${competition.season}`
+      : "N/A"}
   </Box>
 );
 

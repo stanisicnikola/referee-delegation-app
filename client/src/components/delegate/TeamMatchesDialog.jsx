@@ -215,7 +215,7 @@ const TeamMatchesDialog = ({
                         >
                           <TrophyIcon sx={{ fontSize: 13 }} />
                           <Typography sx={{ fontSize: "12px" }}>
-                            {match.competition.name}
+                            {`${match.competition.name} · ${match.competition.season}`}
                           </Typography>
                         </Box>
                       )}

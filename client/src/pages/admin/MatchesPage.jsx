@@ -333,7 +333,7 @@ const MatchesPage = () => {
               label: "Competition",
               render: (_, match) => (
                 <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  {match.competition.name}
+                  {`${match.competition.name} · ${match.competition.season}`}
                 </Typography>
               ),
             },

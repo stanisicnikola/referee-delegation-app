@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { alpha, useTheme } from "@mui/material/styles";
-import { Alert, Box, Chip, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { Alert, Box, Typography } from "@mui/material";
 import {
   useCompetitions,
   useMyHistory,
@@ -15,6 +15,7 @@ import {
   StatsGrid,
 } from "../../components/ui";
 import { REFEREE_ROLE_OPTIONS } from "../../utils/refereeAssignmentBadges";
+import CompetitionBadge from "../../components/matches/CompetitionBadge";
 
 const COMPETITIONS_QUERY = { limit: 1000 };
 
@@ -57,7 +58,7 @@ const HistoryPage = () => {
       if (competition?.id) {
         options.set(String(competition.id), {
           value: competition.id,
-          label: competition.name,
+          label: `${competition.name} · ${competition.season}`,
         });
       }
     });
@@ -209,18 +210,9 @@ const HistoryPage = () => {
             id: "competitionLabel",
             label: "Competition",
             width: 190,
-            render: (value) => (
-              <Chip
-                label={value}
-                size='small'
-                sx={(theme) => ({
-                  height: 26,
-                  borderRadius: "7px",
-                  bgcolor: alpha(theme.palette.warning.main, 0.16),
-                  color: "warning.main",
-                  fontWeight: 800,
-                  fontSize: "12px",
-                })}
+            render: (value, row) => (
+              <CompetitionBadge
+                competition={{ name: value, season: row.competitionSeason }}
               />
             ),
           },

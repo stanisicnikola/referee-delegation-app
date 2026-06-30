@@ -39,6 +39,14 @@ export const createMatchSchema = ({
         });
       }
 
+      if (data.homeTeamId === data.awayTeamId) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Home and away teams must be different",
+          path: ["awayTeamId"],
+        });
+      }
+
       const competition = competitions.find(
         (item) => item.id === data.competitionId,
       );
