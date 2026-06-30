@@ -760,6 +760,7 @@ class RefereeService {
       matchLabel: `${homeTeam} vs ${awayTeam}`,
       competitionId: match?.competitionId || match?.competition_id,
       competitionLabel: match?.competition?.name || "Competition",
+      competitionSeason: match?.competition?.season,
       venueLabel: [
         match?.venue?.name,
         match?.venue?.city,

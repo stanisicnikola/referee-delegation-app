@@ -12,6 +12,12 @@ const {
 const { AppError } = require("../middlewares");
 
 const ACTIVE_ASSIGNMENT_STATUSES = ["pending", "accepted"];
+const TEAM_BLOCKING_MATCH_STATUSES = [
+  "scheduled",
+  "in_progress",
+  "completed",
+  "postponed",
+];
 
 class MatchService {
   getDelegateScope(actor) {
@@ -69,6 +75,75 @@ class MatchService {
     if (actor?.role === "delegate" && match.delegatedBy !== actor.id) {
       throw new AppError("Match not found.", 404);
     }
+  }
+
+  normalizeRound(round) {
+    return round === null || round === undefined ? "" : String(round).trim();
+  }
+
+  assertDifferentTeams(homeTeamId, awayTeamId) {
+    if (homeTeamId && awayTeamId && homeTeamId === awayTeamId) {
+      throw new AppError("Home and away teams must be different.", 400);
+    }
+  }
+
+  async assertTeamsAvailableInRound({
+    competitionId,
+    round,
+    homeTeamId,
+    awayTeamId,
+    excludedMatchId = null,
+  }) {
+    this.assertDifferentTeams(homeTeamId, awayTeamId);
+
+    const normalizedRound = this.normalizeRound(round);
+    if (!competitionId || !normalizedRound || !homeTeamId || !awayTeamId) {
+      return;
+    }
+
+    const selectedTeamIds = [homeTeamId, awayTeamId];
+    const where = {
+      competitionId,
+      round: normalizedRound,
+      status: { [Op.in]: TEAM_BLOCKING_MATCH_STATUSES },
+      [Op.or]: [
+        { homeTeamId: { [Op.in]: selectedTeamIds } },
+        { awayTeamId: { [Op.in]: selectedTeamIds } },
+      ],
+    };
+
+    if (excludedMatchId) {
+      where.id = { [Op.ne]: excludedMatchId };
+    }
+
+    const conflictingMatch = await Match.findOne({
+      where,
+      include: [
+        { model: Team, as: "homeTeam", attributes: ["id", "name"] },
+        { model: Team, as: "awayTeam", attributes: ["id", "name"] },
+      ],
+      order: [["scheduledAt", "ASC"]],
+    });
+
+    if (!conflictingMatch) {
+      return;
+    }
+
+    const conflictingTeamNames = [
+      conflictingMatch.homeTeam,
+      conflictingMatch.awayTeam,
+    ]
+      .filter((team) => team && selectedTeamIds.includes(team.id))
+      .map((team) => team.name);
+    const teamLabel = conflictingTeamNames.length
+      ? conflictingTeamNames.join(" and ")
+      : "Selected team";
+    const verb = conflictingTeamNames.length > 1 ? "have" : "has";
+
+    throw new AppError(
+      `${teamLabel} already ${verb} a match in this competition round.`,
+      400,
+    );
   }
 
   async findAll(query = {}, actor = null) {
@@ -228,6 +303,9 @@ class MatchService {
 
   async create(matchData, actor = null) {
     const { delegateId, ...data } = matchData;
+    if (data.round !== undefined && data.round !== null) {
+      data.round = this.normalizeRound(data.round);
+    }
 
     if (actor?.role === "delegate") {
       data.delegatedBy = actor.id;
@@ -254,6 +332,12 @@ class MatchService {
     if (!competition) throw new AppError("Competition not found.", 400);
     this.assertMatchDateInFuture(matchData.scheduledAt);
     this.assertMatchDateWithinCompetition(competition, matchData.scheduledAt);
+    await this.assertTeamsAvailableInRound({
+      competitionId: data.competitionId,
+      round: data.round,
+      homeTeamId: data.homeTeamId,
+      awayTeamId: data.awayTeamId,
+    });
 
     const match = await Match.create(data);
     return this.findById(match.id, actor);
@@ -269,6 +353,10 @@ class MatchService {
     this.assertDelegateCanAccessMatch(match, actor);
 
     const { delegateId, ...data } = matchData;
+    if (data.round !== undefined && data.round !== null) {
+      data.round = this.normalizeRound(data.round);
+    }
+
     if (actor?.role === "admin" && delegateId) {
       const delegate = await User.findOne({
         where: { id: delegateId, role: "delegate", status: "active" },
@@ -311,6 +399,16 @@ class MatchService {
       this.assertMatchDateInFuture(data.scheduledAt);
     }
 
+    if (data.homeTeamId !== undefined) {
+      const homeTeam = await Team.findByPk(data.homeTeamId);
+      if (!homeTeam) throw new AppError("Home team not found.", 400);
+    }
+
+    if (data.awayTeamId !== undefined) {
+      const awayTeam = await Team.findByPk(data.awayTeamId);
+      if (!awayTeam) throw new AppError("Away team not found.", 400);
+    }
+
     if (data.competitionId !== undefined || data.scheduledAt !== undefined) {
       const competition = await Competition.findByPk(
         data.competitionId || match.competitionId,
@@ -321,6 +419,22 @@ class MatchService {
         competition,
         data.scheduledAt || match.scheduledAt,
       );
+    }
+
+    const relevantTeamScheduleChanged =
+      data.competitionId !== undefined ||
+      data.round !== undefined ||
+      data.homeTeamId !== undefined ||
+      data.awayTeamId !== undefined;
+
+    if (relevantTeamScheduleChanged && data.status !== "cancelled") {
+      await this.assertTeamsAvailableInRound({
+        competitionId: data.competitionId || match.competitionId,
+        round: data.round !== undefined ? data.round : match.round,
+        homeTeamId: data.homeTeamId || match.homeTeamId,
+        awayTeamId: data.awayTeamId || match.awayTeamId,
+        excludedMatchId: id,
+      });
     }
 
     if (data.status === "cancelled") {
