@@ -35,12 +35,6 @@ module.exports = (sequelize, DataTypes) => {
         unique: true,
         field: "user_id",
       },
-      licenseNumber: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-        unique: true,
-        field: "license_number",
-      },
       licenseCategory: {
         type: DataTypes.ENUM(...REFEREE_CATEGORY_VALUES),
         allowNull: false,
@@ -52,19 +46,13 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         field: "date_of_birth",
       },
-      city: {
+      country: {
         type: DataTypes.STRING(100),
-        allowNull: true,
+        allowNull: false,
       },
       address: {
         type: DataTypes.STRING(255),
         allowNull: true,
-      },
-      experienceYears: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: 0,
-        field: "experience_years",
       },
       bankAccount: {
         type: DataTypes.STRING(50),

@@ -35,6 +35,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: false,
       },
+      country: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
       capacity: {
         type: DataTypes.INTEGER,
         allowNull: true,

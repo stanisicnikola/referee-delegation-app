@@ -4,7 +4,7 @@ const { AppError } = require("../middlewares");
 
 class VenueService {
   async findAll(query = {}) {
-    const { page = 1, limit = 10, city, search } = query;
+    const { page = 1, limit = 10, city, country, search } = query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
@@ -12,10 +12,13 @@ class VenueService {
     const where = {};
 
     if (city) where.city = { [Op.like]: `%${city}%` };
+    if (country) where.country = { [Op.like]: `%${country}%` };
     if (search) {
       where[Op.or] = [
         { name: { [Op.like]: `%${search}%` } },
         { address: { [Op.like]: `%${search}%` } },
+        { city: { [Op.like]: `%${search}%` } },
+        { country: { [Op.like]: `%${search}%` } },
       ];
     }
 

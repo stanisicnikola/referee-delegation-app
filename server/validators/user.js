@@ -1,6 +1,12 @@
 const { z } = require("zod");
 const { REFEREE_CATEGORY_VALUES } = require("../constants/refereeCategories");
 
+const country = z
+  .string({ required_error: "Country is required." })
+  .trim()
+  .min(1, "Country is required.")
+  .max(100, "Country cannot exceed 100 characters.");
+
 const create = z.object({
   email: z
     .string({ required_error: "Email is required." })
@@ -19,17 +25,23 @@ const create = z.object({
   phone: z.string().optional().nullable(),
   role: z.enum(["admin", "delegate", "referee"]),
   status: z.enum(["active", "inactive", "suspended"]),
-  licenseNumber: z.string().optional(),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   dateOfBirth: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
+  country: country.optional(),
   address: z.string().optional().nullable(),
-  experienceYears: z.union([z.number(), z.string()]).optional(),
   bankAccount: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   confirmPassword: z.string().optional(),
   sendWelcomeEmail: z.boolean().optional(),
   requirePasswordChange: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === "referee" && !data.country) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Country is required.",
+      path: ["country"],
+    });
+  }
 });
 
 const update = z.object({
@@ -39,14 +51,20 @@ const update = z.object({
   phone: z.string().optional().nullable(),
   role: z.enum(["admin", "delegate", "referee"]).optional(),
   status: z.enum(["active", "inactive", "suspended"]).optional(),
-  licenseNumber: z.string().optional(),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   dateOfBirth: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
+  country: country.optional(),
   address: z.string().optional().nullable(),
-  experienceYears: z.union([z.number(), z.string()]).optional(),
   bankAccount: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.role === "referee" && !data.country) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Country is required.",
+      path: ["country"],
+    });
+  }
 });
 
 const query = z.object({

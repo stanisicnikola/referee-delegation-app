@@ -3,6 +3,12 @@ const { REFEREE_CATEGORY_VALUES } = require("../constants/refereeCategories");
 
 const digitsOnly = (value = "") => value.replace(/\D/g, "");
 
+const country = z
+  .string({ required_error: "Country is required." })
+  .trim()
+  .min(1, "Country is required.")
+  .max(100, "Country cannot exceed 100 characters.");
+
 const login = z.object({
   email: z
     .string({ required_error: "Email is required." })
@@ -54,12 +60,10 @@ const registerReferee = z.object({
     .min(2)
     .max(100),
   phone: z.string().optional().nullable(),
-  licenseNumber: z.string({ required_error: "License number is required." }),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   dateOfBirth: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
+  country,
   address: z.string().optional().nullable(),
-  experienceYears: z.number().int().min(0).optional(),
   bankAccount: z.string().optional().nullable(),
 });
 

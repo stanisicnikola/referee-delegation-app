@@ -93,12 +93,10 @@ class UserService {
         : null;
 
       const {
-        licenseNumber,
         licenseCategory,
         dateOfBirth,
-        city,
+        country,
         address,
-        experienceYears,
         bankAccount,
         notes,
         confirmPassword,
@@ -122,12 +120,10 @@ class UserService {
         await Referee.create(
           {
             userId: user.id,
-            licenseNumber: licenseNumber || `REF-${Date.now()}`,
             licenseCategory: licenseCategory || "none",
             dateOfBirth: dateOfBirth || null,
-            city: city || null,
+            country: country || null,
             address: address || null,
-            experienceYears: experienceYears || 0,
             bankAccount: bankAccount || null,
             notes: notes || null,
           },
@@ -202,12 +198,10 @@ class UserService {
 
     try {
       const {
-        licenseNumber,
         licenseCategory,
         dateOfBirth,
-        city,
+        country,
         address,
-        experienceYears,
         bankAccount,
         notes,
         ...userOnlyData
@@ -222,18 +216,14 @@ class UserService {
         if (hadRefereeProfile) {
           await user.referee.update(
             {
-              licenseNumber: licenseNumber || user.referee.licenseNumber,
               licenseCategory: licenseCategory || user.referee.licenseCategory,
               dateOfBirth:
                 dateOfBirth !== undefined
                   ? dateOfBirth
                   : user.referee.dateOfBirth,
-              city: city !== undefined ? city : user.referee.city,
+              country:
+                country !== undefined ? country : user.referee.country,
               address: address !== undefined ? address : user.referee.address,
-              experienceYears:
-                experienceYears !== undefined
-                  ? experienceYears
-                  : user.referee.experienceYears,
               bankAccount:
                 bankAccount !== undefined
                   ? bankAccount
@@ -246,12 +236,10 @@ class UserService {
           await Referee.create(
             {
               userId: user.id,
-              licenseNumber: licenseNumber || `REF-${Date.now()}`,
               licenseCategory: licenseCategory || "none",
               dateOfBirth: dateOfBirth || null,
-              city: city || null,
+              country: country || null,
               address: address || null,
-              experienceYears: experienceYears || 0,
               bankAccount: bankAccount || null,
               notes: notes || null,
             },

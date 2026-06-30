@@ -4,7 +4,7 @@ const { AppError } = require("../middlewares");
 
 class TeamService {
   async findAll(query = {}) {
-    const { page = 1, limit = 10, city, status, search } = query;
+    const { page = 1, limit = 10, city, country, status, search } = query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
@@ -12,11 +12,14 @@ class TeamService {
     const where = {};
 
     if (city) where.city = { [Op.like]: `%${city}%` };
+    if (country) where.country = { [Op.like]: `%${country}%` };
     if (status) where.status = status;
     if (search) {
       where[Op.or] = [
         { name: { [Op.like]: `%${search}%` } },
         { shortName: { [Op.like]: `%${search}%` } },
+        { city: { [Op.like]: `%${search}%` } },
+        { country: { [Op.like]: `%${search}%` } },
       ];
     }
 

@@ -108,7 +108,7 @@ class RefereeService {
   }
 
   async findAll(query = {}) {
-    const { page = 1, limit = 10, licenseCategory, city, search } = query;
+    const { page = 1, limit = 10, licenseCategory, country, search } = query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const offset = (pageNum - 1) * limitNum;
@@ -117,7 +117,7 @@ class RefereeService {
     const userWhere = {};
 
     if (licenseCategory) where.licenseCategory = licenseCategory;
-    if (city) where.city = { [Op.like]: `%${city}%` };
+    if (country) where.country = { [Op.like]: `%${country}%` };
 
     if (search) {
       userWhere[Op.or] = [
@@ -174,17 +174,6 @@ class RefereeService {
   }
 
   async create(refereeData) {
-    const existingLicense = await Referee.findOne({
-      where: { licenseNumber: refereeData.licenseNumber },
-    });
-
-    if (existingLicense) {
-      throw new AppError(
-        "Referee with this license number already exists.",
-        400,
-      );
-    }
-
     const referee = await Referee.create(refereeData);
 
     return this.findById(referee.id);
@@ -195,21 +184,6 @@ class RefereeService {
 
     if (!referee) {
       throw new AppError("Referee not found.", 404);
-    }
-
-    if (
-      refereeData.licenseNumber &&
-      refereeData.licenseNumber !== referee.licenseNumber
-    ) {
-      const existingLicense = await Referee.findOne({
-        where: { licenseNumber: refereeData.licenseNumber },
-      });
-      if (existingLicense) {
-        throw new AppError(
-          "Referee with this license number already exists.",
-          400,
-        );
-      }
     }
 
     await referee.update(refereeData);
@@ -491,7 +465,7 @@ class RefereeService {
           tone: chipIndex === 0 ? "competition" : "neutral",
         })),
       venueLabel: venue
-        ? [venue.name, venue.city].filter(Boolean).join(", ")
+        ? [venue.name, venue.city, venue.country].filter(Boolean).join(", ")
         : "Venue not set",
       acceptedColleagues,
     };
@@ -640,7 +614,7 @@ class RefereeService {
           tone: chipIndex === 0 ? "competition" : "neutral",
         })),
       venueLabel: venue
-        ? [venue.name, venue.city].filter(Boolean).join(", ")
+        ? [venue.name, venue.city, venue.country].filter(Boolean).join(", ")
         : "Venue not set",
       delegateLabel: this.getUserDisplayName(match?.delegate, null),
       otherReferees: otherAssignments.map((matchAssignment, refereeIndex) => {
@@ -730,13 +704,16 @@ class RefereeService {
       homeTeam?.name,
       homeTeam?.shortName,
       homeTeam?.city,
+      homeTeam?.country,
       awayTeam?.name,
       awayTeam?.shortName,
       awayTeam?.city,
+      awayTeam?.country,
       competition?.name,
       competition?.shortName,
       venue?.name,
       venue?.city,
+      venue?.country,
       match?.round,
       match?.matchNumber,
       assignment.role,
@@ -783,7 +760,11 @@ class RefereeService {
       matchLabel: `${homeTeam} vs ${awayTeam}`,
       competitionId: match?.competitionId || match?.competition_id,
       competitionLabel: match?.competition?.name || "Competition",
-      venueLabel: [match?.venue?.name, match?.venue?.city]
+      venueLabel: [
+        match?.venue?.name,
+        match?.venue?.city,
+        match?.venue?.country,
+      ]
         .filter(Boolean)
         .join(", "),
       roleKey: assignment.role,
@@ -994,7 +975,7 @@ class RefereeService {
         match?.awayTeam?.name || "Away team"
       }`,
       venueLabel: venue
-        ? [venue.name, venue.city].filter(Boolean).join(", ")
+        ? [venue.name, venue.city, venue.country].filter(Boolean).join(", ")
         : "Venue not set",
     };
   }

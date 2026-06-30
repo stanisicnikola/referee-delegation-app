@@ -1,24 +1,26 @@
 const { z } = require("zod");
 const { REFEREE_CATEGORY_VALUES } = require("../constants/refereeCategories");
 
+const country = z
+  .string({ required_error: "Country is required." })
+  .trim()
+  .min(1, "Country is required.")
+  .max(100, "Country cannot exceed 100 characters.");
+
 const create = z.object({
   userId: z.string().uuid("Invalid ID format."),
-  licenseNumber: z.string({ required_error: "License number is required." }),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES),
   dateOfBirth: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
+  country,
   address: z.string().optional().nullable(),
-  experienceYears: z.number().int().min(0).optional(),
   bankAccount: z.string().optional().nullable(),
 });
 
 const update = z.object({
-  licenseNumber: z.string().optional(),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
   dateOfBirth: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
+  country: country.optional(),
   address: z.string().optional().nullable(),
-  experienceYears: z.number().int().min(0).optional(),
   bankAccount: z.string().optional().nullable(),
 });
 
@@ -26,7 +28,7 @@ const query = z.object({
   page: z.string().transform(Number).optional(),
   limit: z.string().transform(Number).optional(),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES).optional(),
-  city: z.string().optional(),
+  country: z.string().optional(),
   search: z.string().optional(),
 });
 

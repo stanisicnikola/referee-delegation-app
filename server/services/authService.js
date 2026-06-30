@@ -102,18 +102,6 @@ class AuthService {
         throw new AppError("User with this email already exists.", 400);
       }
 
-      const existingLicense = await Referee.findOne({
-        where: { licenseNumber: userData.licenseNumber },
-        transaction,
-      });
-
-      if (existingLicense) {
-        throw new AppError(
-          "Referee with this license number already exists.",
-          400,
-        );
-      }
-
       const passwordHash = await this.hashPassword(userData.password);
 
       const user = await User.create(
@@ -132,12 +120,10 @@ class AuthService {
       await Referee.create(
         {
           userId: user.id,
-          licenseNumber: userData.licenseNumber,
           licenseCategory: userData.licenseCategory || "none",
           dateOfBirth: userData.dateOfBirth,
-          city: userData.city,
+          country: userData.country,
           address: userData.address,
-          experienceYears: userData.experienceYears || 0,
           bankAccount: userData.bankAccount,
         },
         { transaction },

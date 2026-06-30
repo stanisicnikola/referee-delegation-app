@@ -41,6 +41,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: false,
       },
+      country: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
       logoUrl: {
         type: DataTypes.STRING(500),
         allowNull: true,
