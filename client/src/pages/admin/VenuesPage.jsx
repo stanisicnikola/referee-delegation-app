@@ -54,6 +54,11 @@ const VenuesPage = () => {
     avgCapacity: 0,
   };
 
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
+  };
+
   const handleOpenModal = (venue = null) => {
     setEditingVenue(venue);
     setModalOpen(true);
@@ -152,7 +157,7 @@ const VenuesPage = () => {
         <FilterSearch
           placeholder='Search venues...'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
       </Box>
 
@@ -198,13 +203,14 @@ const VenuesPage = () => {
             ),
           },
           {
-            id: "city",
-            label: "City",
-            render: (city) => (
+            id: "location",
+            label: "Location",
+            render: (_, venue) => (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <LocationIcon sx={{ fontSize: 16, color: "#3b82f6" }} />
                 <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  {city || "N/A"}
+                  {[venue.city, venue.country].filter(Boolean).join(", ") ||
+                    "N/A"}
                 </Typography>
               </Box>
             ),

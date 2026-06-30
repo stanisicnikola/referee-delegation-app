@@ -61,6 +61,16 @@ const CompetitionsPage = () => {
     suspended: 0,
   };
 
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(0);
+  };
+
   const handleOpenModal = (competition = null) => {
     setEditingCompetition(competition);
     setModalOpen(true);
@@ -168,11 +178,11 @@ const CompetitionsPage = () => {
         <FilterSearch
           placeholder='Search competitions...'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
         <FilterSelect
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={handleStatusFilterChange}
           placeholder='All Status'
           options={[
             { value: "upcoming", label: "Upcoming" },

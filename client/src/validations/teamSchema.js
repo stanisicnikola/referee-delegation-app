@@ -12,5 +12,10 @@ export const teamSchema = z.object({
   city: z
     .string({ required_error: "City is required." })
     .min(1, "City is required."),
+  country: z
+    .string({ required_error: "Country is required." })
+    .trim()
+    .min(1, "Country is required.")
+    .max(100, "Country cannot exceed 100 characters."),
   primaryVenueId: z.uuid("Home venue is required."),
 });

@@ -15,7 +15,7 @@ const MatchVenue = ({ venue }) => (
       {venue?.name || "TBA"}
     </Typography>
     <Typography sx={{ fontSize: 12, color: COLORS.muted }}>
-      {venue?.city || ""}
+      {[venue?.city, venue?.country].filter(Boolean).join(", ")}
     </Typography>
   </Box>
 );

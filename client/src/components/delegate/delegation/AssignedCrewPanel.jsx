@@ -140,7 +140,7 @@ const AssignmentSlot = ({ config, referee, assignment, locked, onRemove }) => {
           </Box>
           <Typography sx={{ color: "#6b7280", fontSize: 12, mt: 0.25 }}>
             Category: {getRefereeCategoryLabel(referee.licenseCategory)} -{" "}
-            {referee.city || "N/A"}
+            {referee.country || "N/A"}
           </Typography>
         </Box>
       </Box>

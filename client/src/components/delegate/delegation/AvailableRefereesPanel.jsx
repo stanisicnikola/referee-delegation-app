@@ -85,7 +85,7 @@ const CandidateRow = ({ referee, assignedReferees, onAssign, disabled }) => {
         </Box>
         <Typography sx={{ color: "#6b7280", fontSize: 11 }}>
           Category: {getRefereeCategoryLabel(referee.licenseCategory)} -{" "}
-          {referee.city || "-"}
+          {referee.country || "-"}
         </Typography>
         {hasDeclined && (
           <Typography sx={{ color: "#fca5a5", fontSize: 11, mt: 0.35 }}>

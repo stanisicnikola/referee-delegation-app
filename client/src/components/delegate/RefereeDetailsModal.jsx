@@ -94,19 +94,8 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor }) => {
               label: "Phone",
               value: referee?.phone || referee?.user?.phone,
             },
-            { label: "City", value: referee?.city },
+            { label: "Country", value: referee?.country },
             { label: "Address", value: referee?.address },
-          ].filter((f) => f.value);
-
-          const professionalFields = [
-            { label: "License Number", value: referee?.licenseNumber },
-            {
-              label: "Experience",
-              value:
-                referee?.experienceYears != null
-                  ? `${referee.experienceYears} years`
-                  : null,
-            },
           ].filter((f) => f.value);
 
           const additionalFields = [
@@ -122,7 +111,6 @@ const RefereeDetailsModal = ({ open, referee, onClose, avatarColor }) => {
 
           const sections = [
             { title: "Contact", fields: contactFields },
-            { title: "License & Professional", fields: professionalFields },
             { title: "Additional Info", fields: additionalFields },
           ].filter((s) => s.fields.length > 0);
 

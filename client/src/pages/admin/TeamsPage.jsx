@@ -52,11 +52,17 @@ const TeamsPage = () => {
   const { data: teamStats } = useTeamStats();
 
   const cities = teamStats?.data?.cities || [];
-  const totalTeams = teamStats?.data?.totalTeams || 0;
+  const tableTotalTeams = teamsRecord?.pagination?.total || 0;
+  const totalTeams = teamStats?.data?.totalTeams || tableTotalTeams;
   const activeTeams = teamStats?.data?.activeTeams || 0;
   const suspendedTeams = teamStats?.data?.suspendedTeams || 0;
 
   const teams = teamsRecord?.data || [];
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
+  };
 
   const handleOpenModal = (team = null) => {
     setEditingTeam(team);
@@ -157,7 +163,7 @@ const TeamsPage = () => {
         <FilterSearch
           placeholder='Search teams...'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
       </Box>
 
@@ -190,13 +196,14 @@ const TeamsPage = () => {
             ),
           },
           {
-            id: "city",
-            label: "City",
-            render: (city) => (
+            id: "location",
+            label: "Location",
+            render: (_, team) => (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <LocationIcon sx={{ fontSize: 16, color: "#3b82f6" }} />
                 <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  {city || "N/A"}
+                  {[team.city, team.country].filter(Boolean).join(", ") ||
+                    "N/A"}
                 </Typography>
               </Box>
             ),
@@ -240,7 +247,7 @@ const TeamsPage = () => {
         loading={isLoading || isFetching}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={totalTeams}
+        totalRows={tableTotalTeams}
         onPageChange={setPage}
         onRowsPerPageChange={(newRowsPerPage) => {
           setRowsPerPage(newRowsPerPage);

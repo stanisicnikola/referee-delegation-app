@@ -157,21 +157,6 @@ const RefereeForm = ({
         >
           <Box>
             <Controller
-              name='licenseNumber'
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  {...field}
-                  label='License Number *'
-                  placeholder='SUD-XXXX-XXX'
-                  error={errors?.licenseNumber?.message}
-                  accentColor={accentColor}
-                />
-              )}
-            />
-          </Box>
-          <Box>
-            <Controller
               name='licenseCategory'
               control={control}
               render={({ field }) => (
@@ -185,41 +170,16 @@ const RefereeForm = ({
               )}
             />
           </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-            gap: 2,
-          }}
-        >
           <Box>
             <Controller
-              name='city'
+              name='country'
               control={control}
               render={({ field }) => (
                 <CustomInput
                   {...field}
-                  label='City *'
-                  placeholder='e.g. Sarajevo'
-                  error={errors?.city?.message}
-                  accentColor={accentColor}
-                />
-              )}
-            />
-          </Box>
-          <Box>
-            <Controller
-              name='experienceYears'
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  {...field}
-                  label='Years of Experience'
-                  autoComplete='on'
-                  placeholder='0'
-                  error={errors?.experienceYears?.message}
+                  label='Country *'
+                  placeholder='e.g. Serbia'
+                  error={errors?.country?.message}
                   accentColor={accentColor}
                 />
               )}

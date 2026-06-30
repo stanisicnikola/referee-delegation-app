@@ -60,10 +60,10 @@ const DelegateTeamsTable = ({
         ),
       },
       {
-        id: "city",
-        label: "City",
+        id: "location",
+        label: "Location",
         minWidth: 150,
-        render: (city) => (
+        render: (_, team) => (
           <Box
             sx={{
               display: "flex",
@@ -73,7 +73,9 @@ const DelegateTeamsTable = ({
             }}
           >
             <LocationIcon sx={{ fontSize: 16 }} />
-            <Typography sx={{ fontSize: "14px" }}>{city || "N/A"}</Typography>
+            <Typography sx={{ fontSize: "14px" }}>
+              {[team.city, team.country].filter(Boolean).join(", ") || "N/A"}
+            </Typography>
           </Box>
         ),
       },

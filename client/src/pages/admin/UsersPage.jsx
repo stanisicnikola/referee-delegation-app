@@ -53,8 +53,24 @@ const UsersPage = () => {
 
   const users = data?.data || [];
   const stats = statisticsData?.data || {};
-  const totalUsers = stats.total ?? data?.pagination?.total ?? 0;
+  const tableTotalUsers = data?.pagination?.total ?? 0;
+  const totalUsers = stats.total ?? tableTotalUsers;
   const roleStats = stats.byRole || {};
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
+  };
+
+  const handleRoleFilterChange = (e) => {
+    setRoleFilter(e.target.value);
+    setPage(0);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(0);
+  };
 
   const handleOpenModal = (user = null) => {
     if (user) {
@@ -159,12 +175,12 @@ const UsersPage = () => {
         <FilterSearch
           placeholder='Search users...'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
 
         <FilterSelect
           value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
+          onChange={handleRoleFilterChange}
           placeholder='All Roles'
           options={[
             { value: "admin", label: "Admin" },
@@ -175,7 +191,7 @@ const UsersPage = () => {
 
         <FilterSelect
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={handleStatusFilterChange}
           placeholder='All Status'
           options={[
             { value: "active", label: "Active" },
@@ -215,11 +231,6 @@ const UsersPage = () => {
                   >
                     {user.firstName} {user.lastName}
                   </Typography>
-                  {user.referee?.licenseNumber && (
-                    <Typography sx={{ fontSize: "12px", color: "#6b7280" }}>
-                      {user.referee.licenseNumber}
-                    </Typography>
-                  )}
                 </Box>
               </Box>
             ),
@@ -274,7 +285,7 @@ const UsersPage = () => {
         loading={isLoading || isFetching}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={totalUsers}
+        totalRows={tableTotalUsers}
         onPageChange={setPage}
         onRowsPerPageChange={(newRowsPerPage) => {
           setRowsPerPage(newRowsPerPage);

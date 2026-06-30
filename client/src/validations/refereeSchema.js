@@ -5,23 +5,6 @@ import { REFEREE_CATEGORY_VALUES } from "../constants/refereeCategories";
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])(?!.*\s).{8,}$/;
 
-const experienceYearsSchema = z.preprocess(
-  (value) => {
-    if (value === null || value === undefined) return "";
-    return String(value);
-  },
-  z
-    .string()
-    .trim()
-    .refine((value) => value === "" || /^\d+$/.test(value), {
-      message: "Experience years must contain only digits.",
-    })
-    .transform((value) => (value === "" ? undefined : Number(value)))
-    .refine((value) => value === undefined || (value >= 0 && value <= 40), {
-      message: "Experience years must be between 0 and 40.",
-    }),
-);
-
 export const baseRefereeSchema = z.object({
   firstName: z
     .string()
@@ -35,12 +18,14 @@ export const baseRefereeSchema = z.object({
   phone: phoneSchema,
   role: z.literal("referee"),
   status: z.enum(["active", "inactive", "suspended"]),
-  licenseNumber: z.string().min(1, "License number is required."),
   licenseCategory: z.enum(REFEREE_CATEGORY_VALUES, {
     required_error: "License category is required.",
   }),
-  city: z.string().min(1, "City is required."),
-  experienceYears: experienceYearsSchema,
+  country: z
+    .string({ required_error: "Country is required." })
+    .trim()
+    .min(1, "Country is required.")
+    .max(100, "Country cannot exceed 100 characters."),
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
 });

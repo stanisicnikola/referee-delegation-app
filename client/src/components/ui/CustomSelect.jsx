@@ -88,6 +88,8 @@ const CustomSelect = ({
                 border: "1px solid #242428",
                 borderRadius: "12px",
                 mt: 1,
+                maxHeight: "min(360px, calc(100vh - 96px))",
+                overflowY: "auto",
                 "& .MuiMenuItem-root": {
                   color: "#9ca3af",
                   fontSize: "14px",

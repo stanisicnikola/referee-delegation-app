@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Box, Chip, TablePagination, Typography } from "@mui/material";
 import {
   CalendarMonth as CalendarIcon,
@@ -69,9 +69,15 @@ const MatchesPage = () => {
   const tableLoading = isLoading || isFetching;
   const hasFilters = Boolean(search) || statusFilter !== "all";
 
-  useEffect(() => {
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
     setPage(0);
-  }, [search, statusFilter]);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(0);
+  };
 
   const handleOpenModal = (match = null) => {
     setEditingMatch(match);
@@ -209,12 +215,12 @@ const MatchesPage = () => {
         <FilterSearch
           placeholder='Search matches...'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
 
         <FilterSelect
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={handleStatusFilterChange}
           placeholder='All Status'
           options={[
             { value: "scheduled", label: "Scheduled" },

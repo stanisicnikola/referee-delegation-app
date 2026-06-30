@@ -36,11 +36,12 @@ export const TeamModal = ({
       name: "",
       shortName: "",
       city: "",
+      country: "",
       primaryVenueId: "",
     },
   });
 
-  const { data: venuesData } = useVenues();
+  const { data: venuesData } = useVenues({ limit: 100 });
   const venueOptions = useMemo(
     () =>
       (venuesData?.data || []).map((venue) => ({
@@ -58,6 +59,7 @@ export const TeamModal = ({
           name: editTeam.name || "",
           shortName: editTeam.shortName || "",
           city: editTeam.city || "",
+          country: editTeam.country || "",
           primaryVenueId: editTeam.primaryVenueId || "",
         });
       } else {
@@ -65,6 +67,7 @@ export const TeamModal = ({
           name: "",
           shortName: "",
           city: "",
+          country: "",
           primaryVenueId: "",
         });
       }
@@ -162,6 +165,19 @@ export const TeamModal = ({
               />
             )}
           />
+          <Controller
+            name='shortName'
+            control={control}
+            render={({ field }) => (
+              <CustomInput
+                {...field}
+                label='Short Name'
+                placeholder='BOS'
+                error={errors.shortName?.message}
+                accentColor={accentColor}
+              />
+            )}
+          />
           <Box
             sx={{
               display: "grid",
@@ -169,19 +185,6 @@ export const TeamModal = ({
               gap: 2,
             }}
           >
-            <Controller
-              name='shortName'
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  {...field}
-                  label='Short Name'
-                  placeholder='BOS'
-                  error={errors.shortName?.message}
-                  accentColor={accentColor}
-                />
-              )}
-            />
             <Controller
               name='city'
               control={control}
@@ -195,7 +198,34 @@ export const TeamModal = ({
                 />
               )}
             />
+            <Controller
+              name='country'
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  {...field}
+                  label='Country *'
+                  placeholder='Bosnia and Herzegovina'
+                  error={errors.country?.message}
+                  accentColor={accentColor}
+                />
+              )}
+            />
           </Box>
+          <Controller
+            name='primaryVenueId'
+            control={control}
+            render={({ field }) => (
+              <CustomSelect
+                {...field}
+                options={venueOptions}
+                label='Home Venue *'
+                placeholder='Select Home Venue'
+                error={errors.primaryVenueId?.message}
+                variant={panelVariant}
+              />
+            )}
+          />
           {editTeam && (
             <Box
               sx={{
@@ -235,22 +265,6 @@ export const TeamModal = ({
               </CustomButton>
             </Box>
           )}
-          <Box>
-            <Controller
-              name='primaryVenueId'
-              control={control}
-              render={({ field }) => (
-                <CustomSelect
-                  {...field}
-                  options={venueOptions}
-                  label='Home Venue *'
-                  placeholder='Select Home Venue'
-                  error={errors.primaryVenueId?.message}
-                  variant={panelVariant}
-                />
-              )}
-            />
-          </Box>
         </Box>
         <Box
           sx={{

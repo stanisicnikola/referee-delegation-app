@@ -107,7 +107,7 @@ const TeamMobileCard = ({
               whiteSpace: "nowrap",
             }}
           >
-            {team.city || "N/A"}
+            {[team.city, team.country].filter(Boolean).join(", ") || "N/A"}
           </Typography>
         </Box>
         <Typography

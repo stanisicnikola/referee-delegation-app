@@ -64,14 +64,8 @@ const UserModal = ({
         email: user?.email || "",
         phone: user?.phone || "",
         status: user?.status || "active",
-        licenseNumber: user?.referee?.licenseNumber || "",
         licenseCategory: user?.referee?.licenseCategory || "none",
-        city: user?.referee?.city || "",
-        experienceYears:
-          user?.referee?.experienceYears !== undefined &&
-          user?.referee?.experienceYears !== null
-            ? String(user.referee.experienceYears)
-            : "",
+        country: user?.referee?.country || "",
         password: "",
         confirmPassword: "",
         sendWelcomeEmail: !user,
@@ -143,10 +137,8 @@ const UserModal = ({
   const onSubmit = (data) => {
     if (data.role !== "referee") {
       const cleanData = { ...data };
-      delete cleanData.licenseNumber;
       delete cleanData.licenseCategory;
-      delete cleanData.city;
-      delete cleanData.experienceYears;
+      delete cleanData.country;
       onConfirm(cleanData);
     } else {
       onConfirm(data);

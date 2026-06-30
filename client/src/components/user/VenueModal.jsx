@@ -23,6 +23,7 @@ export const VenueModal = ({
     defaultValues: {
       name: "",
       city: "",
+      country: "",
       address: "",
       capacity: "",
     },
@@ -34,6 +35,7 @@ export const VenueModal = ({
         reset({
           name: editVenue.name || "",
           city: editVenue.city || "",
+          country: editVenue.country || "",
           address: editVenue.address || "",
           capacity: editVenue.capacity ?? "",
         });
@@ -41,6 +43,7 @@ export const VenueModal = ({
         reset({
           name: "",
           city: "",
+          country: "",
           address: "",
           capacity: "",
         });
@@ -169,6 +172,26 @@ export const VenueModal = ({
                 />
               )}
             />
+            <Controller
+              name='country'
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  {...field}
+                  label='Country *'
+                  placeholder='Bosnia and Herzegovina'
+                  error={errors.country?.message}
+                />
+              )}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
             <Controller
               name='capacity'
               control={control}

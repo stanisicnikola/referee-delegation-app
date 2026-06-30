@@ -23,6 +23,11 @@ export const venueSchema = z.object({
     .min(2, "Venue name must be at least 2 characters")
     .max(200, "Venue name must be less than 200 characters"),
   city: z.string().min(1, "City is required"),
+  country: z
+    .string({ required_error: "Country is required" })
+    .trim()
+    .min(1, "Country is required")
+    .max(100, "Country cannot exceed 100 characters"),
   address: z.string().min(1, "Address is required"),
   capacity: capacitySchema,
 });

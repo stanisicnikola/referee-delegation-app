@@ -4,7 +4,6 @@ import {
   Person as PersonIcon,
   Star as StarIcon,
   LocationOn as LocationIcon,
-  Badge as BadgeIcon,
 } from "@mui/icons-material";
 import {
   useReferees,
@@ -55,8 +54,19 @@ const RefereesPage = () => {
 
   const referees = data?.data || [];
   const stats = statisticsData?.data || {};
-  const totalReferees = stats.total ?? data?.pagination?.total ?? 0;
+  const tableTotalReferees = data?.pagination?.total ?? 0;
+  const totalReferees = stats.total ?? tableTotalReferees;
   const licenseCategoryStats = stats.byLicenseCategory || {};
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
+  };
+
+  const handleLicenseFilterChange = (e) => {
+    setLicenseFilter(e.target.value);
+    setPage(0);
+  };
 
   const handleOpenModal = (referee = null) => {
     if (referee) {
@@ -201,12 +211,12 @@ const RefereesPage = () => {
         <FilterSearch
           placeholder='Search referees...'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
 
         <FilterSelect
           value={licenseFilter}
-          onChange={(e) => setLicenseFilter(e.target.value)}
+          onChange={handleLicenseFilterChange}
           placeholder='All categories'
           options={REFEREE_CATEGORY_OPTIONS}
         />
@@ -250,47 +260,20 @@ const RefereesPage = () => {
             ),
           },
           {
-            id: "licenseNumber",
-            label: "License Number",
-            render: (license) => (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <BadgeIcon sx={{ fontSize: 16, color: "#6b7280" }} />
-                <Typography
-                  sx={{
-                    fontSize: "14px",
-                    color: "#9ca3af",
-                    fontFamily: "monospace",
-                  }}
-                >
-                  {license || "N/A"}
-                </Typography>
-              </Box>
-            ),
-          },
-          {
             id: "licenseCategory",
             label: "License Category",
             render: (license) => getCategoryBadge(license),
           },
           {
-            id: "city",
-            label: "City",
-            render: (city) => (
+            id: "country",
+            label: "Country",
+            render: (country) => (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <LocationIcon sx={{ fontSize: 16, color: "#3b82f6" }} />
                 <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                  {city || "N/A"}
+                  {country || "N/A"}
                 </Typography>
               </Box>
-            ),
-          },
-          {
-            id: "experienceYears",
-            label: "Experience",
-            render: (years) => (
-              <Typography sx={{ fontSize: "14px", color: "#9ca3af" }}>
-                {years ? `${years} years` : "N/A"}
-              </Typography>
             ),
           },
           {
@@ -322,7 +305,7 @@ const RefereesPage = () => {
         loading={isLoading || isFetching}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={totalReferees}
+        totalRows={tableTotalReferees}
         onPageChange={setPage}
         onRowsPerPageChange={(newRowsPerPage) => {
           setRowsPerPage(newRowsPerPage);

@@ -450,7 +450,7 @@ const RefereesPage = () => {
                       >
                         <LocationIcon sx={{ fontSize: 16 }} />
                         <Typography sx={{ fontSize: "14px" }}>
-                          {referee.city || "N/A"}
+                          {referee.country || "N/A"}
                         </Typography>
                       </Box>
                       <Box

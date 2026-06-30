@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   CircularProgress,
@@ -45,10 +45,6 @@ const TeamsPage = () => {
   const [editingTeam, setEditingTeam] = useState(null);
   const [teamToDelete, setTeamToDelete] = useState(null);
 
-  useEffect(() => {
-    setPage(0);
-  }, [search]);
-
   const { data: teamsData, isLoading } = useTeams({
     page: page + 1,
     limit: rowsPerPage,
@@ -88,6 +84,11 @@ const TeamsPage = () => {
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
+    setPage(0);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
     setPage(0);
   };
 
@@ -260,7 +261,7 @@ const TeamsPage = () => {
             variant='delegate'
             placeholder='Search teams...'
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={handleSearchChange}
           />
         </Box>
 

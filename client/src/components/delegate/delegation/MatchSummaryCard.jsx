@@ -577,8 +577,9 @@ const MatchSummaryCard = ({
             overflowWrap: "anywhere",
           }}
         >
-          {match?.venue?.name || "TBA"}
-          {match?.venue?.city ? `, ${match.venue.city}` : ""}
+          {[match?.venue?.name, match?.venue?.city, match?.venue?.country]
+            .filter(Boolean)
+            .join(", ") || "TBA"}
         </Typography>
       </Box>
 

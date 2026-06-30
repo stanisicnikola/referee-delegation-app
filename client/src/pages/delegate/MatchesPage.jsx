@@ -39,11 +39,8 @@ const MatchesPage = () => {
     const status = searchParams.get("status");
     setCompetitionFilter(competitionId || "all");
     setStatusFilter(status || "all");
-  }, [searchParams]);
-
-  useEffect(() => {
     setPage(0);
-  }, [search, competitionFilter, statusFilter]);
+  }, [searchParams]);
 
   const {
     data: matchesData,
@@ -116,6 +113,21 @@ const MatchesPage = () => {
     setPage(0);
   };
 
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setPage(0);
+  };
+
+  const handleCompetitionFilterChange = (event) => {
+    setCompetitionFilter(event.target.value);
+    setPage(0);
+  };
+
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    setPage(0);
+  };
+
   return (
     <Box sx={{ width: "100%", minWidth: 0 }}>
       <PageHeader
@@ -131,11 +143,9 @@ const MatchesPage = () => {
         competitionFilter={competitionFilter}
         statusFilter={statusFilter}
         competitions={competitions}
-        onSearchChange={(event) => setSearch(event.target.value)}
-        onCompetitionChange={(event) =>
-          setCompetitionFilter(event.target.value)
-        }
-        onStatusChange={(event) => setStatusFilter(event.target.value)}
+        onSearchChange={handleSearchChange}
+        onCompetitionChange={handleCompetitionFilterChange}
+        onStatusChange={handleStatusFilterChange}
       />
 
       <Box sx={{ display: { xs: "grid", md: "none" }, gap: 1.5 }}>

@@ -32,6 +32,7 @@ const TeamDetailsDialog = ({
   const infoFields = [
     { label: "Short Name", value: team?.shortName },
     { label: "City", value: team?.city },
+    { label: "Country", value: team?.country },
     { label: "Primary Venue", value: team?.primaryVenue?.name },
     {
       label: "Matches",
